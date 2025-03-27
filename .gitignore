@@ -1,0 +1,16 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+
+
+data/D2_cdm/*
+!data/D2_cdm/.gitkeep
+data/D3_study_variables/*
+!data/D3_study_variables/.gitkeep
+data/D4_analytic_datastes/*
+!data/D4_analytic_datastes/.gitkeep
+data/D5_results/*
+!data/D5_results/.gitkeep
+data/D6_report/*
+!data/D6_report/.gitkeep

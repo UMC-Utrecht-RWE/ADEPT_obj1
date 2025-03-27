@@ -1,0 +1,3 @@
+[submodule "T2-DMM"]
+	path = T2-DMM
+	url = https://github.com/UMC-Utrecht-RWE/T2-DataManagementModel
