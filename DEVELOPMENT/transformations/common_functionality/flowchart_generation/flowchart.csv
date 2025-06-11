@@ -1,0 +1,132 @@
+## **********************************************************
+## Configuration
+## **********************************************************
+# label: %FILE%<br>%FORMAT%
+# styles: {"rds" : "shape=mxgraph.flowchart.document;fillColor=#FFE6CC;strokeColor=#D79B00;rounded=0;html=1;", \
+#         "multiple-rds" : "shape=mxgraph.flowchart.multi-document;fillColor=#FFE6CC;strokeColor=#D79B00;rounded=0;html=1;", \
+#         "multiple-csv" : "shape=mxgraph.flowchart.multi-document;fillColor=#FFFFFF;strokeColor=#000000;rounded=0;html=1;", \
+#         "csv" : "shape=mxgraph.flowchart.document;fillColor=#FFFFFF;strokeColor=#000000;rounded=0;html=1;", \
+#         "CDM" : "shape=mxgraph.flowchart.document;fillColor=#DAE8FC;strokeColor=#6C8EBF;rounded=1;html=1;", \
+#         "STEP" : "fillColor=#F8CECC;strokeColor=#B85450;rounded=1;html=1;", \
+#         "pdf" : "shape=image;html=1;verticalAlign=top;verticalLabelPosition=bottom;labelBackgroundColor=#ffffff;imageAspect=0;aspect=fixed;image=https://cdn1.iconfinder.com/data/icons/hawcons/32/699434-icon-70-document-file-pdf-128.png",\
+#         "multiple-pdf" : "shape=image;html=1;verticalAlign=top;verticalLabelPosition=bottom;labelBackgroundColor=#ffffff;imageAspect=0;aspect=fixed;image=https://cdn3.iconfinder.com/data/icons/brands-applications/512/PDF-128.png",\
+#         "db" : "shape=mxgraph.flowchart.database;fillColor=#DAE8FC;strokeColor=#1522D7;rounded=1;html=1;", "standart" : "fillColor=%fill%;strokeColor=%stroke%;rounded=1;html=1;"}
+# stylename: FORMAT
+# namespace: csvimport-
+# connect: {"from": "INPUT", "to": "FILE", "invert": false, \
+#          "style": "curved=1;endArrow=blockThin;endFill=1;fontSize=11;"}
+# connect: {"from": "OUTPUT", "to": "FILE", "invert": true, \
+#          "style": "curved=1;endArrow=blockThin;endFill=1;fontSize=11;"}
+# width: auto
+# height: auto
+# padding: 5
+# ignore: id,refs
+# link: url
+# nodespacing: 60
+# levelspacing: 60
+# edgespacing: 40
+# layout: horizontalflow
+## **********************************************************
+## CSV Data
+## **********************************************************
+FILE,FORMAT,INPUT,OUTPUT
+Step_00_SetBridge,STEP,NA,NA
+Step_00_SetDataBase,STEP,NA,NA
+Step_00_SetCodeSheets,STEP,NA,NA
+Step_CreateConceptsDataBase,STEP,NA,NA
+Step_CreatePopulationDatabase,STEP,NA,NA
+Step_MergePreAndPostDBs.R,STEP,NA,NA
+Step_GetDatesAESI,STEP,NA,NA
+Step_GetDatesCOV,STEP,NA,NA
+Step_19_PreparingTableShellsData,STEP,NA,NA
+Step_20_Table0,STEP,NA,NA
+Step_Table2,STEP,NA,NA
+Step_23_Table4,STEP,NA,NA
+Step_25_Table5,STEP,NA,NA
+Step_30_Figure1,STEP,NA,NA
+Step_32_Figure2,STEP,NA,NA
+Step_22_Table3,STEP,NA,NA
+Step_26_Table6,STEP,NA,NA
+Step_XXX_Figure5,STEP,NA,NA
+Step_XXX_Figure8,STEP,NA,NA
+Step_27_Table2TTs,STEP,NA,NA
+Step_XXX_Table8_2,STEP,NA,NA
+Step_XXX_Figure3,STEP,NA,NA
+Step_XXX_Table9,STEP,NA,NA
+Step_XXX_Table10,STEP,NA,NA
+Step_XXX_Figure4,STEP,NA,NA
+Step_XXX_Table12,STEP,NA,NA
+AESI files,multiple-rds,Step_Table2,Step_GetDatesAESI
+AZ_Figure3_,pdf,NA,Step_XXX_Figure3
+AZ_Figure4_,pdf,NA,Step_XXX_Figure4
+AZ_Table0_,csv,NA,Step_20_Table0
+AZ_Table10_,csv,Step_XXX_Figure4,Step_XXX_Table10
+AZ_Table12_,csv,NA,Step_XXX_Table12
+AZ_Table2_,multiple-csv,NA,Step_Table2
+AZ_Table3_,csv,NA,Step_22_Table3
+AZ_Table4_,csv,NA,Step_23_Table4
+AZ_Table5_,csv,NA,Step_25_Table5
+AZ_Table6_,csv,Step_XXX_Figure4,Step_26_Table6
+AZ_Table8_,csv,NA,Step_XXX_Table8_2
+AZ_Table9_,csv,NA,Step_XXX_Table9
+AZ_additional_concepts,csv,Step_00_SetCodeSheets,NA
+AZ_algorithms,csv,Step_00_SetCodeSheets,NA
+AZ_dictionary,csv,Step_00_SetCodeSheets,NA
+AZ_eventList,csv,Step_00_SetCodeSheets,NA
+AZ_eventList,rds,"Step_Table2,Step_XXX_Figure5,Step_XXX_Table12",Step_00_SetCodeSheets
+AZ_formulas,csv,Step_00_SetCodeSheets,NA
+AZ_scores,csv,Step_00_SetCodeSheets,NA
+AZ_study_variables,csv,Step_00_SetBridge,NA
+AZ_study_variables,rds,"Step_GetDatesAESI,Step_GetDatesCOV",Step_00_SetBridge
+AZ_vaccines_codelist,csv,Step_00_SetCodeSheets,NA
+AZ_variableSelection_metadata,csv,Step_XXX_Table8_2,NA
+Algorithms,rds,Step_CreateConceptsDataBase,Step_00_SetCodeSheets
+AllVaccinatedFirstDosePopulation,rds,Step_CreatePopulationDatabase,NA
+AllVaccinatedSpells,rds,"Step_22_Table3,Step_23_Table4,Step_30_Figure1,Step_CreatePopulationDatabase",NA
+CDM_metadata,csv,Step_00_SetDataBase,NA
+CDM_origin_postMatching,db,"Step_00_SetCodeSheets,Step_CreateConceptsDataBase,Step_MergePreAndPostDBs.R",Step_00_SetDataBase
+DAP_SPECIFIC_CODELIST_EVENTS_postMatching,rds,Step_CreateConceptsDataBase,Step_00_SetCodeSheets
+DAP_SPECIFIC_CODELIST_MEDICINES_postMatching,rds,Step_CreateConceptsDataBase,Step_00_SetCodeSheets
+DAP_SPECIFIC_CODELIST_VACCINES_postMatching,rds,Step_CreateConceptsDataBase,Step_00_SetCodeSheets
+DAP_SPECIFIC_CONCEPTS,rds,Step_CreateConceptsDataBase,Step_00_SetCodeSheets
+Dictionary,rds,NA,Step_00_SetCodeSheets
+EVENTS,CDM,Step_00_SetDataBase,NA
+Event_Info_Control,multiple-rds,"Step_XXX_Figure5,Step_XXX_Figure8,Step_XXX_Table8_2",Step_Table2
+Event_Info_Exposed,multiple-rds,"Step_27_Table2TTs,Step_XXX_Figure5,Step_XXX_Figure8,Step_XXX_Table12,Step_XXX_Table8_2",Step_Table2
+Figure1_,pdf,NA,Step_30_Figure1
+Figure2_Control_,pdf,NA,Step_32_Figure2
+Figure2_Exposed_,pdf,NA,Step_32_Figure2
+Figure5_AZ_'AESI_NAME',multiple-pdf,NA,Step_XXX_Figure5
+Figure8_AZ_'AESI_NAME',multiple-pdf,NA,Step_XXX_Figure8
+FirstDosePopulation,rds,"Step_19_PreparingTableShellsData,Step_CreatePopulationDatabase",NA
+FirstDosePopulation2,rds,Step_20_Table0,Step_19_PreparingTableShellsData
+MEDICAL_OBSERVATIONS,CDM,Step_00_SetDataBase,NA
+MEDICINES,CDM,Step_00_SetDataBase,NA
+M_StudyCohort_AESI,rds,"Step_26_Table6,Step_XXX_Table8_2",Step_GetDatesAESI
+M_Studycohort,rds,"Step_27_Table2TTs,Step_30_Figure1,Step_CreatePopulationDatabase",NA
+M_Studycohort2,rds,"Step_23_Table4,Step_25_Table5,Step_32_Figure2,Step_Table2",Step_19_PreparingTableShellsData
+M_Studycohort_Covariates_,rds,"Step_26_Table6,Step_XXX_Table8_2",Step_GetDatesCOV
+MatchingPopulationSpells,rds,"Step_23_Table4,Step_CreatePopulationDatabase",NA
+OBSERVATION_PERIODS,CDM,Step_00_SetDataBase,NA
+PERSONS,CDM,Step_00_SetDataBase,NA
+PROCEDURES,CDM,Step_00_SetDataBase,NA
+PopulationsTable,rds,Step_CreatePopulationDatabase,NA
+RepeatedDBMerge,multiple-csv,NA,Step_MergePreAndPostDBs.R
+SPELLS_04,rds,"Step_23_Table4,Step_26_Table6",NA
+SPELLS_CheckList2,rds,"Step_23_Table4,Step_CreatePopulationDatabase",NA
+SURVEY_OBSERVATIONS,CDM,Step_00_SetDataBase,NA
+Table2TTS_,csv,NA,Step_27_Table2TTs
+Table6Input,rds,Step_XXX_Table10,Step_26_Table6
+Table6_metadata,csv,"Step_26_Table6,Step_XXX_Table10",NA
+VACCINES,CDM,Step_00_SetDataBase,NA
+_drug_proxies_codelist,csv,Step_00_SetCodeSheets,NA
+_full_codelist,csv,Step_00_SetCodeSheets,NA
+concepts_post,db,Step_MergePreAndPostDBs.R,Step_CreateConceptsDataBase
+concepts_preANDpost,db,"Step_19_PreparingTableShellsData,Step_GetDatesAESI,Step_GetDatesCOV",Step_MergePreAndPostDBs.R
+count_rows_OriginDB_postMatching,rds,NA,Step_00_SetDataBase
+count_rows_postMatchingDb,rds,NA,Step_CreateConceptsDataBase
+formula_weights,rds,Step_GetDatesCOV,Step_00_SetCodeSheets
+populations,db,"Step_19_PreparingTableShellsData,Step_GetDatesAESI,Step_GetDatesCOV",Step_CreatePopulationDatabase
+ps_database_input,rds,"Step_XXX_Figure3,Step_XXX_Table10,Step_XXX_Table9",Step_XXX_Table8_2
+score_groups,rds,Step_GetDatesCOV,Step_00_SetCodeSheets
+

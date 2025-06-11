@@ -14,3 +14,5 @@ data/D5_results/*
 !data/D5_results/.gitkeep
 data/D6_report/*
 !data/D6_report/.gitkeep
+CDMInstances
+scripts_used_in_previous_study
