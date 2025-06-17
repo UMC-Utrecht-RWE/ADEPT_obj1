@@ -14,5 +14,7 @@ data/D5_results/*
 !data/D5_results/.gitkeep
 data/D6_report/*
 !data/D6_report/.gitkeep
-CDMInstances
+CDM_Instances
 scripts_used_in_previous_study
+CDMInstances
+Temp
