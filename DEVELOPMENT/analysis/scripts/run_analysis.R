@@ -92,7 +92,10 @@ if(multiple_regions==T){
   source(file.path(thisdir, "scripts", "study_source_population_script.R"), local = TRUE)
   
   # clean up before moving on
+  # Data 
   rm(list = grep("actual_tables|CDM_SOURCE|^flowchart|^Flow|inputed|^METADATA|^missing|^OBSERVATION|persons|^PT|^SCHEME|^Selection|^SOURCE|SPELLS|study_population|TEMP", ls(), value = TRUE))
+  # Values 
+  rm(list = grep("^after|Analyse_dates|attrition|^before|CreateSpellsStep|crit_name|deap_names|default_start|earliest_in_data|end_study_date2|^f$|^i$|^intv|^j$|OBS_number|^p$|required_packages|select_most_recent|start_study_date2|^step|subfolders|T0|T1|T2|vars|^Y$|^years|YEN2|YST2", ls(), value = TRUE))
   
   # runs main analysis 
   source(file.path(thisdir, "scripts", "run_analysis_each_pop.R"), local = TRUE)

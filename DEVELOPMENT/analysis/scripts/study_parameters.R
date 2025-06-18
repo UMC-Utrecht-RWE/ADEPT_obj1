@@ -29,7 +29,7 @@ end_study_date <- as.IDate(as.character(CDM_SOURCE[, recommended_end_date]), "%Y
 # Other parameters
 age_min          <- 12 # both males and females
 age_max          <- 55 # females only
-lookback_period  <- 365
+lookback_period  <- 365L
 
 
 

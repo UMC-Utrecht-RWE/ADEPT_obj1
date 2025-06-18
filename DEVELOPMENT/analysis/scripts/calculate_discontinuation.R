@@ -1,0 +1,80 @@
+#TODO Please note that in episodes with multiple ATC codes, different ATC are being compared to each other. 
+
+# List tx episode files
+tx_episode_files <- list.files(file.path(paths$D3_dir, "tx_episodes"), pattern = "\\.rds$", full.names = TRUE)
+
+# List prevalence files
+prevalence_files <- list.files(file.path(paths$D4_dir, "1.1_prevalence"), pattern = "\\.rds$", full.names = TRUE)
+
+# Create a named vector where the key is the base name WITHOUT the '_prevalence' suffix
+prevalence_map <- setNames(
+  prevalence_files,
+  # strip '_prevalence' suffix from prevalence file names
+  sub("_prevalence$", "", tools::file_path_sans_ext(basename(prevalence_files)))
+)
+
+# Loop through each treatment episode file
+for (epi in seq_along(tx_episode_files)) {
+  
+  # Read the treatment episode file
+  dt <- readRDS(tx_episode_files[epi])
+  
+  # Remove the suffix '_treatment_episode' from file_name_raw
+  file_name <- sub("_treatment_episode$", "", tools::file_path_sans_ext(basename(tx_episode_files[epi])))
+  
+  # Keep only episodes that start after the 1‑year look‑back period
+  dt <- dt[episode.start >= start_follow_up & episode.start <= end_follow_up]
+  
+  # Order episodes by person & start date
+  setorder(dt, person_id, episode.start)
+  
+  # We lag the end of the previous episode and calculate the gap:
+  # Get next episode start date
+  dt[, next_start := shift(episode.start, type = "lead"), by = person_id]
+  
+  # Convert all dates to IDate
+  dt[, c("episode.start", "episode.end", "exit_date", "next_start") := lapply(.SD, as.IDate), .SDcols = c("exit_date", "episode.start", "episode.end", "next_start")]
+  
+  # Flag discontinuation events
+  dt[, discontinuer_flag := fifelse(is.na(next_start), (exit_date - episode.end > 120), (next_start - episode.end > 120))]
+  
+  # Keep only the discontinued episodes
+  discontinuers <- dt[discontinuer_flag == TRUE]
+  
+  # Assign calendar year of each incident episode
+  discontinuers[, year := year(episode.end)]
+  
+  # Remove duplicates: if person has multiple treatments (e.g., ATCs) in the same year, keep only one
+  discontinuers <- unique(incidents, by = c("person_id", "year"))
+  
+  # Count number of unique treated persons per year (numerator for prevalence)
+  discontinued_counts <- discontinuers[, .("N" = .N), by = year]
+  
+  # Now match treatment episode file_name with prevalence_map keys
+  prevalence_file <- prevalence_map[file_name]
+  
+  if (!is.na(prevalence_file)) {prev_counts <- readRDS(prevalence_file)} else {warning(paste("No matching prevalence file found for:", file_name))}
+  
+  # Prepare prevalence counts
+  prev_counts[,c("n_total", "rate"):=NULL]
+  # Rename columns
+  setnames(prev_counts, "n_treated", "n_total")
+  
+  # Merge discontinued with prevalence
+  discontinued_all <- merge(discontinued_counts, prev_counts, by = "year", all.x = TRUE)
+  
+  # Set N = 0 for years with no treatments
+  discontinued_all[is.na(N), N := 0]
+  
+  # Calculate discontinued as a rate
+  discontinued_all[, rate := round(100 * N / n_total, 3)]
+  
+  # rename columns
+  setnames(discontinued_all, "N", "n_treated")
+   
+  # Save results 
+  saveRDS(discontinued_all, file.path(paths$D4_dir, "1.2_discontinued", paste0(file_name, "_discontinued.rds")))
+  
+}
+
+

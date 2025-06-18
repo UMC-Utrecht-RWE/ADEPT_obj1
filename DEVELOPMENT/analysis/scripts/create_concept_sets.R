@@ -5,12 +5,12 @@ codelist_meds <- unique(as.data.table(read_excel(file.path(thisdir, "definitions
 codelist_dx   <- unique(as.data.table(read_csv  (file.path(thisdir, "definitions", "codelists", "20250429_ADEPT_full_codelist.csv"), show_col_types = FALSE)))
 
 # Codelists not participating in algorithms 
-not_algorithms <- bridge[(EXPOSURE == TRUE | COV == TRUE | INDICATION == TRUE | ALTERNATIVES == TRUE | Algorithm_input == TRUE | DP == TRUE) & Algorithm == FALSE, ]
-algorithms     <- bridge[Algorithm == TRUE, ]
+not_algorithms <- bridge[(exposure == TRUE | cov == TRUE | indication == TRUE | algorithm_input == TRUE | dp == TRUE) & algorithm == FALSE, ]
+algorithms     <- bridge[algorithm == TRUE, ]
 
 # Get codes for not_algorithms: 
 # Cols to loop over
-defined_cols <- c("EXPOSURE", "COV", "INDICATION", "ALTERNATIVES", "Algorithm_input", "DP")
+defined_cols <- c("exposure", "cov", "indication", "algorithm_input", "dp")
 
 # Loop through each column
 for (col in defined_cols) {
@@ -54,26 +54,26 @@ for (col in defined_cols) {
   }
 }
 
-# Algorithm Value Check
-# If Algorithm is TRUE in bridge, are all the variables == to all the variables in the Algorithm column of algorithm_map and vice versa
-alg_in_bridge_not_in_map <-  setdiff(bridge[Algorithm == TRUE]$Varname, algorithm_map$Algorithm)
-alg_in_map_not_in_bridge <-  setdiff(algorithm_map$Algorithm, bridge[Algorithm == TRUE]$Varname)
+# # Algorithm Value Check
+# # If Algorithm is TRUE in bridge, are all the variables == to all the variables in the Algorithm column of algorithm_map and vice versa
+# alg_in_bridge_not_in_map <-  setdiff(bridge[algorithm == TRUE]$Varname, algorithm_map$Algorithm)
+# alg_in_map_not_in_bridge <-  setdiff(algorithm_map$Algorithm, bridge[algorithm == TRUE]$Varname)
+# 
+# # If Algorithm input is TRUE in bridge, are all the variables == to all the variables in the variable name column of algorithm_map and vice versa
+# alg_input_in_bridge_not_in_map <- setdiff(bridge[algorithm_input == TRUE]$Varname, algorithm_map$VariableName)
+# alg_input_in_map_not_in_bridge <- setdiff(algorithm_map$VariableName, bridge[algorithm_input == TRUE]$Varname)
 
-# If Algorithm input is TRUE in bridge, are all the variables == to all the variables in the variable name column of algorithm_map and vice versa
-alg_input_in_bridge_not_in_map <- setdiff(bridge[Algorithm_input == TRUE]$Varname, algorithm_map$VariableName)
-alg_input_in_map_not_in_bridge <- setdiff(algorithm_map$VariableName, bridge[Algorithm_input == TRUE]$Varname)
 
-
-cat("Algorithm Values in bridge but not in algorithm map:\n")
-print(alg_in_bridge_not_in_map)
-
-cat("Algorithm Values in algorithm map but not in bridge:\n")
-print(alg_in_map_not_in_bridge)
-
-cat("Algorithm Input Values in bridge but not in algorithm map:\n")
-print(alg_input_in_bridge_not_in_map)
-
-cat("Algorithm Input Values in algorithm map but not in bridge:\n")
-print(alg_input_in_map_not_in_bridge)
+# cat("Algorithm Values in bridge but not in algorithm map:\n")
+# print(alg_in_bridge_not_in_map)
+# 
+# cat("Algorithm Values in algorithm map but not in bridge:\n")
+# print(alg_in_map_not_in_bridge)
+# 
+# cat("Algorithm Input Values in bridge but not in algorithm map:\n")
+# print(alg_input_in_bridge_not_in_map)
+# 
+# cat("Algorithm Input Values in algorithm map but not in bridge:\n")
+# print(alg_input_in_map_not_in_bridge)
 
 

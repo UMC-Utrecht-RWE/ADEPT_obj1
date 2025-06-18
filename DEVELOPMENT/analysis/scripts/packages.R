@@ -16,7 +16,7 @@ load_package <- function(pkg) {
 }
 
 # List of all required packages
-required_packages <- c("data.table", "lubridate", "RcppAlgos", "stringr", "readxl", "readr", "fs")
+required_packages <- c("data.table", "lubridate", "RcppAlgos", "stringr", "readxl", "readr", "fs", "crayon", "AdhereR")
 
 # Load each package
 invisible(lapply(required_packages, load_package))
@@ -32,8 +32,6 @@ invisible(lapply(required_packages, load_package))
 # suppressPackageStartupMessages(library(RColorBrewer))
 # if(!require(survival)){install.packages("survival")}
 # suppressPackageStartupMessages(library(survival))
-# if(!require(stringr)){install.packages("stringr")}
-# suppressPackageStartupMessages(library(stringr))
 # if(!require(knitr)){install.packages("knitr")}
 # suppressPackageStartupMessages(library(knitr))
 # if(!require(DT)){install.packages("DT")}
@@ -62,7 +60,5 @@ invisible(lapply(required_packages, load_package))
 # suppressPackageStartupMessages(library(ff))
 # if(!require(dplyr)){install.packages("dplyr")}
 # suppressPackageStartupMessages(library(dplyr))
-# if(!require(AdhereR)){install.packages("AdhereR")}
-# suppressPackageStartupMessages(library(AdhereR))
 # if(!require(stringi)){install.packages("stringi")}
 # suppressPackageStartupMessages(library(stringi))

@@ -21,8 +21,7 @@ for (p in paths) {
 subfolders <- list(
   file.path(paths$D3_dir, c(
     "spells", "source_population", "study_population", "concept_sets",
-    "EXPOSURE", "COV", "indications", "ALTERNATIVES",
-    "Algorithm", "DP", "tx_episodes", "denominator", "Algorithm_input"
+    "exposure", "cov", "indications", "dp", "tx_episodes", "denominator", "algorithm_input", "tmp"
   )),
   file.path(paths$D4_dir, c(
     "1.1_incidence", "1.1_prevalence",

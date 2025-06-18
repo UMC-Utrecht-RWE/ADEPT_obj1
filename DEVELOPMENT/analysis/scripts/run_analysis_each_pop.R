@@ -20,10 +20,33 @@ for(pop in 1:length(populations)){
   # Create concept sets
   source(file.path(thisdir, "scripts", "create_concept_sets.R"), local = TRUE)
 
-  # # Finds records matching retinoid and RAM ATCs - creates dataset of all retinoids and RAMS in study population 
-  # source(paste0(pre_dir,"counts/monthly_counts_ATC.R")) # This creates datasets of Retinoids as well as RAMs
-  # # Creates denominator file
-  # source(paste0(pre_dir,"denominators/denominator_monthly_retinoid_users.R"))
+  # Create ATC subsets
+  source(file.path(thisdir, "scripts", "create_subsets_ATC.R"), local = TRUE)
+  
+  # TODO
+  # Create Dx subsets
+  
+  # Move algorithm inputs to folders 
+  source(file.path(thisdir, "scripts", "move_algorithm_inputs_to_folders.R"), local = TRUE)
+  
+  # clean up before moving on
+  # Data
+  rm(list = grep("^algo|^ATC_|bridge|^codelist|combined_dt|cs_row|dp_algorithm|drug_dt|dt|file_info|FUyears_dt|merged_drug|merged_dx|not_algorithm|subset_dt", ls(), value = TRUE))
+  # Values 
+  rm(list = grep("^code|col|^component|copied_files|^current|end_year|exact|^f$|^file|flas|FUyears|^i$|^med|sf_name|start_year|subfolder_name|subset_files|success|^unmatched|^v$|varname", ls(), value = TRUE))
+  
+  # Create Treatment Episodes 
+  source(file.path(thisdir, "scripts", "create_treatment_episodes.R"), local = TRUE)
+  
+  # Calculate incidence 
+  source(file.path(thisdir, "scripts", "calculate_incidence.R"), local = TRUE)
+  
+  # Calculate prevalence 
+  source(file.path(thisdir, "scripts", "calculate_prevalence.R"), local = TRUE)
+  
+  # Calculate Discontinuers
+  source(file.path(thisdir, "scripts", "calculate_discontinuation.R"), local = TRUE)
+
   # # Flowchart
   # source(paste0(pre_dir,"flowchart_base_population.R"))
   # Flowchart

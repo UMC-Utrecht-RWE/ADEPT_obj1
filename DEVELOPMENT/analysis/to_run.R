@@ -47,23 +47,4 @@ source(file.path(thisdir, "scripts", "set_flags.R"), local = TRUE)
 source(file.path(thisdir, "scripts", "run_analysis.R"), local = TRUE)
 
 
-# source(paste0(pre_dir,"intermediate/run_counts_prelim.R"))
-# 
-
-
-
-# ###########################################
-# # clear g_intermediate 
-# #set to TRUE to clear out intermediate files PLEASE REPLACE T WITH F IF YOU WANT TO SAVE INTERMEDIATE DATA SETS, I.E. TO REDUCE AMOUNT OF STORED DATA"
-# clear_int_files<-F
-# #user input parameter
-# #set to TRUE to clear out intermediate files PLEASE REPLACE T WITH F IF YOU WANT TO SAVE INTERMEDIATE DATA SETS, I.E. TO REDUCE AMOUNT OF STORED DATA"
-# if(clear_int_files==T){
-#   unlink(paste0(g_intermediate, "/tmp"), recursive = TRUE)
-#   unlink(paste0(g_intermediate, "/populations"), recursive = TRUE)
-# }
-# 
-# 
-# 
-# 
 
