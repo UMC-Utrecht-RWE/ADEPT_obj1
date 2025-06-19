@@ -19,15 +19,17 @@ for (epi in seq_along(tx_episode_files)) {
   # Remove the suffix '_treatment_episode' from file_name_raw
   file_name <- sub("_treatment_episode$", "", tools::file_path_sans_ext(basename(tx_episode_files[epi])))
   
+  dt <- dt[episode.start >= entry_date & episode.end <= exit_date,]
+  
   # Extract year ranges from episode start and end dates
   dt[, start_year := year(episode.start)]
   dt[, end_year := year(episode.end)]
   
-  # Generate one row per person-year (e.g., 2020, 2021 if a person is treated both years)
-  person_years <- dt[, .(year = unlist(Map(seq, start_year, end_year))), by = person_id]
+  # Generate one row per person-year-ATC
+  dt_expanded <- dt[, .(year = unlist(Map(seq, start_year, end_year))), by = .(person_id, ATC)]
   
   # Remove duplicates: if person has multiple treatments (e.g., ATCs) in the same year, keep only one
-  person_years <- unique(person_years, by = c("person_id", "year"))
+  person_years <- unique(dt_expanded[, .(person_id, year)])
   
   # Count number of unique treated persons per year (numerator for prevalence)
   prevalence_counts <- person_years[, .N, by = year]
@@ -39,7 +41,10 @@ for (epi in seq_along(tx_episode_files)) {
   prevalence_all[is.na(N), N := 0]
   
   # Calculate prevalence per 1000 person
-  prevalence_all[, rate := round(N / Freq * 1000, 3)]
+  prevalence_all[, rate := fifelse(Freq == 0, NA_real_, round(1000 * N / Freq, 3))]
+  
+  # Create column marking if rate is computable 
+  prevalence_all[, rate_computable := Freq != 0]
   
   # Rename columns 
   setnames(prevalence_all, c("N", "Freq"), c("n_treated", "n_total"))

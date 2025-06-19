@@ -22,15 +22,15 @@ for (epi in seq_along(tx_episode_files)) {
   # Remove the suffix '_treatment_episode' from file_name_raw
   file_name <- sub("_treatment_episode$", "", tools::file_path_sans_ext(basename(tx_episode_files[epi])))
   
-  # Keep only episodes that start after the 1‑year look‑back period
-  dt <- dt[episode.start >= start_follow_up & episode.start <= end_follow_up]
+  # Keep only episodes between entry and exit date
+  dt <- dt[episode.start >= entry_date & episode.end <= exit_date,]
   
   # Order episodes by person & start date
-  setorder(dt, person_id, episode.start)
+  setorder(dt, person_id, ATC, episode.start)
   
   # We lag the end of the previous episode and calculate the gap:
   # Get next episode start date
-  dt[, next_start := shift(episode.start, type = "lead"), by = person_id]
+  dt[, next_start := shift(episode.start, type = "lead"), by = .(person_id, ATC)]
   
   # Convert all dates to IDate
   dt[, c("episode.start", "episode.end", "exit_date", "next_start") := lapply(.SD, as.IDate), .SDcols = c("exit_date", "episode.start", "episode.end", "next_start")]
@@ -44,8 +44,11 @@ for (epi in seq_along(tx_episode_files)) {
   # Assign calendar year of each incident episode
   discontinuers[, year := year(episode.end)]
   
+  # Deduplicate 
+  discontinuers <- unique(discontinuers, by = c("person_id", "year", "ATC"))
+  
   # Remove duplicates: if person has multiple treatments (e.g., ATCs) in the same year, keep only one
-  discontinuers <- unique(incidents, by = c("person_id", "year"))
+  discontinuers <- unique(discontinuers, by = c("person_id", "year"))
   
   # Count number of unique treated persons per year (numerator for prevalence)
   discontinued_counts <- discontinuers[, .("N" = .N), by = year]
@@ -61,13 +64,16 @@ for (epi in seq_along(tx_episode_files)) {
   setnames(prev_counts, "n_treated", "n_total")
   
   # Merge discontinued with prevalence
-  discontinued_all <- merge(discontinued_counts, prev_counts, by = "year", all.x = TRUE)
+  discontinued_all <- merge(discontinued_counts, prev_counts, by = "year", all.y = TRUE)
   
   # Set N = 0 for years with no treatments
   discontinued_all[is.na(N), N := 0]
   
-  # Calculate discontinued as a rate
-  discontinued_all[, rate := round(100 * N / n_total, 3)]
+  # Calculate discontinued as a rate (*100)
+  discontinued_all[, rate := fifelse(n_total == 0, NA_real_, round(100 * N / n_total, 3))]
+  
+  # Create column marking if rate is computable 
+  discontinued_all[, rate_computable := n_total != 0]
   
   # rename columns
   setnames(discontinued_all, "N", "n_treated")

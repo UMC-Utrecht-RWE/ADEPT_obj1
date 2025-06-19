@@ -21,18 +21,24 @@ for (epi in seq_along(tx_episode_files)) {
   file_name <- sub("_treatment_episode$", "", tools::file_path_sans_ext(basename(tx_episode_files[epi])))
   
   # Keep only episodes that start after the 1‑year look‑back period
-  dt <- dt[episode.start >= start_follow_up]
+  dt <- dt[episode.start >= entry_date & episode.end <= exit_date,]
   
   # Order episodes by person & start date
-  setorder(dt, person_id, episode.start)
+  setorder(dt, person_id, ATC, episode.start)
   
   # Flag “incident” episodes: an episode is incident if the gap since the previous episode’s end ≥ 365 days
-  dt[, prev_end := shift(episode.end, 1, type = "lag"), by = person_id]
+  dt[, prev_end := shift(episode.end, 1, type = "lag"), by = .(person_id, ATC)]
   dt[, gap_since_prev := as.numeric(episode.start - prev_end)]
   dt[, incident_flag := is.na(prev_end) | gap_since_prev > 365]
-  
+
   # Keep only the incident episodes
   incidents <- dt[incident_flag == TRUE]
+  
+  # Assign calendar year of each incident episode
+  incidents[, year := year(episode.start)]
+  
+  # Remove duplicates
+  incidents <- unique(incidents, by = c("person_id", "year", "ATC"))
   
   # Assign calendar year of each incident episode
   incidents[, year := year(episode.start)]
@@ -44,14 +50,18 @@ for (epi in seq_along(tx_episode_files)) {
   incidence_counts <- incidents[, .("N" = .N), by = year]
   
   # Merge with denominator to calculate prevalence; include all years even if no treatments (all.y = TRUE)
-  incidence_all <- merge(incidence_counts, denominator, by = "year", all.x = TRUE)
+  incidence_all <- merge(incidence_counts, denominator, by = "year", all.y = TRUE)
   
   # Set N = 0 for years with no treatments
   incidence_all[is.na(N), N := 0]
   
   # Calculate prevalence per 1000 person
-  incidence_all[, rate := round(1000 * N / Freq, 3)]
+  incidence_all[, rate := fifelse(Freq == 0, NA_real_, round(1000 * N / Freq, 3))]
   
+  # Create column marking if rate is computable 
+  incidence_all[, rate_computable := Freq != 0]
+  
+  # Rename columns
   setnames(incidence_all, c("N", "Freq"), c("n_treated", "n_total"))
   
   # Save results 
