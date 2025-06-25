@@ -65,20 +65,24 @@ for (med in seq_along(med_files)) {
     
     # If exact = TRUE, then we do an exact match. If exact = FALSE, then we look for any codes that start with
     if (exact) {
-        subset_dt <- dt[code == current_code] 
+      subset_dt <- dt[code == current_code] 
     } else {
       subset_dt <- dt[startsWith(code, current_code)]
     }
     
     # Check if the subset data table has any rows. Proceed only if it's not empty.
     if (nrow(subset_dt) > 0) {
+      # Remove any true duplicates
+      subset_dt <- unique(subset_dt)
       # Retrieve the 'Varname' corresponding to the current ATC code from the unlisted concept set table
       varname <- ATC_concept_set_unlisted[code == current_code, Varname]
       # Add or update the 'Varname' column in subset_dt with the retrieved value
       subset_dt[, Varname := varname]
       # Save the subset_dt to file
       saveRDS(subset_dt, file.path(paths$D3_dir,"tmp", paste0(varname, "-", current_table,".rds")))
+      
     } else {
+      
       cat(red(paste0("No matching records found for: ", current_code)), "\n")
     }
   }
@@ -105,10 +109,10 @@ for (varname in unique(file_info$Varname)) {
   
   # Read all RDS files for this varname and combine them into one data.table
   combined_dt <- rbindlist(lapply(files_to_bind, readRDS), use.names = TRUE, fill = TRUE)
- 
+  
   # Save the combined data.table back to disk (overwrite or new file)
   saveRDS(combined_dt, file.path(paths$D3_dir, paste0(pop_prefix, "_", varname, ".rds")))
-
+  
 }
 
 # Clean up temp folder 

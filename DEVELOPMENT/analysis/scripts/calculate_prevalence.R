@@ -1,7 +1,7 @@
 # TODO Prevalence not being counted correctly when treatment episode has multiple unique ATC
 
 # List all treatment episode .rds files from the tx_episodes directory
-tx_episode_files <- list.files(file.path(paths$D3_dir, "tx_episodes"), pattern = "\\.rds$", full.names = TRUE)
+tx_episode_files <- list.files(file.path(paths$D3_dir, "tx_episodes", "exposures"), pattern = "\\.rds$", full.names = TRUE)
 
 # Load the denominator file
 denominator <- readRDS(file.path(paths$D3_dir, "denominator", paste0(pop_prefix, "_denominator.rds")))
@@ -26,7 +26,13 @@ for (epi in seq_along(tx_episode_files)) {
   dt[, end_year := year(episode.end)]
   
   # Generate one row per person-year-ATC
-  dt_expanded <- dt[, .(year = unlist(Map(seq, start_year, end_year))), by = .(person_id, ATC)]
+  # dt_expanded <- dt[, .(year = unlist(Map(seq, start_year, end_year))), by = .(person_id, ATC)]
+  dt_expanded <- dt[, {
+    years <- seq(start_year, end_year)
+    repeated <- .SD[rep(1L, length(years))]
+    repeated[, year := years]
+    repeated
+  }, by = .I]
   
   # Remove duplicates: if person has multiple treatments (e.g., ATCs) in the same year, keep only one
   person_years <- unique(dt_expanded[, .(person_id, year)])
@@ -49,7 +55,10 @@ for (epi in seq_along(tx_episode_files)) {
   # Rename columns 
   setnames(prevalence_all, c("N", "Freq"), c("n_treated", "n_total"))
   
+  # Save dataset 
+  saveRDS(dt_expanded, file.path(paths$D4_dir, "1.1_prevalence", paste0(file_name, "_prevalence_data.rds")))
+  
   # Save results 
-  saveRDS(prevalence_all, file.path(paths$D4_dir, "1.1_prevalence", paste0(file_name, "_prevalence.rds")))
+  saveRDS(prevalence_all, file.path(paths$D5_dir, "1.1_prevalence", paste0(file_name, "_prevalence.rds")))
   
 }

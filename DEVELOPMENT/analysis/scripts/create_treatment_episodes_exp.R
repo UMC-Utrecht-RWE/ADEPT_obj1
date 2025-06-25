@@ -1,6 +1,8 @@
 # Get list of all datasets in exposure folder
 list_exposures <- list.files(file.path(paths$D3_dir, "exposure"))
 # For each one, create treatment episodes and save in treatment episodes folder with the same name + suffix treatment_episode
+# Create folder for treatment episodes
+dir.create(file.path(paths$D3_dir, "tx_episodes", "exposures"), recursive = TRUE, showWarnings = FALSE)
 
 for(exposure in list_exposures){
 
@@ -48,10 +50,10 @@ for(exposure in list_exposures){
                                                                       "snow(NWS)")[1],
                                                  parallel.threads = "auto",
                                                  suppress.warnings = FALSE,
-                                                 return.data.table = FALSE
+                                                 return.data.table = TRUE
     ) 
     # Add column ATC code 
-    treat_episode <- as.data.table(treat_episode)[, ATC:=current_code]
+    treat_episode <- treat_episode[, ATC:=current_code]
 
     # Store in list
     episode_list[[current_code]] <- treat_episode
@@ -63,14 +65,14 @@ for(exposure in list_exposures){
   combined_episodes <- merge(combined_episodes, study_population[,c("person_id", "sex_at_instance_creation", "birth_date", "entry_date","exit_date", "start_follow_up", "end_follow_up")], by = "person_id")
   # # TODO
   # combined_episodes <- combined_episodes[episode.end > start_follow_up - 90,]
-  # # TODO 
-  # combined_episodes <- combined_episodes[episode.end > end_follow_up, episode.end:= end_follow_up]
-  # # TODO 
-  # combined_episodes <- combined_episodes[episode.start < end_follow_up,]
-  # # TODO 
-  # combined_episodes <- combined_episodes[episode.end > episode.start,]
-  # 
+  # TODO 
+  combined_episodes <- combined_episodes[episode.end > end_follow_up, episode.end:= end_follow_up]
+  # TODO 
+  combined_episodes <- combined_episodes[episode.start < end_follow_up,]
+  # TODO 
+  combined_episodes <- combined_episodes[episode.end > episode.start,]
+   
   # Save using original exposure name + suffix
-  saveRDS(combined_episodes, file = file.path(paths$D3_dir, "tx_episodes", paste0(gsub(".rds", "", exposure), "_treatment_episode.rds")))
+  saveRDS(combined_episodes, file = file.path(paths$D3_dir, "tx_episodes","exposures" , paste0(gsub(".rds", "", exposure), "_treatment_episode.rds")))
   
 }

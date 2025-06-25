@@ -1,10 +1,10 @@
 #TODO Please note that in episodes with multiple ATC codes, different ATC are being compared to each other. 
 
 # List tx episode files
-tx_episode_files <- list.files(file.path(paths$D3_dir, "tx_episodes"), pattern = "\\.rds$", full.names = TRUE)
+tx_episode_files <- list.files(file.path(paths$D3_dir, "tx_episodes", "exposures"), pattern = "\\.rds$", full.names = TRUE)
 
 # List prevalence files
-prevalence_files <- list.files(file.path(paths$D4_dir, "1.1_prevalence"), pattern = "\\.rds$", full.names = TRUE)
+prevalence_files <- list.files(file.path(paths$D5_dir, "1.1_prevalence"), pattern = "\\.rds$", full.names = TRUE)
 
 # Create a named vector where the key is the base name WITHOUT the '_prevalence' suffix
 prevalence_map <- setNames(
@@ -41,46 +41,52 @@ for (epi in seq_along(tx_episode_files)) {
   # Keep only the discontinued episodes
   discontinuers <- dt[discontinuer_flag == TRUE]
   
-  # Assign calendar year of each incident episode
-  discontinuers[, year := year(episode.end)]
-  
-  # Deduplicate 
-  discontinuers <- unique(discontinuers, by = c("person_id", "year", "ATC"))
-  
-  # Remove duplicates: if person has multiple treatments (e.g., ATCs) in the same year, keep only one
-  discontinuers <- unique(discontinuers, by = c("person_id", "year"))
-  
-  # Count number of unique treated persons per year (numerator for prevalence)
-  discontinued_counts <- discontinuers[, .("N" = .N), by = year]
-  
-  # Now match treatment episode file_name with prevalence_map keys
-  prevalence_file <- prevalence_map[file_name]
-  
-  if (!is.na(prevalence_file)) {prev_counts <- readRDS(prevalence_file)} else {warning(paste("No matching prevalence file found for:", file_name))}
-  
-  # Prepare prevalence counts
-  prev_counts[,c("n_total", "rate"):=NULL]
-  # Rename columns
-  setnames(prev_counts, "n_treated", "n_total")
-  
-  # Merge discontinued with prevalence
-  discontinued_all <- merge(discontinued_counts, prev_counts, by = "year", all.y = TRUE)
-  
-  # Set N = 0 for years with no treatments
-  discontinued_all[is.na(N), N := 0]
-  
-  # Calculate discontinued as a rate (*100)
-  discontinued_all[, rate := fifelse(n_total == 0, NA_real_, round(100 * N / n_total, 3))]
-  
-  # Create column marking if rate is computable 
-  discontinued_all[, rate_computable := n_total != 0]
-  
-  # rename columns
-  setnames(discontinued_all, "N", "n_treated")
-   
-  # Save results 
-  saveRDS(discontinued_all, file.path(paths$D4_dir, "1.2_discontinued", paste0(file_name, "_discontinued.rds")))
-  
+  if(nrow(discontinuers)>0){
+    
+    # Assign calendar year of each incident episode
+    discontinuers[, year := year(episode.end)]
+    
+    # Deduplicate 
+    discontinuers <- unique(discontinuers, by = c("person_id", "year", "ATC"))
+    
+    # Remove duplicates: if person has multiple treatments (e.g., ATCs) in the same year, keep only one
+    discontinuers <- unique(discontinuers, by = c("person_id", "year"))
+    
+    # Count number of unique treated persons per year (numerator for prevalence)
+    discontinued_counts <- discontinuers[, .("N" = .N), by = year]
+    
+    # Now match treatment episode file_name with prevalence_map keys
+    prevalence_file <- prevalence_map[file_name]
+    
+    if (!is.na(prevalence_file)) {prev_counts <- readRDS(prevalence_file)} else {warning(paste("No matching prevalence file found for:", file_name))}
+    
+    # Prepare prevalence counts
+    prev_counts[,c("n_total", "rate"):=NULL]
+    # Rename columns
+    setnames(prev_counts, "n_treated", "n_total")
+    
+    # Merge discontinued with prevalence
+    discontinued_all <- merge(discontinued_counts, prev_counts, by = "year", all.y = TRUE)
+    
+    # Set N = 0 for years with no treatments
+    discontinued_all[is.na(N), N := 0]
+    
+    # Calculate discontinued as a rate (*100)
+    discontinued_all[, rate := fifelse(n_total == 0, NA_real_, round(100 * N / n_total, 3))]
+    
+    # Create column marking if rate is computable 
+    discontinued_all[, rate_computable := n_total != 0]
+    
+    # rename columns
+    setnames(discontinued_all, "N", "n_treated")
+    
+    # Save dataset
+    saveRDS(discontinuers, file.path(paths$D4_dir, "1.2_discontinued", paste0(file_name, "_discontinued_data.rds")))
+    # Save results 
+    saveRDS(discontinued_all, file.path(paths$D5_dir, "1.2_discontinued", paste0(file_name, "_discontinued.rds")))
+  } else {
+    print(paste("No discontinuers were found for:", file_name))
+  }
 }
 
 

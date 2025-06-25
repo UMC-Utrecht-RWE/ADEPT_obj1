@@ -36,7 +36,7 @@ for(pop in 1:length(populations)){
   rm(list = grep("^code|col|^component|copied_files|^current|end_year|exact|^f$|^file|flas|FUyears|^i$|^med|sf_name|start_year|subfolder_name|subset_files|success|^unmatched|^v$|varname", ls(), value = TRUE))
   
   # Create Treatment Episodes 
-  source(file.path(thisdir, "scripts", "create_treatment_episodes.R"), local = TRUE)
+  source(file.path(thisdir, "scripts", "create_treatment_episodes_exp.R"), local = TRUE)
   
   # Calculate incidence 
   source(file.path(thisdir, "scripts", "calculate_incidence.R"), local = TRUE)
@@ -46,7 +46,10 @@ for(pop in 1:length(populations)){
   
   # Calculate Discontinuers
   source(file.path(thisdir, "scripts", "calculate_discontinuation.R"), local = TRUE)
-
+  
+  # Create Treatment episodes for alternative meds
+  source(file.path(thisdir, "scripts", "create_treatment_episodes_alt.R"), local = TRUE)
+  
   # # Flowchart
   # source(paste0(pre_dir,"flowchart_base_population.R"))
   # Flowchart
