@@ -31,7 +31,7 @@ for (epi in seq_along(tx_episode_files)) {
   
   # We lag the end of the previous episode and calculate the gap:
   # Get next episode start date
-  dt[, next_start := shift(episode.start, type = "lead"), by = .(person_id, atc_group)]
+  dt[, next_start := shift(episode.start, type = "lead"), by = .(person_id)]
   
   # Convert all dates to IDate
   dt[, c("episode.start", "episode.end", "exit_date", "next_start") := lapply(.SD, as.IDate), .SDcols = c("exit_date", "episode.start", "episode.end", "next_start")]
