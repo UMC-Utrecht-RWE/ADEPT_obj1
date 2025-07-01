@@ -11,7 +11,7 @@ OBSERVATION_PERIODS <- as.data.table(rbindlist(lapply(list.files(CDM_dir, patter
 earliest_in_data <- OBSERVATION_PERIODS[, min(as.IDate(as.character(op_start_date), format = "%Y%m%d"), na.rm = TRUE)]
 
 # set default start date
-default_start <- as.IDate("2000-01-01")
+default_start <- as.IDate("1999-01-01")
 
 # Start_study date is the max of earliest in data and default start date
 start_study_date <- max(earliest_in_data, default_start, na.rm = TRUE)

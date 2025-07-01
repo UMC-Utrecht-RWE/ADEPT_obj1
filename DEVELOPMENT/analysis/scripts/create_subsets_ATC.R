@@ -1,3 +1,7 @@
+print("===============================================================================")
+print("========================= CREATING MEDICATION SUBSETS =========================")
+print("===============================================================================")
+
 # Load all concept sets and bind them. Remove all true duplicates
 ATC_concept_sets <- unique(rbindlist(lapply(list.files(path = file.path(paths$D3_dir, "concept_sets"), pattern = "meds", ignore.case = TRUE, full.names = TRUE), fread), use.names = TRUE, fill = TRUE))
 
@@ -49,7 +53,7 @@ for (med in seq_along(med_files)) {
   dt <- dt[study_population,on=.(person_id)]
   
   # Drop any records that fall outside entry and exit dates
-  # dt <- dt[rx_date >= entry_date & rx_date <= exit_date]
+  dt <- dt[rx_date >= entry_date & rx_date <= exit_date]
   
   # If no records for dt, then skip to the next Medicines table 
   if (nrow(dt) == 0) next  

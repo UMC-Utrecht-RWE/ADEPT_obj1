@@ -36,33 +36,28 @@ for(pop in 1:length(populations)){
   rm(list = grep("^code|col|^component|copied_files|^current|end_year|exact|^f$|^file|flas|FUyears|^i$|^med|sf_name|start_year|subfolder_name|subset_files|success|^unmatched|^v$|varname", ls(), value = TRUE))
   
   # Create Treatment Episodes 
-  source(file.path(thisdir, "scripts", "create_treatment_episodes_exp.R"), local = TRUE)
+  source(file.path(thisdir, "scripts", "create_treatment_episodes.R"), local = TRUE)
   
-  # Calculate incidence 
+  # Calculate incidence - individual groups
   source(file.path(thisdir, "scripts", "calculate_incidence.R"), local = TRUE)
   
-  # Calculate prevalence 
+  # Calculate prevalence - individual groups
   source(file.path(thisdir, "scripts", "calculate_prevalence.R"), local = TRUE)
   
-  # Calculate Discontinuers
+  # Calculate Discontinuers - individual
   source(file.path(thisdir, "scripts", "calculate_discontinuation.R"), local = TRUE)
   
-  # Create Treatment episodes for alternative meds
-  source(file.path(thisdir, "scripts", "create_treatment_episodes_alt.R"), local = TRUE)
+  # Create Treatment Episodes - subgroups
+  source(file.path(thisdir, "scripts", "create_treatment_episodes_groups.R"), local = TRUE)
   
-  # # Flowchart
-  # source(paste0(pre_dir,"flowchart_base_population.R"))
-  # Flowchart
-  # source(paste0(pre_dir,"plots/plots_mask.R"))
+  # Calculate incidence - subgroups
+  source(file.path(thisdir, "scripts", "calculate_incidence_groups.R"), local = TRUE)
+  
+  # Calculate prevalence - subgroups
+  source(file.path(thisdir, "scripts", "calculate_prevalence_groups.R"), local = TRUE)
+  
+  # Calculate Discontinuers - subgroups
+  source(file.path(thisdir, "scripts", "calculate_discontinuation_groups.R"), local = TRUE)
+
 }
 
-# # Moves all counts, plots, formatted files to preliminary_counts folder
-# pattern1 = c("monthly_counts", "plots", paste0(my_format,"_files"))
-# # files_to_move <- list.files(path=output_dir, pattern=paste0(pattern1, collapse="|"))
-# for(file in list.files(path=output_dir, pattern=paste0(pattern1, collapse="|"), ignore.case = T)){file.move(paste0(output_dir,file), paste0(paste0(preliminary_counts_dir, "/") ,file))}
-# # Deletes temp files
-# for(file in list.files(path = tmp, pattern ="events_")){unlink(paste0(tmp, file), recursive = TRUE)}
-# # Delete Flowchart files 
-# for(file in list.files(path = output_dir, pattern ="FlowChart")){unlink(paste0(output_dir, file), recursive = TRUE)}
-# # Delete Study_population_folder 
-# for(file in list.files(path = output_dir, pattern ="STUDY_SOURCE_POPULATION")){unlink(paste0(output_dir, file), recursive = TRUE)}

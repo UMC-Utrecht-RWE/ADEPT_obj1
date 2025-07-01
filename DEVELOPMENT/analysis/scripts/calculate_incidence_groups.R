@@ -1,9 +1,9 @@
 print("=============================================================================================")
-print("========================= CALCULATING INCIDENCE - INDIVIDUAL GROUPS =========================")
+print("========================= CALCULATING INCIDENCE - SUBGROUPS =========================")
 print("=============================================================================================")
 
 # List all treatment episode .rds files from the tx_episodes directory
-tx_episode_files <- list.files(file.path(paths$D3_dir, "tx_episodes", "individual"), pattern = "\\.rds$", full.names = TRUE)
+tx_episode_files <- list.files(file.path(paths$D3_dir, "tx_episodes", "groups"), pattern = "\\.rds$", full.names = TRUE)
 
 # Load the denominator file
 denominator <- readRDS(file.path(paths$D3_dir, "denominator", paste0(pop_prefix, "_denominator.rds")))

@@ -72,9 +72,12 @@ for(i in 1:nrow(SCHEME_04)){
   ## op_start_date (previously set - max of date_min, op_start_date, start_study_date) + lookback period
   ## date_min 
 
-  study_population <- SOURCE[, start_follow_up := pmax(start_study_date, entry_date + lookback_period, date_min, na.rm = TRUE)]
+  # study_population <- SOURCE[, start_follow_up := pmax(start_study_date, entry_date + lookback_period, date_min, na.rm = TRUE)]
+
+  SOURCE[, entry_plus_1yr := as.IDate(seq(entry_date, length.out = 2, by = "1 year")[2], origin = "1970-01-01"), by = 1:nrow(SOURCE)]
+  study_population <- SOURCE[, start_follow_up := pmax(start_study_date, entry_plus_1yr, date_min, na.rm = TRUE)]
   study_population <- study_population[, end_follow_up := pmin(end_study_date, exit_date, date_creation, recommended_end_date, date_max, na.rm = TRUE)]
-  
+
   before <- nrow(study_population)
   study_population <- study_population[start_follow_up < end_follow_up ,]
   study_population <- study_population[(start_follow_up - op_start_date) >= lookback_period ,]

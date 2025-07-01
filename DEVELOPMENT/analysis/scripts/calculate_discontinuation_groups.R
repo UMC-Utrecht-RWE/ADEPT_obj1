@@ -1,9 +1,9 @@
 print("===================================================================================================")
-print("========================= CALCULATING DISCONTINUATION - INDIVIDUAL GROUPS =========================")
+print("========================= CALCULATING DISCONTINUATION - SUBGROUPS =========================")
 print("===================================================================================================")
 
 # List tx episode files
-tx_episode_files <- list.files(file.path(paths$D3_dir, "tx_episodes", "individual"), pattern = "\\.rds$", full.names = TRUE)
+tx_episode_files <- list.files(file.path(paths$D3_dir, "tx_episodes", "groups"), pattern = "\\.rds$", full.names = TRUE)
 
 # List prevalence files
 prevalence_files <- list.files(file.path(paths$D5_dir, "1.1_prevalence"), pattern = "\\.rds$", full.names = TRUE)
@@ -48,6 +48,9 @@ for (epi in seq_along(tx_episode_files)) {
     
     # Assign calendar year of each incident episode
     discontinuers[, year := year(episode.end)]
+    
+    # Deduplicate 
+    discontinuers <- unique(discontinuers, by = c("person_id", "year"))
     
     # Remove duplicates: if person has multiple treatments (e.g., ATCs) in the same year, keep only one
     discontinuers <- unique(discontinuers, by = c("person_id", "year"))
