@@ -25,52 +25,52 @@ for(pop in 1:length(populations)){
   
   # TODO
   # Create Dx subsets
-  
-  # Move algorithm inputs to folders 
+
+  # Move algorithm inputs to folders
   source(file.path(thisdir, "scripts", "move_algorithm_inputs_to_folders.R"), local = TRUE)
-  
+
   # clean up before moving on
   # Data
   rm(list = grep("^algo|^ATC_|bridge|^codelist|combined_dt|cs_row|dp_algorithm|drug_dt|dt|file_info|FUyears_dt|merged_drug|merged_dx|not_algorithm|subset_dt", ls(), value = TRUE))
-  # Values 
+  # Values
   rm(list = grep("^code|col|^component|copied_files|^current|end_year|exact|^f$|^file|flas|FUyears|^i$|^med|sf_name|start_year|subfolder_name|subset_files|success|^unmatched|^v$|varname", ls(), value = TRUE))
-  
-  # Create Treatment Episodes 
+
+  # Create Treatment Episodes
   source(file.path(thisdir, "scripts", "create_treatment_episodes.R"), local = TRUE)
-  
+
   # Calculate incidence - individual groups
   source(file.path(thisdir, "scripts", "calculate_incidence.R"), local = TRUE)
-  
+
   # Calculate prevalence - individual groups
   source(file.path(thisdir, "scripts", "calculate_prevalence.R"), local = TRUE)
-  
+
   # Calculate Discontinuers - individual
   source(file.path(thisdir, "scripts", "calculate_discontinuation.R"), local = TRUE)
-  
+
   # Create Treatment Episodes - subgroups
   source(file.path(thisdir, "scripts", "create_treatment_episodes_groups.R"), local = TRUE)
-  
+
   # Calculate incidence - subgroups
   source(file.path(thisdir, "scripts", "calculate_incidence_groups.R"), local = TRUE)
-  
+
   # Calculate prevalence - subgroups
   source(file.path(thisdir, "scripts", "calculate_prevalence_groups.R"), local = TRUE)
-  
+
   # Calculate Discontinuers - subgroups
   source(file.path(thisdir, "scripts", "calculate_discontinuation_groups.R"), local = TRUE)
-  
+
   # Calculate alternative medications
   source(file.path(thisdir, "scripts", "calculate_altmeds.R"), local = TRUE)
-   
+
   # Find Switchers Exposure-Exposure
   source(file.path(thisdir, "scripts", "get_switchers_exp-exp.R"), local = TRUE)
-  
+
   # Find Switchers Exposure-Alternative Medications
   source(file.path(thisdir, "scripts", "get_switchers_exp-alt.R"), local = TRUE)
-  
+
   # Find Polytherapy
   source(file.path(thisdir, "scripts", "get_polytherapy.R"), local = TRUE)
-  
+
   # Clean up
   rm(list = grep("treat_episode|dt|^inciden|^prevalence|dt_expanded|^discontinue|prev_counts|dt_combined|matched|^alt|bridge|dt_exp|switchers", ls(), value = TRUE))
   

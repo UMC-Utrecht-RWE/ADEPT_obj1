@@ -1,7 +1,7 @@
 
 # <<< Define root folder >>> #
-root_dir <- thisdir
-
+if (!exists("root_dir")) {root_dir <- thisdir
+}
 # Assign named paths only to D3, D4, D5
 paths <- list(
   D3_dir = file.path(root_dir, "D3_study_variables"),

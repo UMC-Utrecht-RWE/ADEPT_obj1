@@ -252,8 +252,7 @@ if (SUBP) {
     flowchart_create_spells[[paste0("Spells_", subpopulation_meanings[["subpopulations"]][i])]]$after <- after
 
     # Save flowchart list to file
-    saveRDS(flowchart_create_spells, file = paste0(path_g_output, "/", subpopulation_meanings[["subpopulations"]][i], "_flowchart.rds"))
-
+    saveRDS(flowchart_create_spells, file = file.path(paths$D5_dir, "flowcharts", "SUBPOP_flowchart_overlap.rds"))
   }
   
   # If no subpopulations exist

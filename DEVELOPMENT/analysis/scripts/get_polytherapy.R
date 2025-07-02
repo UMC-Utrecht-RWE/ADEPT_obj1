@@ -7,7 +7,8 @@ print("=========================================================================
 input_dir <- file.path(paths$D3_dir, "tx_episodes", "individual")
 output_dir <- file.path(paths$D4_dir, "1.2_polytherapy")
 
-files <- list.files(input_dir, pattern = "\\.rds$", full.names = TRUE)
+files <- list.files(input_dir, pattern = paste0("^", pop_prefix, ".*\\.rds$"), full.names = TRUE)
+files <- files[(pop_prefix != "PC" | !grepl("^PC_HOSP_", basename(files)))]
 
 # Loop through each unique file pair
 for (i in seq_along(files)) {

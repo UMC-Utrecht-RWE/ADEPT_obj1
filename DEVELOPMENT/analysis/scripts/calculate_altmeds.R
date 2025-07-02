@@ -2,7 +2,6 @@ print("=========================================================================
 print("========================= PROCESSING ALTERNATIVE MEDICATIONS =========================")
 print("======================================================================================")
 
-
 # Load bridge to get list of altmeds 
 bridge <- unique(as.data.table(read_excel(file.path(thisdir, "definitions", "bridge", "ADEPT_O1_BRIDGE_19Mayo25.xlsx"), sheet = "OBJ1")))
 
@@ -17,11 +16,26 @@ alt_folders[, Varname := basename(folder_path)]
 matched <- alt_folders[altnames, on = "Varname", nomatch = 0]
 
 # Move folders to alternatives folder
+# Move files from algorithm_input subfolders to alternatives/Varname/
 for (i in seq_len(nrow(matched))) {
-  from <- matched$folder_path[i]
-  to <- file.path(paths$D3_dir, "alternatives", matched$Varname[i])
-  # Move folder
-  file_move(from, to)
+  from_folder <- matched$folder_path[i]
+  to_folder <- file.path(paths$D3_dir, "alternatives", matched$Varname[i])
+  
+  # Create the destination folder if it doesn't exist
+  dir.create(to_folder, recursive = TRUE, showWarnings = FALSE)
+  
+  # List all .rds files in the source folder
+  rds_files <- list.files(from_folder, pattern = "\\.rds$", full.names = TRUE)
+  
+  # Move each .rds file individually to avoid nesting folders
+  for (f in rds_files) {
+    file.rename(f, file.path(to_folder, basename(f)))
+  }
+  
+  # Optionally delete the original folder if it's empty
+  if (length(list.files(from_folder)) == 0) {
+    unlink(from_folder, recursive = TRUE)
+  }
 }
 
 
@@ -35,15 +49,16 @@ for (folder in alt_folders) {
   # Get name of alternative group
   file_name <- basename(folder)
   
-  message("Processing: ", file_name)
+  message("Processing: ",pop_prefix, "_", file_name)
   # Read and combine all .rds files
-  dt <- as.data.table(rbindlist(lapply(list.files(folder, pattern = "\\.rds$", full.names = TRUE), readRDS), use.names = TRUE, fill = TRUE))
+  dt <- as.data.table(rbindlist(lapply(list.files(folder, pattern = paste0("^", pop_prefix, ".*\\.rds$"), full.names = TRUE), readRDS), use.names = TRUE, fill = TRUE))
   
+  if (nrow(dt)){
   # Create a column with year of rx
   dt[, year := year(rx_date)][,source:=basename(folder)]
   dt <- unique(dt, by = c("person_id", "year"))
   
-  if (nrow(dt)){
+
     # Count the number of persons per year. 
     alt_counts <- dt[, .("N" = .N), by = year]
     

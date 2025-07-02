@@ -72,7 +72,7 @@ for (algo in unique(dp_algorithm_map$Algorithm)) {
     } else {
       
       # Warn if the expected RDS file for the variable name does not exist
-      warning("Missing file for varname: ", v, " (", src, ")")
+      message("For algorithm: ", algo, ", missing input: ", tools::file_path_sans_ext(basename(src)))
     }
   }
 }

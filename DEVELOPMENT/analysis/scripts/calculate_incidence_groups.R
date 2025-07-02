@@ -2,8 +2,10 @@ print("=========================================================================
 print("========================= CALCULATING INCIDENCE - SUBGROUPS =========================")
 print("=============================================================================================")
 
-# List all treatment episode .rds files from the tx_episodes directory
-tx_episode_files <- list.files(file.path(paths$D3_dir, "tx_episodes", "groups"), pattern = "\\.rds$", full.names = TRUE)
+# List all .rds files (full paths)
+all_files <- list.files(file.path(paths$D3_dir, "tx_episodes", "groups"), pattern = "\\.rds$", full.names = TRUE)
+# Filter to keep only files starting with pop_prefix + "_"
+tx_episode_files <- all_files[grepl(paste0("/", pop_prefix, "_"), all_files) & (pop_prefix != "PC" | !grepl("/PC_HOSP_", all_files))]
 
 # Load the denominator file
 denominator <- readRDS(file.path(paths$D3_dir, "denominator", paste0(pop_prefix, "_denominator.rds")))

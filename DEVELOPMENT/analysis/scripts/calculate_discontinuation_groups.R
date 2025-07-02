@@ -2,18 +2,27 @@ print("=========================================================================
 print("========================= CALCULATING DISCONTINUATION - SUBGROUPS =================================")
 print("===================================================================================================")
 
-# List tx episode files
-tx_episode_files <- list.files(file.path(paths$D3_dir, "tx_episodes", "groups"), pattern = "\\.rds$", full.names = TRUE)
+# List all .rds files (full paths)
+all_files <- list.files(file.path(paths$D3_dir, "tx_episodes", "groups"), pattern = "\\.rds$", full.names = TRUE)
+# Filter to keep only files starting with pop_prefix + "_"
+tx_episode_files <- all_files[grepl(paste0("/", pop_prefix, "_"), all_files) & (pop_prefix != "PC" | !grepl("/PC_HOSP_", all_files))]
 
 # List prevalence files
 prevalence_files <- list.files(file.path(paths$D5_dir, "1.1_prevalence"), pattern = "\\.rds$", full.names = TRUE)
 
 # Create a named vector where the key is the base name WITHOUT the '_prevalence' suffix
+prevalence_files <- list.files(
+  file.path(paths$D5_dir, "1.1_prevalence"),
+  pattern = paste0("^", pop_prefix, "_.*\\.rds$"),
+  full.names = TRUE
+)
+
+# Create a named vector mapping from base name (without _prevalence suffix) to file path
 prevalence_map <- setNames(
   prevalence_files,
-  # strip '_prevalence' suffix from prevalence file names
   sub("_prevalence$", "", tools::file_path_sans_ext(basename(prevalence_files)))
 )
+
 
 # Loop through each treatment episode file
 for (epi in seq_along(tx_episode_files)) {
