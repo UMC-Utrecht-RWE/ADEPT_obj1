@@ -75,10 +75,13 @@ for (epi in seq_along(tx_episode_files)) {
     discontinued_all[is.na(N), N := 0]
     
     # Calculate discontinued as a rate (*100)
-    discontinued_all[, rate := fifelse(n_total == 0, NA_real_, round(100 * N / n_total, 3))]
+    discontinued_all[, rate := round(100 * N / n_total, 3)][N == 0 & n_total == 0, rate := 0]
+    
+    if (nrow(discontinued_all[N > n_total]) > 0) {warning(red("Warning: Some numerator values exceed denominator."))}
+    if (nrow(discontinued_all[n_total == 0 & N != 0]) > 0) {warning(red("Warning: Denominator zero with non-zero numerator."))}
     
     # Create column marking if rate is computable 
-    discontinued_all[, rate_computable := n_total != 0]
+    discontinued_all[, rate_computable := !(n_total == 0 & N > 0)]
     
     # rename columns
     setnames(discontinued_all, "N", "n_treated")

@@ -19,7 +19,7 @@ for (exposure in list_exposures) {
   dt <- readRDS(file.path(paths$D3_dir, "exposure", exposure))
   
   # Set assumed duration if missing
-  dt[, assumed_duration := ifelse(is.na(presc_duration_days), 30, presc_duration_days)]
+  dt[, assumed_duration := ifelse(is.na(presc_duration_days) | presc_duration_days < 30, 30, presc_duration_days)]
   
   # Add atc_group column
   dt[, atc_group := atc_group]
@@ -79,8 +79,10 @@ for (exposure in list_exposures) {
   treat_episode <- treat_episode[episode.start < end_follow_up]
   treat_episode <- treat_episode[episode.end > episode.start]
   
-  # Save output
-  saveRDS(treat_episode, file = file.path(paths$D3_dir, "tx_episodes", "individual", paste0(gsub("\\.rds$", "", exposure), "_treatment_episode.rds")))
+  if(nrow(treat_episode)>0) {
+    # Save output
+    saveRDS(treat_episode, file = file.path(paths$D3_dir, "tx_episodes", "individual", paste0(gsub("\\.rds$", "", exposure), "_treatment_episode.rds")))
+  }
 }
 
 

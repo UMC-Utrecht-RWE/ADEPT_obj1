@@ -16,7 +16,7 @@ for (epi in seq_along(tx_episode_files)) {
   
   # Read the treatment episode file
   dt <- readRDS(tx_episode_files[epi])
-
+  
   # Extract the base file name (without path and extension) for labeling output
   # Remove the suffix '_treatment_episode' from file_name_raw
   file_name <- sub("_treatment_episode$", "", tools::file_path_sans_ext(basename(tx_episode_files[epi])))
@@ -44,29 +44,35 @@ for (epi in seq_along(tx_episode_files)) {
   
   # Remove duplicates: if person has multiple treatments (e.g., ATCs) in the same year, keep only one
   dt_expanded <- unique(dt_expanded, by = c("person_id", "year"))
-
-  # Count number of unique treated persons per year (numerator for prevalence)
-  prevalence_counts <- dt_expanded[, .N, by = year]
   
-  # Merge with denominator to calculate prevalence; include all years even if no treatments (all.y = TRUE)
-  prevalence_all <- merge(prevalence_counts, denominator, by = "year", all.y = TRUE)
-  
-  # Set N = 0 for years with no treatments
-  prevalence_all[is.na(N), N := 0]
-  
-  # Calculate prevalence per 1000 person
-  prevalence_all[, rate := fifelse(Freq == 0, NA_real_, round(1000 * N / Freq, 3))]
-  
-  # Create column marking if rate is computable 
-  prevalence_all[, rate_computable := Freq != 0]
-  
-  # Rename columns 
-  setnames(prevalence_all, c("N", "Freq"), c("n_treated", "n_total"))
-  
-  # Save dataset 
-  saveRDS(dt_expanded, file.path(paths$D4_dir, "1.1_prevalence", paste0(file_name, "_prevalence_data.rds")))
-  
-  # Save results 
-  saveRDS(prevalence_all, file.path(paths$D5_dir, "1.1_prevalence", paste0(file_name, "_prevalence.rds")))
-  
+  if(nrow(dt_expanded)>0){
+    # Count number of unique treated persons per year (numerator for prevalence)
+    prevalence_counts <- dt_expanded[, .N, by = year]
+    
+    # Merge with denominator to calculate prevalence; include all years even if no treatments (all.y = TRUE)
+    prevalence_all <- merge(prevalence_counts, denominator, by = "year", all.y = TRUE)
+    
+    # Set N = 0 for years with no treatments
+    prevalence_all[is.na(N), N := 0]
+    
+    # Calculate prevalence per 1000 person
+    prevalence_all[, rate := round(1000 * N / Freq, 3)][N == 0 & Freq == 0, rate := 0]
+    
+    # Set warnings if Numerator > than Denominator or if Denominator is 0 and Numerator is >0
+    if (nrow(prevalence_all[N > Freq]) > 0) {warning(red("Warning: Some numerator values exceed denominator."))}
+    if (nrow(prevalence_all[Freq == 0 & N != 0]) > 0) {warning(red("Warning: Denominator zero with non-zero numerator."))}
+    
+    # Create column marking if rate is computable 
+    prevalence_all[, rate_computable := !(Freq == 0 & N > 0)]
+    
+    # Rename columns 
+    setnames(prevalence_all, c("N", "Freq"), c("n_treated", "n_total"))
+    
+    # Save dataset 
+    saveRDS(dt_expanded, file.path(paths$D4_dir, "1.1_prevalence", paste0(file_name, "_prevalence_data.rds")))
+    
+    # Save results 
+    saveRDS(prevalence_all, file.path(paths$D5_dir, "1.1_prevalence", paste0(file_name, "_prevalence.rds")))
+    
+  }
 }

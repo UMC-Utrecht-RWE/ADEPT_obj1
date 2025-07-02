@@ -29,7 +29,7 @@ for (epi in seq_along(tx_episode_files)) {
   # Flag “incident” episodes: an episode is incident if the gap since the previous episode’s end ≥ 365 days
   # dt[, prev_end := shift(episode.end, 1, type = "lag"), by = .(person_id, ATC)]
   dt[, prev_end := shift(episode.end, 1, type = "lag"), by = .(person_id)]
-  dt[, gap_since_prev := as.numeric(episode.start - prev_end)]
+  dt[, gap_since_prev := as.numeric(as.IDate(episode.start) - as.IDate(prev_end))]
   dt[, incident_flag := is.na(prev_end) | gap_since_prev > 365]
   
   # Keep only the incident episodes
@@ -54,11 +54,15 @@ for (epi in seq_along(tx_episode_files)) {
     # Set N = 0 for years with no treatments
     incidence_all[is.na(N), N := 0]
     
-    # Calculate prevalence per 1000 person
-    incidence_all[, rate := fifelse(Freq == 0, NA_real_, round(1000 * N / Freq, 3))]
+    # Calculate incidence per 1000 person
+    incidence_all[, rate := round(1000 * N / Freq, 3)][N == 0 & Freq == 0, rate := 0]
     
-    # Create column marking if rate is computable 
-    incidence_all[, rate_computable := Freq != 0]
+    # Set warnings if Numerator > than Denominator or if Denominator is 0 and Numerator is >0
+    if (nrow(incidence_all[N > Freq]) > 0) {warning(red("Warning: Some numerator values exceed denominator."))}
+    if (nrow(incidence_all[Freq == 0 & N != 0]) > 0) {warning(red("Warning: Denominator zero with non-zero numerator."))}
+    
+    # Create column marking if rate is computable i.e. if numerator is greater than denominator
+    incidence_all[, rate_computable := !(Freq == 0 & N > 0)]
     
     # Rename columns
     setnames(incidence_all, c("N", "Freq"), c("n_treated", "n_total"))

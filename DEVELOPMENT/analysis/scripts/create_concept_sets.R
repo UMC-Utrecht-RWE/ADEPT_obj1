@@ -6,76 +6,86 @@ algorithm_map <- unique(as.data.table(read_excel(file.path(thisdir, "definitions
 codelist_meds <- unique(as.data.table(read_excel(file.path(thisdir, "definitions", "codelists", "20250515_ADEPT_medicines.xlsx"))))
 codelist_dx   <- unique(as.data.table(read_csv  (file.path(thisdir, "definitions", "codelists", "20250429_ADEPT_full_codelist.csv"), show_col_types = FALSE)))
 
-# Codelists not participating in algorithms 
+# Codelists not participating in algorithms
 not_algorithms <- bridge[(exposure == TRUE | cov == TRUE | indication == TRUE | algorithm_input == TRUE | dp == TRUE) & algorithm == FALSE, ]
 algorithms     <- bridge[algorithm == TRUE, ]
 
-# Get codes for not_algorithms: 
+# Get codes for not_algorithms:
 # Cols to loop over
-defined_cols <- c("exposure", "cov", "indication", "algorithm_input", "dp")
+defined_cols <- c("exposure", "cov", "indication", "algorithm_input")
 
 # Loop through each column
 for (col in defined_cols) {
-  
+
   if (col %in% names(not_algorithms)) {
-    
+
     # Subset bridge where the column is TRUE
     subset_dt <- not_algorithms[get(col) == TRUE]
-    
+
     if (nrow(subset_dt) > 0) {
-      
+
       # DRUG subset
       drug_dt <- subset_dt[Type_codelist == "drug"]
-      
+
       if (nrow(drug_dt) > 0) {
-        
+
         merged_drug <- merge(drug_dt, codelist_meds, by.x = "Varname", by.y = "Drug_abbreviation", all.x = TRUE)
-        
+
         # Check for unmatched variables
         unmatched_drugs <- unique(merged_drug[is.na(`ATC codes`), Varname])
-        
+
         if (length(unmatched_drugs) > 0) message("No matching drug codes found for: ", paste(unmatched_drugs, collapse = ", "))
-        
+
         fwrite(merged_drug, file = file.path(paths$D3_dir, "concept_sets", paste0(col, "_meds.csv")))
       }
-      
+
       # DIAGNOSIS subset
       dx_dt <- subset_dt[Type_codelist == "diagnosis"]
-      
+
       if (nrow(dx_dt) > 0) {
-        
+
         merged_dx <- merge(dx_dt, codelist_dx, by.x = "Varname", by.y = "variable_name", all.x = TRUE)
-        
+
         unmatched_dx <- unique(merged_dx[is.na(code), Varname])
-        
+
         if (length(unmatched_dx) > 0) {message("No matching diagnosis codes found for: ", paste(unmatched_dx, collapse = ", "))}
-        
+
         fwrite(merged_dx, file = file.path(paths$D3_dir, "concept_sets", paste0(col, "_dx.csv")))
       }
     }
   }
 }
 
-# # Algorithm Value Check
-# # If Algorithm is TRUE in bridge, are all the variables == to all the variables in the Algorithm column of algorithm_map and vice versa
-# alg_in_bridge_not_in_map <-  setdiff(bridge[algorithm == TRUE]$Varname, algorithm_map$Algorithm)
-# alg_in_map_not_in_bridge <-  setdiff(algorithm_map$Algorithm, bridge[algorithm == TRUE]$Varname)
-# 
-# # If Algorithm input is TRUE in bridge, are all the variables == to all the variables in the variable name column of algorithm_map and vice versa
-# alg_input_in_bridge_not_in_map <- setdiff(bridge[algorithm_input == TRUE]$Varname, algorithm_map$VariableName)
-# alg_input_in_map_not_in_bridge <- setdiff(algorithm_map$VariableName, bridge[algorithm_input == TRUE]$Varname)
+# --- ALTERNATIVES BLOCK ---
+# Get all alternatives from bridge
+alternatives_list <- unique(bridge[alternatives == TRUE, Varname])
 
+# Get all component variable names from algorithm_map (for alternatives)
+alt_components <- algorithm_map[Algorithm %in% alternatives_list, unique(VariableName)]
 
-# cat("Algorithm Values in bridge but not in algorithm map:\n")
-# print(alg_in_bridge_not_in_map)
-# 
-# cat("Algorithm Values in algorithm map but not in bridge:\n")
-# print(alg_in_map_not_in_bridge)
-# 
-# cat("Algorithm Input Values in bridge but not in algorithm map:\n")
-# print(alg_input_in_bridge_not_in_map)
-# 
-# cat("Algorithm Input Values in algorithm map but not in bridge:\n")
-# print(alg_input_in_map_not_in_bridge)
+# Subset bridge to get rows where Varname is one of the components
+alt_component_bridge <- bridge[Varname %in% alt_components]
 
+# Join to codelist_meds to get ATC codes
+alt_with_atc <- merge(
+  alt_component_bridge,
+  codelist_meds,
+  by.x = "Varname",
+  by.y = "Drug_abbreviation",
+  all.x = TRUE
+)
 
+# Deduplicate
+alt_with_atc <- unique(alt_with_atc)
+
+# Warn if some didn’t match
+unmatched_alt <- unique(alt_with_atc[is.na(`ATC codes`), Varname])
+if (length(unmatched_alt) > 0) {
+  message("No matching drug codes found for components: ", paste(unmatched_alt, collapse = ", "))
+}
+
+# Step 8: Export
+fwrite(
+  alt_with_atc,
+  file = file.path(paths$D3_dir, "concept_sets", "alternatives_meds.csv")
+)

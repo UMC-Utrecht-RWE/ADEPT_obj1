@@ -42,29 +42,38 @@ for (folder in alt_folders) {
   # Create a column with year of rx
   dt[, year := year(rx_date)][,source:=basename(folder)]
   dt <- unique(dt, by = c("person_id", "year"))
-
-  # Count the number of persons per year. 
-  alt_counts <- dt[, .("N" = .N), by = year]
-
-  # Merge with denominator to calculate prevalence; include all years even if no treatments (all.y = TRUE)
-  alt_all <- merge(alt_counts, denominator, by = "year", all.y = TRUE)
   
-  # Set N = 0 for years with no treatments
-  alt_all[is.na(N), N := 0]
-  
-  # Calculate prevalence per 1000 person
-  alt_all[, rate := fifelse(Freq == 0, NA_real_, round(1000 * N / Freq, 3))]
-  
-  # Create column marking if rate is computable 
-  alt_all[, rate_computable := Freq != 0]
-  
-  # Rename columns
-  setnames(alt_all, c("N", "Freq"), c("n_treated", "n_total"))
-  
-  # Save dataset 
-  saveRDS(dt, file.path(paths$D4_dir, "1.2_altmeds", paste0(pop_prefix,"_",file_name, "_altmeds_data.rds")))
-  
-  # Save results 
-  saveRDS(alt_all, file.path(paths$D5_dir, "1.2_altmeds", paste0(pop_prefix, "_", file_name, "_altmeds.rds")))
-  
+  if (nrow(dt)){
+    # Count the number of persons per year. 
+    alt_counts <- dt[, .("N" = .N), by = year]
+    
+    # Merge with denominator to calculate prevalence; include all years even if no treatments (all.y = TRUE)
+    alt_all <- merge(alt_counts, denominator, by = "year", all.y = TRUE)
+    
+    # Set N = 0 for years with no treatments
+    alt_all[is.na(N), N := 0]
+    
+    # Calculate altmeds per 1000 person
+    alt_all[, rate := round(1000 * N / Freq, 3)][N == 0 & Freq == 0, rate := 0]
+    
+    # Set warnings if Numerator > than Denominator or if Denominator is 0 and Numerator is >0
+    if (nrow(alt_all[N > Freq]) > 0) {warning(red("Warning: Some numerator values exceed denominator."))}
+    if (nrow(alt_all[Freq == 0 & N != 0]) > 0) {warning(red("Warning: Denominator zero with non-zero numerator."))}
+    
+    # Create column marking if rate is computable 
+    alt_all[, rate_computable := !(Freq == 0 & N > 0)]
+    
+    # Rename columns
+    setnames(alt_all, c("N", "Freq"), c("n_treated", "n_total"))
+    
+    # Save dataset 
+    saveRDS(dt, file.path(paths$D4_dir, "1.2_altmeds", paste0(pop_prefix,"_",file_name, "_altmeds_data.rds")))
+    
+    # Save results 
+    saveRDS(alt_all, file.path(paths$D5_dir, "1.2_altmeds", paste0(pop_prefix, "_", file_name, "_altmeds.rds")))
+    
+  } else {
+    
+    message(red(paste("No Altmeds were found for :", file_name)))
+  }
 }

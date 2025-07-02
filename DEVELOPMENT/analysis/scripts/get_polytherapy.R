@@ -35,8 +35,8 @@ for (i in seq_along(files)) {
     common_ids <- intersect(unique(dt1$person_id), unique(dt2$person_id))
     if (length(common_ids) == 0) next
     
-    dt1_sub <- dt1[person_id %in% common_ids, .(person_id, start1, end1)]
-    dt2_sub <- dt2[person_id %in% common_ids, .(person_id, start2, end2)]
+    dt1_sub <- dt1[person_id %in% common_ids, .(person_id, start1, end1, code)]
+    dt2_sub <- dt2[person_id %in% common_ids, .(person_id, start2, end2, code)]
     
     # Prepare for foverlaps
     setnames(dt1_sub, c("start1", "end1"), c("start", "end"))

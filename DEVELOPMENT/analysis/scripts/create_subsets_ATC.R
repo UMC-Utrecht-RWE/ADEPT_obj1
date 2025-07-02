@@ -153,7 +153,7 @@ for (fpath in subset_files) {
   }
   
   # Define which columns/flags we want to check for TRUE values
-  flags <- c("exposure", "cov", "algorithm_input", "dp")
+  flags <- c("exposure", "cov", "algorithm_input")
   
   # Initialize a flag to track if the file was copied to any subfolder
   file_copied <- FALSE  
@@ -168,7 +168,7 @@ for (fpath in subset_files) {
     if (length(flag_col) == 1 && isTRUE(cs_row[[flag_col]])) {
       
       # Print a message indicating the file is being copied and to which folder
-      message("Copying ", basename(fpath), " → ", sf_name, " [✓ ", flag_col, "]")
+      message("Moving '", basename(fpath), "' into folder: ", sf_name)
       
       # Construct the destination path combining base directory, subfolder, and filename
       dest_path <- file.path(paths$D3_dir, sf_name, basename(fpath))

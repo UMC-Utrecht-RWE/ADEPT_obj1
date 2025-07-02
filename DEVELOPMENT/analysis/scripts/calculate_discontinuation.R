@@ -25,7 +25,7 @@ for (epi in seq_along(tx_episode_files)) {
   file_name <- sub("_treatment_episode$", "", tools::file_path_sans_ext(basename(tx_episode_files[epi])))
   
   message("Processing: ", file_name)
-  
+
   # Order episodes by person & start date
   setorder(dt, person_id, episode.start)
   
@@ -61,7 +61,7 @@ for (epi in seq_along(tx_episode_files)) {
     if (!is.na(prevalence_file)) {prev_counts <- readRDS(prevalence_file)} else {warning(paste("No matching prevalence file found for:", file_name))}
     
     # Prepare prevalence counts
-    prev_counts[,c("n_total", "rate"):=NULL]
+    prev_counts[,c("n_total", "rate", "rate_computable"):=NULL]
     # Rename columns
     setnames(prev_counts, "n_treated", "n_total")
     
@@ -72,10 +72,14 @@ for (epi in seq_along(tx_episode_files)) {
     discontinued_all[is.na(N), N := 0]
     
     # Calculate discontinued as a rate (*100)
-    discontinued_all[, rate := fifelse(n_total == 0, NA_real_, round(100 * N / n_total, 3))]
+    discontinued_all[, rate := round(100 * N / n_total, 3)][N == 0 & n_total == 0, rate := 0]
+  
+    if (nrow(discontinued_all[N > n_total]) > 0) {warning(red("Warning: Some numerator values exceed denominator."))}
+    if (nrow(discontinued_all[n_total == 0 & N != 0]) > 0) {warning(red("Warning: Denominator zero with non-zero numerator."))}
+    
     
     # Create column marking if rate is computable 
-    discontinued_all[, rate_computable := n_total != 0]
+    discontinued_all[, rate_computable := !(n_total == 0 & N > 0)]
     
     # rename columns
     setnames(discontinued_all, "N", "n_treated")
@@ -88,5 +92,11 @@ for (epi in seq_along(tx_episode_files)) {
     message(red(paste("No discontinuers were found for:", file_name)))
   }
 }
+
+
+
+
+
+
 
 

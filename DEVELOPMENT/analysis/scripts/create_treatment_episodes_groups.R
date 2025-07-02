@@ -21,7 +21,8 @@ for (group in target_folders) {
   dt_combined <- rbindlist(lapply(list_exposures, readRDS), use.names = TRUE, fill = TRUE)
   
   # Add assumed duration if needed
-  dt_combined[, assumed_duration := ifelse(is.na(presc_duration_days), 30, presc_duration_days)]
+  # Set assumed duration if missing
+  dt_combined[, assumed_duration := ifelse(is.na(presc_duration_days) | presc_duration_days < 30, 30, presc_duration_days)]
   
   # Add the atc_group column (if not retained)
   dt_combined[, atc_group := atc_group]
@@ -54,7 +55,7 @@ for (group in target_folders) {
   
   # Add the atc_group column (if not retained)
   treat_episode[, atc_group := atc_group]
-
+  
   # merge to get unique ATC
   treat_episode <- merge(
     treat_episode,
@@ -69,15 +70,17 @@ for (group in target_folders) {
     study_population[, .(person_id, sex_at_instance_creation, birth_date, start_follow_up, end_follow_up, entry_date, exit_date)],
     by = "person_id"
   )
-
+  
   # Apply episode validity filters
   treat_episode <- treat_episode[episode.end > entry_date - 90]
   treat_episode[episode.end > end_follow_up, episode.end := end_follow_up]
   treat_episode <- treat_episode[episode.start < end_follow_up]
   treat_episode <- treat_episode[episode.end > episode.start]
-
-  # Save output
-  saveRDS(treat_episode, file = file.path(paths$D3_dir, "tx_episodes", "groups", paste0(gsub("\\.rds$", "", group), "_treatment_episode.rds")))
+  
+  if(nrow(treat_episode)>0){
+    # Save output
+    saveRDS(treat_episode, file = file.path(paths$D3_dir, "tx_episodes", "groups", paste0(gsub("\\.rds$", "", group), "_treatment_episode.rds")))
+  }
 }
 
 
