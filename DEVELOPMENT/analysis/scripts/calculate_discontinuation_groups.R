@@ -89,6 +89,22 @@ for (epi in seq_along(tx_episode_files)) {
     if (nrow(discontinued_all[N > n_total]) > 0) {warning(red("Warning: Some numerator values exceed denominator."))}
     if (nrow(discontinued_all[n_total == 0 & N != 0]) > 0) {warning(red("Warning: Denominator zero with non-zero numerator."))}
     
+    # Check rows where numerator > denominator
+    problem1 <- discontinued_all[N > n_total]
+    if (nrow(problem1) > 0) {
+      print(red("Rows where numerator > denominator:"))
+      print(problem1)
+      fwrite(problem1, file.path(paths$D5_dir, "1.2_switching", paste0(pfx, "_num_gt_denominator.csv")))
+    }
+    
+    # Check rows where denominator = 0 but numerator != 0
+    problem2 <- discontinued_all[n_total == 0 & N != 0]
+    if (nrow(problem2) > 0) {
+      print(red("Rows where denominator = 0 but numerator != 0:"))
+      print(problem2)
+      fwrite(problem2, file.path(paths$D5_dir, "1.2_switching", paste0(pfx, "_denominator_zero_numerator_nonzero.csv")))
+    }
+    
     # Create column marking if rate is computable 
     discontinued_all[, rate_computable := !(n_total == 0 & N > 0)]
     

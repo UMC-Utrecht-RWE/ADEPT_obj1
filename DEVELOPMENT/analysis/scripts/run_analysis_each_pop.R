@@ -62,14 +62,11 @@ for(pop in 1:length(populations)){
   # Calculate alternative medications
   source(file.path(thisdir, "scripts", "calculate_altmeds.R"), local = TRUE)
 
-  # Find Switchers Exposure-Exposure
-  source(file.path(thisdir, "scripts", "get_switchers_exp-exp.R"), local = TRUE)
-
-  # Find Switchers Exposure-Alternative Medications
-  source(file.path(thisdir, "scripts", "get_switchers_exp-alt.R"), local = TRUE)
+  # Calculate Switching
+  source(file.path(thisdir, "scripts", "calculate_switching.R"), local = TRUE)
 
   # Find Polytherapy
-  source(file.path(thisdir, "scripts", "get_polytherapy.R"), local = TRUE)
+  source(file.path(thisdir, "scripts", "calculate_polytherapy.R"), local = TRUE)
 
   # Clean up
   rm(list = grep("treat_episode|dt|^inciden|^prevalence|dt_expanded|^discontinue|prev_counts|dt_combined|matched|^alt|bridge|dt_exp|switchers", ls(), value = TRUE))
