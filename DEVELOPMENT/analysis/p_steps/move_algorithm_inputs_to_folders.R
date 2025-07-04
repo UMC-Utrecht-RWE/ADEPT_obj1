@@ -1,3 +1,7 @@
+print("======================================================================================")
+print("========================= MOVE INPUTS INTO ALGORITHM FOLDERS =========================")
+print("======================================================================================")
+
 # Move all algorithm input files into folders corresponding to the algorithm names they belong to
 
 #TODO - THIS WILL BE FOR BOTH ATC & DX codes as some algorithms are made from both. 
@@ -83,3 +87,37 @@ copied_files <- unique(copied_files)
 # Loop through all copied files and delete the originals to avoid duplication
 for (f in copied_files) {if (file_exists(f)) {file_delete(f)}}
 
+
+
+# print("======================================================================================")
+# print("========================= MOVE INPUTS INTO ALGORITHM FOLDERS =========================")
+# print("======================================================================================")
+
+# Create a list of altmed algorithms
+altnames <- bridge[alternatives==TRUE, .(Varname)]
+
+# Look for folders in dir
+alt_folders <- data.table(folder_path = list.dirs(file.path(paths$D3_dir, "algorithm_input"), recursive = TRUE, full.names = TRUE))
+alt_folders[, Varname := basename(folder_path)]
+
+# Match folders to algorithm names
+matched <- alt_folders[altnames, on = "Varname", nomatch = 0]
+
+# Move folders to alternatives folder
+# Move files from algorithm_input subfolders to alternatives/Varname/
+for (i in seq_len(nrow(matched))) {
+  from_folder <- matched$folder_path[i]
+  to_folder <- file.path(paths$D3_dir, "alternatives", matched$Varname[i])
+  
+  # Create the destination folder if it doesn't exist
+  dir.create(to_folder, recursive = TRUE, showWarnings = FALSE)
+  
+  # List all .rds files in the source folder
+  rds_files <- list.files(from_folder, pattern = "\\.rds$", full.names = TRUE)
+  
+  # Move each .rds file individually to avoid nesting folders
+  for (f in rds_files) file.rename(f, file.path(to_folder, basename(f)))
+  
+  # Optionally delete the original folder if it's empty
+  if (length(list.files(from_folder)) == 0) unlink(from_folder, recursive = TRUE)
+}

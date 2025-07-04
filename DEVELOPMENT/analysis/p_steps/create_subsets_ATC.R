@@ -131,8 +131,8 @@ subfolder_names <- basename(list.dirs(paths$D3_dir, full.names = TRUE, recursive
 subset_files <- list.files(paths$D3_dir, pattern = ".rds$", full.names = TRUE)
 
 # Load functions 
-source(file.path(thisdir, "scripts", "functions","extract_var_name.R"), local = TRUE)
-source(file.path(thisdir, "scripts", "functions","find_matching_row.R"), local = TRUE)
+source(file.path(thisdir, "p_steps", "functions","extract_var_name.R"), local = TRUE)
+source(file.path(thisdir, "p_steps", "functions","find_matching_row.R"), local = TRUE)
 
 # Track files that were successfully copied
 copied_files <- character()
@@ -187,3 +187,7 @@ for (fpath in subset_files) {
 
 # Delete only successfully copied files
 if (length(copied_files) > 0) invisible(file.remove(copied_files))
+
+
+
+

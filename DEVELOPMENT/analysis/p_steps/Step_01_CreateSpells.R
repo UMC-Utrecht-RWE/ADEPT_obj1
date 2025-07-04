@@ -3,7 +3,7 @@
 # and in the case of multiple spells, the most recent is taken, and the others are discarded, resulting in one spell per personID
 
 # Initialize empty list to store spells info for flowchart
-flowchart_create_spells <- list()
+FlowChartCreateSpells <- list()
 
 # Print message
 print('Import and append observation periods files') 
@@ -245,14 +245,14 @@ if (SUBP) {
     after <- nrow(TEMP)
     
     # Store flowchart info for this subpopulation
-    flowchart_create_spells[[paste0("Spells_", subpopulation_meanings[["subpopulations"]][i])]]$step <- "01_CreateSpells"
-    flowchart_create_spells[[paste0("Spells_", subpopulation_meanings[["subpopulations"]][i])]]$original_unique_ID <- original_unique_ID
-    flowchart_create_spells[[paste0("Spells_", subpopulation_meanings[["subpopulations"]][i])]]$population <- subpopulation_meanings[["subpopulations"]][i]
-    flowchart_create_spells[[paste0("Spells_", subpopulation_meanings[["subpopulations"]][i])]]$before <- before
-    flowchart_create_spells[[paste0("Spells_", subpopulation_meanings[["subpopulations"]][i])]]$after <- after
+    FlowChartCreateSpells[[paste0("Spells_", subpopulation_meanings[["subpopulations"]][i])]]$step <- "01_CreateSpells"
+    FlowChartCreateSpells[[paste0("Spells_", subpopulation_meanings[["subpopulations"]][i])]]$original_unique_ID <- original_unique_ID
+    FlowChartCreateSpells[[paste0("Spells_", subpopulation_meanings[["subpopulations"]][i])]]$population <- subpopulation_meanings[["subpopulations"]][i]
+    FlowChartCreateSpells[[paste0("Spells_", subpopulation_meanings[["subpopulations"]][i])]]$before <- before
+    FlowChartCreateSpells[[paste0("Spells_", subpopulation_meanings[["subpopulations"]][i])]]$after <- after
 
     # Save flowchart list to file
-    saveRDS(flowchart_create_spells, file = file.path(paths$D5_dir, "flowcharts", "SUBPOP_flowchart_overlap.rds"))
+    saveRDS(FlowChartCreateSpells, file = file.path(paths$D5_dir, "flowcharts", "SUBPOP_flowchart_overlap.rds"))
   }
   
   # If no subpopulations exist
@@ -317,10 +317,10 @@ if (SUBP) {
   OBS_number <- c(before_CreateSpells, step0_unique, after_CreateSpells, select_most_recent)
   
   # Combine steps and numbers into a data frame for reporting
-  flowchart_create_spells <- as.data.frame(cbind(CreateSpellsStep, OBS_number))
+  FlowChartCreateSpells <- as.data.frame(cbind(CreateSpellsStep, OBS_number))
   
   # Save the flowchart
-  saveRDS(flowchart_create_spells, file = file.path(paths$D5_dir, "flowcharts", "flowchart_create_spells.rds"))
+  saveRDS(FlowChartCreateSpells, file = file.path(paths$D5_dir, "flowcharts", "FlowChartCreateSpells.rds"))
   
   # If an object called flowchart_overlap exists, Save it
   if (exists("flowchart_overlap")) {

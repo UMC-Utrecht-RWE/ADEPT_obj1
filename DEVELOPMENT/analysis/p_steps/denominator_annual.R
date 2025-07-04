@@ -10,7 +10,7 @@ if (nrow(study_population) > 0) {
   studyFUyears <- unlist(mapply(seq, start_year, end_year, SIMPLIFY = FALSE))
   
   # Tabulate frequency of persons observed per year
-  FUyears_dt <- data.table(Year = studyFUyears)[, .N, by = Year]
+  FUyears_dt <- data.table(year = studyFUyears)[, .N, by = year]
   
   # Rename count column
   setnames(FUyears_dt, "N", "Freq") 
@@ -23,21 +23,21 @@ if (nrow(study_population) > 0) {
   if (!dir.exists(denominator_plot_dir)) dir.create(denominator_plot_dir, recursive = TRUE)
   
   # Sort years ascending
-  FUyears_dt <- FUyears_dt[order(Year)]
+  FUyears_dt <- FUyears_dt[order(year)]
   
   # Plot denominator over years and save as PDF
   pdf(file.path(denominator_plot_dir, paste0(pop_prefix, "_denominator.pdf")), width = 8, height = 4)
   
-  plot(FUyears_dt$Year, FUyears_dt$Freq,
+  plot(FUyears_dt$year, FUyears_dt$Freq,
        type = "b",       # both line and points
-       ylab = "Persons Observed per Year",
-       xlab = "Year",
+       ylab = "Persons Observed per year",
+       xlab = "year",
        xaxt = "n",       # suppress default x-axis
        pch = 16,         # solid circle points
        lwd = 2,          # line width
        col = "darkblue")
   
-  axis(1, at = FUyears_dt$Year, labels = FUyears_dt$Year)
+  axis(1, at = FUyears_dt$year, labels = FUyears_dt$year)
   
   dev.off()
   
