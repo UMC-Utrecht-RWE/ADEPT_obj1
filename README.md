@@ -100,4 +100,4 @@ Once the configuration is complete, run the `to_run.R` script.
 ---
 
 ### 5. 📤 Upload Output  
-After the script finishes, upload the `D5_results` folder.
+After the script finishes, upload the `D5_results` folder to myDRE. 
