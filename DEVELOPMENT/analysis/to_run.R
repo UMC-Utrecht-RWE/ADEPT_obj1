@@ -30,7 +30,7 @@ DEAP_data <- "CPRD"
 # multiple_regions     <- TRUE
 # multiple_regions_dir <- "Path/To/Your/Regional/Folders/Here/For/BIFAP"
 
-# ELSE 
+# <<< IF NOT BIFAP!!! >>>
 
 # Leave Multiple Regions as FALSE and set path to folder with CDM instances
 multiple_regions <- FALSE

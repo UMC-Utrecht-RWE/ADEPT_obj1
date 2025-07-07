@@ -50,6 +50,23 @@ for (episode in seq_along(files_episodes)) {
     dt <-dt[episode.start<start_follow_up, episode.start := start_follow_up]
     dt <-dt[episode.end > end_follow_up, episode.end := end_follow_up]
     
+    # Calculate Treatment Duration where you don't break down the treatment episode per year. You calculate treatment duration and count it in the year the episode started 
+    dt_not_expanded <- copy(dt)
+    
+    # Count the number of days of treatment episode
+    dt_not_expanded <- dt_not_expanded[,total_days := as.numeric(episode.end - episode.start) + 1]
+    
+    # Aggregate based on episode.start.date
+    stats_by_episode_start_year <- dt_not_expanded[, .(
+      mean_days   = mean(total_days, na.rm = TRUE),
+      median_days = median(total_days, na.rm = TRUE),
+      min_days    = min(total_days, na.rm = TRUE),
+      max_days    = max(total_days, na.rm = TRUE),
+      iqr_days    = IQR(total_days, na.rm = TRUE),
+      sd_days     = sd(total_days, na.rm = TRUE)
+    ), by = year(episode.start)]
+    
+    
     # Expand each row into multiple rows, one for each year spanned by the episode
     dt_expanded <- dt[ , .(year = seq(year_start, year_end)), by = .(person_id, episode.start, episode.end)]
     
@@ -108,6 +125,7 @@ for (episode in seq_along(files_episodes)) {
     
     # Save stats_by_year for each exposure
     saveRDS(stats_by_year, file.path(paths$D5_dir, "1.2_treatment_duration", paste0(pop_prefix, "_", episode_name, "_treatment_duration_by_year.rds")))
+    saveRDS(stats_by_episode_start_year, file.path(paths$D5_dir, "1.2_treatment_duration", paste0(pop_prefix, "_", episode_name, "_treatment_duration_by_episode_start_year.rds")))
     
     saveRDS(dt_expanded, file.path(paths$D4_dir, "1.2_treatment_duration", paste0(pop_prefix, "_", episode_name, "_treatment_duration_by_year_data.rds")))
     

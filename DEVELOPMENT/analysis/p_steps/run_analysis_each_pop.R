@@ -67,6 +67,10 @@ for(pop in 1:length(populations)){
   # Treatment Durations
   source(file.path(thisdir, "p_steps", "calculate_treatment_duration.R"), local = TRUE)
   
+  # Baseline Tables 
+  source(file.path(thisdir, "p_steps", "create_baseline_tables.R"), local = TRUE)
+  
+  
   # Clean up
   rm(list = grep("dt|overall|incidence|prev|discontinue|overlap|switcher|treat|stat|summary|altmed", ls(), value = TRUE))
   
