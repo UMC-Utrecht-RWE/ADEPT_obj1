@@ -28,14 +28,13 @@ DEAP_data <- "CPRD"
 # If Multiple Regions (BIFAP) set to TRUE and add path to folder with multiple regions
 
 # multiple_regions     <- TRUE
-# multiple_regions_dir <- "Path/To/Your/Regional/Folders/Here/For/BIFAP"
+# multiple_regions_dir <- "C:/Users/mgamb/Documents/GitHub/ADEPT_obj1/DEVELOPMENT/CDM_instances_BIFAP"
 
 # <<< IF NOT BIFAP!!! >>>
 
 # Leave Multiple Regions as FALSE and set path to folder with CDM instances
 multiple_regions <- FALSE
-CDM_dir <- "Path/To/Your/CDM/Folders/here"
-
+CDM_dir <- "C:/Users/mgamb/Documents/GitHub/ADEPT_obj1/DEVELOPMENT/CDM_instances"
 
 # === SET FLAGS === 
 

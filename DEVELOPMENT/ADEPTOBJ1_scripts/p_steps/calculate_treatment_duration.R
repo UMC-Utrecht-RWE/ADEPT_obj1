@@ -24,7 +24,7 @@ for (episode in seq_along(files_episodes)) {
   episode_name <- gsub("_treatment_episode\\.rds$", "", episode_name)
   
   # Print Message
-  message("Processing: ", episode_name)
+  message("Processing: ", pop_prefix, "_", episode_name)
   
   # Convert episode start and end to date type (IDate)
   dt[, episode.start := as.IDate(episode.start)]
@@ -132,7 +132,7 @@ for (episode in seq_along(files_episodes)) {
   } else { 
     
     # Print Message
-    message("No Treatment Duration can be calculated for: ", episode_name)
+    message(red(paste0("No Treatment Duration can be calculated for: ", pop_prefix, "_", episode_name)))
   }
 }
 
