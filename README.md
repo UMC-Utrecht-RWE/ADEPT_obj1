@@ -46,7 +46,7 @@ Sub-objectives:
 ---
 
 ### 2. 📁 Setup  
-Copy the `analysis` folder from the `RELEASE` directory into the **same local directory** where you also store:
+Copy the `ADEPTOBJ1_scripts` folder from the `RELEASE` directory into the **same local directory** where you also store:
 - the `CDMInstances` folder  
 - the Level 1–3 check script folders
 
@@ -54,7 +54,7 @@ Copy the `analysis` folder from the `RELEASE` directory into the **same local di
 
 ### 3. 🔧 Configuration (in `to_run.R`)
 
-Open the `to_run.R` file located in the `analysis` folder and follow the steps below:
+Open the `to_run.R` file located in the `ADEPTOBJ1_scripts` folder and follow the steps below:
 
 #### 3.1 Select your DEAP source 
 Uncomment the line corresponding to your DEAP data source.  
