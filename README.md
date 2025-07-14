@@ -2,10 +2,13 @@
 =============
 - Study type: Drug Utilisation
 - Tags: TBD
-- Study lead: Dr. Shahab Abtahi, Dr. Carlos E. Durán 
+- Study PI: Prof. Dr. Miriam Sturkenboom
+- Study lead: Dr. Shahab Abtahi, Dr. Carlos E. Durán, Elizabeth Comberg
+- Study programmer: Magdalena Gamba 
 - Study contributors: TBD
-- Study start date: 2000-01-01
-- Study end date: Last available data in DEAP
+- Study data sources: BIFAP (ES), SIDIAP (ES), FISABIO (ES), Val Padana (IT), CPRD (UK), NHR (NO), FHR (FI), EFEMERIS (FR), PHARMO (NL).
+- Study start date: 2000-01-01 or first DEAP data availability
+- Study end date: Last DEAP data availability
 - Publications: TBD
 - Contact: m.a.gamba@uu.nl
   
