@@ -19,6 +19,9 @@ for (episode in seq_along(files_episodes)) {
   # Read the treatment episode file
   dt <- readRDS(file.path(paths$D3_dir, "tx_episodes", "individual", files_episodes[episode]))
   
+  # Remove duplicates
+  dt <- unique(dt)
+  
   # Extract short name from file, e.g. DP_AMINOBUTYRIC
   episode_name <- gsub(paste0("^", pop_prefix, "_"), "", files_episodes[episode])
   episode_name <- gsub("_treatment_episode\\.rds$", "", episode_name)
@@ -68,10 +71,13 @@ for (episode in seq_along(files_episodes)) {
     
     
     # Expand each row into multiple rows, one for each year spanned by the episode
-    dt_expanded <- dt[ , .(year = seq(year_start, year_end)), by = .(person_id, episode.start, episode.end)]
+    # dt_expanded <- dt[ , .(year = seq(year_start, year_end)), by = .(person_id, episode.start, episode.end)]
+    #  dt_expanded <- dt[ , .(year = seq(year_start, year_end)), by = .(person_id, episode.start, episode.end, year_start, year_end)]
+    dt_expanded <- dt[, .(year = mapply(seq, year_start, year_end, SIMPLIFY = FALSE)), by = .(person_id, episode.start, episode.end)]
+    dt_expanded <- dt_expanded[, .(year = unlist(year)), by = .(person_id, episode.start, episode.end)]
     
     # Merge back all the other columns from dt so no info is lost
-    dt_expanded <- merge(dt_expanded, dt, by = c("person_id", "episode.start", "episode.end"), all.x = TRUE)
+    dt_expanded <- merge(dt_expanded, dt, by = c("person_id", "episode.start", "episode.end"), all.x = TRUE, allow.cartesian = TRUE)
     
     # Convert to IDate
     dt_expanded[, c("start_follow_up", "end_follow_up", "episode.start", "episode.end") := lapply(.SD, as.IDate), .SDcols = c("start_follow_up", "end_follow_up", "episode.start", "episode.end")]

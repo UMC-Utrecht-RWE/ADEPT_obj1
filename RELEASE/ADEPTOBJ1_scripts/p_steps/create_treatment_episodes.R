@@ -29,6 +29,9 @@ for (exposure in seq_along(files_exposures)) {
   # Add atc_group column
   dt[, atc_group := atc_group]
   
+  # Remove duplicates
+  dt <- unique(dt)
+  
   # Print message
   message("Processing: ", gsub(".rds", "", files_exposures[exposure]))
   

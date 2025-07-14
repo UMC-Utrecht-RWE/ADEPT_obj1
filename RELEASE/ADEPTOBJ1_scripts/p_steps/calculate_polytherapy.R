@@ -63,7 +63,7 @@ for (epi1 in seq_along(files_episodes)){
     overlaps[, overlap_days  := as.numeric(overlap_end - overlap_start) + 1]
     
     # Filter ≥182 days and same calendar year
-    overlaps <- overlaps[overlap_days >= 182]
+    overlaps <- overlaps[overlap_days >= 10]
     # overlaps <- overlap_dt[overlap_days >= 182 & year(overlap_start) == year(overlap_end)]
     
     # Overlap should be between start and end fu
@@ -113,7 +113,9 @@ for (pfx in seq_along(unique_prefixes)) {
   message("Processing Polytherapy for: ", current_prefix)
   
   # For each row, generate all years covered by the overlap interval
-  dt_expanded <- overlaps[, .(year = mapply(seq, year(overlap_start), year(overlap_end))), by = person_id]
+  # dt_expanded <- overlaps[, .(year = mapply(seq, year(overlap_start), year(overlap_end))), by = person_id]
+  # dt_expanded <- overlaps[, .(year = unlist(Map(seq, year(overlap_start), year(overlap_end)))), by = person_id]
+  dt_expanded <- overlaps[, .(year = mapply(seq, year(overlap_start), year(overlap_end), SIMPLIFY = FALSE)), by = person_id]
   dt_expanded <- dt_expanded[, .(year = unlist(year)), by = person_id]
   dt_expanded <- unique(dt_expanded)
   

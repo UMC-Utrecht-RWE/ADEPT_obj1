@@ -284,7 +284,7 @@ age_group_12_18.99_count <- sum(dt$age_group == "12-18.99")
 age_group_19_34.99_count <- sum(dt$age_group == "19-34.99")
 age_group_35_54.99_count <- sum(dt$age_group == "35-54.99")
 age_group_55_74.99_count <- sum(dt$age_group == "55-74.99")
-age_group_above_75_count <- sum(dt$age_group == "75.0+")
+age_group_above_75_count <- sum(dt$age_group == "75+")
 
 # Calculates percentages
 age_group_12_18.99_perc <- (age_group_12_18.99_count/nrow(dt)) * 100

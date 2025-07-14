@@ -25,6 +25,9 @@ for (group in seq_along(group_folders)) {
   # For each folder read in files and bind them 
   dt_combined <- rbindlist(lapply(files_exposures, function(f) readRDS(file.path(file.path(paths$D3_dir, "algorithm_input", group_folders[group]), f))), use.names = TRUE, fill = TRUE)
   
+  # Remove duplicates
+  dt_combined <- unique(dt_combined)
+  
   # If there is at least one row of data
   if(nrow(dt_combined)>0){
     
