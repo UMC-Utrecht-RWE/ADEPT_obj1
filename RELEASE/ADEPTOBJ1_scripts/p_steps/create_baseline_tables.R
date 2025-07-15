@@ -62,7 +62,7 @@ for (episode in seq_along(files_episodes)) {
   age_group_19_34.99_count <- sum(dt$age_group == "19-34.99")
   age_group_35_54.99_count <- sum(dt$age_group == "35-54.99")
   age_group_55_74.99_count <- sum(dt$age_group == "55-74.99")
-  age_group_above_75_count <- sum(dt$age_group == "75.0+")
+  age_group_above_75_count <- sum(dt$age_group == "75+")
   
   # Calculates percentages
   age_group_12_18.99_perc <- (age_group_12_18.99_count/nrow(dt)) * 100
@@ -186,7 +186,7 @@ for (episode in seq_along(files_episodes)) {
   age_group_19_34.99_count <- sum(dt$age_group == "19-34.99")
   age_group_35_54.99_count <- sum(dt$age_group == "35-54.99")
   age_group_55_74.99_count <- sum(dt$age_group == "55-74.99")
-  age_group_above_75_count <- sum(dt$age_group == "75.0+")
+  age_group_above_75_count <- sum(dt$age_group == "75+")
   
   # Calculates percentages
   age_group_12_18.99_perc <- (age_group_12_18.99_count/nrow(dt)) * 100
@@ -280,18 +280,18 @@ age_at_start_fu_mean <-mean(study_population$age_at_start_follow_up)
 age_at_start_fu_SD   <-sd(study_population$age_at_start_follow_up)
 
 # Counts Per Age_Group 
-age_group_12_18.99_count <- sum(dt$age_group == "12-18.99")
-age_group_19_34.99_count <- sum(dt$age_group == "19-34.99")
-age_group_35_54.99_count <- sum(dt$age_group == "35-54.99")
-age_group_55_74.99_count <- sum(dt$age_group == "55-74.99")
-age_group_above_75_count <- sum(dt$age_group == "75+")
+age_group_12_18.99_count <- sum(study_population$age_group == "12-18.99")
+age_group_19_34.99_count <- sum(study_population$age_group == "19-34.99")
+age_group_35_54.99_count <- sum(study_population$age_group == "35-54.99")
+age_group_55_74.99_count <- sum(study_population$age_group == "55-74.99")
+age_group_above_75_count <- sum(study_population$age_group == "75+")
 
 # Calculates percentages
-age_group_12_18.99_perc <- (age_group_12_18.99_count/nrow(dt)) * 100
-age_group_19_34.99_perc <- (age_group_19_34.99_count/nrow(dt)) * 100
-age_group_35_54.99_perc <- (age_group_35_54.99_count/nrow(dt)) * 100
-age_group_55_74.99_perc <- (age_group_55_74.99_count/nrow(dt)) * 100
-age_group_above_75_perc <- (age_group_above_75_count/nrow(dt)) * 100
+age_group_12_18.99_perc <- (age_group_12_18.99_count/nrow(study_population)) * 100
+age_group_19_34.99_perc <- (age_group_19_34.99_count/nrow(study_population)) * 100
+age_group_35_54.99_perc <- (age_group_35_54.99_count/nrow(study_population)) * 100
+age_group_55_74.99_perc <- (age_group_55_74.99_count/nrow(study_population)) * 100
+age_group_above_75_perc <- (age_group_above_75_count/nrow(study_population)) * 100
 
 # Create Baseline Table 
 # Create Baseline Table 
