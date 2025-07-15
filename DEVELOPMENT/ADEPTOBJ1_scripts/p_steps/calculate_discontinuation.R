@@ -88,7 +88,7 @@ for (episode in seq_along(files_episodes)) {
       if(nrow(discontinued_all[n_total == 0 & N != 0])>0) fwrite(discontinued_all[n_total == 0 & N != 0], file.path(paths$D5_dir, "1.2_discontinued", paste0(gsub("_treatment_episode\\.rds$", "", files_episodes[episode]), "_denominator_zero_numerator_nonzero.csv")))
       
       # Create column marking if rate is computable 
-      discontinued_all[, rate_computable := !(n_total == 0 & N > 0)]
+      discontinued_all[, rate_computable := n_total > 0]
       
       # rename columns
       setnames(discontinued_all, "N", "n_treated")

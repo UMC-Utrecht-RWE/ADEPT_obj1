@@ -144,7 +144,7 @@ for (pfx in seq_along(unique_prefixes)) {
   if(nrow(overlap_all[Freq == 0 & N != 0])>0) fwrite(overlap_all[Freq == 0 & N != 0], file.path(paths$D5_dir, "1.1_prevalence", paste0(gsub("_treatment_episode\\.rds$", "", files_episodes[episode]), "_denominator_zero_numerator_nonzero.csv")))
   
   # Create column marking if rate is computable 
-  overlap_all[, rate_computable := !(Freq == 0 & N >= 0)]
+  overlap_all[, rate_computable := Freq > 0]
   
   # Rename columns 
   setnames(overlap_all, c("N", "Freq"), c("n_treated", "n_total"))

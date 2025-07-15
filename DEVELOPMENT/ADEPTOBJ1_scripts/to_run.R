@@ -35,15 +35,19 @@ DEAP_data <- "CPRD"
 # Leave Multiple Regions as FALSE and set path to folder with CDM instances
 multiple_regions <- FALSE
 CDM_dir <- "C:/Users/mgamb/Documents/GitHub/ADEPT_obj1/DEVELOPMENT/CDM_instances"
+preg_dir <- "C:/Users/mgamb/Documents/GitHub/ADEPT_obj1/DEVELOPMENT/ConcePTIONAlgorithmPregnancies-release_6.1/g_output"
 
 # === SET FLAGS === 
 
 # Set DEAP flags
 source(file.path(thisdir, "p_steps", "set_flags.R"), local = TRUE)
 
-
 # === ANALYSIS SCRIPTS === 
 source(file.path(thisdir, "p_steps", "run_analysis.R"), local = TRUE)
+
+# Pregnancy Counts
+source(file.path(thisdir, "p_steps", "run_analysis_pregnancies.R"), local = TRUE)
+
 
 
 

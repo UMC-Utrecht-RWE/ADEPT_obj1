@@ -68,7 +68,7 @@ for (episode in seq_along(files_episodes)) {
     if(nrow(prevalence_all[Freq == 0 & N != 0])>0) fwrite(prevalence_all[Freq == 0 & N != 0], file.path(paths$D5_dir, "1.1_prevalence", paste0(gsub("_treatment_episode\\.rds$", "", files_episodes[episode]), "_denominator_zero_numerator_nonzero.csv")))
     
     # Create column marking if rate is computable 
-    prevalence_all[, rate_computable := !(Freq == 0 & N >= 0)]
+    prevalence_all[, rate_computable := Freq > 0]
     
     # Rename columns 
     setnames(prevalence_all, c("N", "Freq"), c("n_treated", "n_total"))

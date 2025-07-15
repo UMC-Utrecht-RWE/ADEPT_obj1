@@ -26,12 +26,13 @@ subfolders <- list(
   file.path(paths$D4_dir, c(
     "1.1_incidence", "1.1_prevalence",
     "1.2_treatment_duration", "1.2_discontinued", "1.2_altmeds",
-    "1.2_switching", "1.2_polytherapy"
+    "1.2_switching", "1.2_polytherapy", "1.3_pre-pregnancy_use_rate", "1.3_initiation_rate_during_pregnancy", "1.3_continuous_use_rate"
   )),
   file.path(paths$D5_dir, c(
     "1.1_incidence", "1.1_prevalence",
     "1.2_treatment_duration", "1.2_discontinued", "1.2_altmeds",
-    "1.2_switching", "1.2_polytherapy", "flowcharts", "baseline_tables", "plots"
+    "1.2_switching", "1.2_polytherapy", "1.3_pre-pregnancy_use_rate", "1.3_initiation_rate_during_pregnancy", "1.3_continuous_use_rate",
+    "flowcharts", "baseline_tables", "plots"
     
   ))
 ) |> unlist()

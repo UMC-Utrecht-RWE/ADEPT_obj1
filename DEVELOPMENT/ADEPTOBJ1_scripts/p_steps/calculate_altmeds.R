@@ -56,7 +56,7 @@ for (group in seq_along(altmed_group_folders)) {
       if(nrow(altmed_all[Freq == 0 & N != 0])>0) fwrite(altmed_all[Freq == 0 & N != 0], file.path(paths$D5_dir, "1.1_incidence", paste0(gsub("_treatment_episode\\.rds$", "", files_episodes[episode]), "_denominator_zero_numerator_nonzero.csv")))
       
       # Create column marking if rate is computable i.e. if numerator is greater than denominator or if both numerator and denominator = 0
-      altmed_all[, rate_computable := !(Freq == 0 & N >= 0)]
+      altmed_all[, rate_computable := Freq > 0]
       
       # Rename columns
       setnames(altmed_all, c("N", "Freq"), c("n_treated", "n_total"))

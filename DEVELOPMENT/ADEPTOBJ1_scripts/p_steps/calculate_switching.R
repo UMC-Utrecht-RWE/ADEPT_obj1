@@ -222,7 +222,7 @@ for (pfx in seq_along(unique_prefixes)) {
       if(nrow(switcher_all[n_total == 0 & N != 0])>0) fwrite(switcher_all[n_total == 0 & N != 0], file.path(paths$D5_dir, "1.2_discontinued", paste0(gsub("_treatment_episode\\.rds$", "", files_episodes[episode]), "_denominator_zero_numerator_nonzero.csv")))
       
       # Create column marking if rate is computable 
-      switcher_all[, rate_computable := !(n_total == 0 & N > 0)]
+      switcher_all[, rate_computable := n_total > 0]
       
       # rename columns
       setnames(switcher_all, "N", "n_treated")
