@@ -1,6 +1,16 @@
-print("==========================================================================================")
-print("==================== CALCULATING ASM INITIATION RATE DURING PREGNANCY ====================")
-print("==========================================================================================")
+###############################################################################################################################################################################
+# <<< Sub-objective 1.3: Initiation rate during pregnancy >>> 
+# Measure: Annual initiation rate of ASM during pregnancy
+# Numerator: Number of pregnancies in a calendar year with ≥1 treatment episode of an ASM during any trimester, but no treatment episode in the 12 months prior to pregnancy start
+# Denominator: Total number of pregnancies in that calendar year in the data source
+# Stratification by: Overall, individual drug substance, drug sub-groups, age groups, indication, calendar year, data source
+
+# Pending: Stratification by Overall, age groups, indication
+###############################################################################################################################################################################
+
+print("===================================================================================================")
+print("==================== CALCULATING ASM INITIATION RATE DURING PREGNANCY - GROUPS ====================")
+print("===================================================================================================")
 
 # List all incident treatment episode files matching population prefix
 files_episodes <- list.files(file.path(paths$D3_dir, "tx_episodes", "groups"), pattern = "\\.rds$")

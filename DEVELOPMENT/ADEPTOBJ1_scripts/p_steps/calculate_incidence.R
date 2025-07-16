@@ -1,3 +1,13 @@
+###############################################################################################################################################################################
+# <<< Sub-objective 1.1: Incidence rate >>> 
+# Measure: Annual incidence rate of ASM use
+# Numerator: Number of individuals with ≥1 treatment episode of an ASM within a calendar year and without an overlapping treatment episode during the 1-year look-back period
+# Denominator: Total number of person-time in that calendar year in the data source
+# Stratification by: Individual drug substance, drug sub-groups, age groups, indication, calendar year, data source
+
+# Pending: Stratification by age groups, indication
+###############################################################################################################################################################################
+
 print("=========================================================================")
 print("========================= CALCULATING INCIDENCE =========================")
 print("=========================================================================")
@@ -28,14 +38,14 @@ for (episode in seq_along(files_episodes)) {
   
   # Flag “incident” episodes: an episode is incident if the gap since the previous episode’s end ≥ 365 days
   dt[, prev_end       := shift(episode.end, 1, type = "lag"), by = .(person_id)]
-  dt[, gap_since_prev := as.numeric(as.IDate(episode.start) - as.IDate(prev_end))]
-  dt[, incident_flag  := is.na(prev_end) | gap_since_prev > 365]
+  dt[, gap_since_prev := as.numeric(difftime(episode.start, prev_end, units = "days"))]
+  dt[, incident_flag := is.na(prev_end) | gap_since_prev > 365]
   
   # Keep only incident episodes
   incidence <- dt[incident_flag == TRUE]
   
   # Drop any incident use if episode.start is before start_follow_up
-  incidence <- incidence[episode.start >= start_follow_up & episode.end <= end_follow_up,]
+  incidence <- incidence[episode.start >= start_follow_up & episode.start <= end_follow_up,]
   
   # Perform Counts 
   if(nrow(incidence)>0){

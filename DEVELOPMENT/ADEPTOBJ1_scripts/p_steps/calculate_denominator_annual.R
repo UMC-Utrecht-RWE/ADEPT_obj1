@@ -1,10 +1,13 @@
 print("Preparing denominator...")
 
 if (nrow(study_population) > 0) {
+  # Convert start and end follow up to IDate
+  study_population[, start_follow_up := as.IDate(start_follow_up)]
+  study_population[, end_follow_up := as.IDate(end_follow_up)]
   
-  # Clip entry and exit years to study period boundaries
-  start_year <- pmax(year(as.IDate(study_population$start_follow_up, format = "%Y%m%d")), year(start_study_date))
-  end_year   <- pmin(year(as.IDate(study_population$end_follow_up,  format = "%Y%m%d")), year(end_study_date))
+  # Get study period boundaries
+  start_year <- pmax(year(study_population$start_follow_up), year(start_study_date))
+  end_year   <- pmin(year(study_population$end_follow_up), year(end_study_date))
   
   # Generate vector of years of follow-up per person
   studyFUyears <- unlist(mapply(seq, start_year, end_year, SIMPLIFY = FALSE))
@@ -40,5 +43,9 @@ if (nrow(study_population) > 0) {
   axis(1, at = FUyears_dt$year, labels = FUyears_dt$year)
   
   dev.off()
+  
+} else {
+  
+  message("No study population rows found; skipping denominator creation.")
   
 }

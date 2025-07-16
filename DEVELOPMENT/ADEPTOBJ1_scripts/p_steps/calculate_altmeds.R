@@ -1,3 +1,11 @@
+###############################################################################################################################################################################
+# <<< Sub-objective 1.2: Alternative medications >>> 
+# Measure: Annual rate of alternative medication use
+# Numerator: Number of individuals with ≥1 prescription/dispensing of all alternative medications for each indication of interest within a calendar year in the data source
+# Denominator: Total number of person-time in that calendar year in the data source 
+
+###############################################################################################################################################################################
+
 print("======================================================================================")
 print("========================= PROCESSING ALTERNATIVE MEDICATIONS =========================")
 print("======================================================================================")
@@ -52,8 +60,8 @@ for (group in seq_along(altmed_group_folders)) {
       if (nrow(altmed_all[Freq == 0 & N != 0]) > 0) {warning(red("Warning: Denominator zero with non-zero numerator."))}
       
       # Save data with odd values 
-      if(nrow(altmed_all[N > Freq])>0) fwrite(altmed_all[N > Freq], file.path(paths$D5_dir, "1.1_incidence", paste0(gsub("_treatment_episode\\.rds$", "", files_episodes[episode]), "_num_gt_denominator.csv")))
-      if(nrow(altmed_all[Freq == 0 & N != 0])>0) fwrite(altmed_all[Freq == 0 & N != 0], file.path(paths$D5_dir, "1.1_incidence", paste0(gsub("_treatment_episode\\.rds$", "", files_episodes[episode]), "_denominator_zero_numerator_nonzero.csv")))
+      if(nrow(altmed_all[N > Freq]) > 0) fwrite(altmed_all[N > Freq], file.path(paths$D5_dir, "1.2_altmeds", paste0(pop_prefix, "_", altmed_group_folders[group], "_num_gt_denominator.csv")))
+      if(nrow(altmed_all[Freq == 0 & N != 0]) > 0) fwrite(altmed_all[Freq == 0 & N != 0], file.path(paths$D5_dir, "1.2_altmeds", paste0(pop_prefix, "_", altmed_group_folders[group], "_denominator_zero_numerator_nonzero.csv")))
       
       # Create column marking if rate is computable i.e. if numerator is greater than denominator or if both numerator and denominator = 0
       altmed_all[, rate_computable := Freq > 0]

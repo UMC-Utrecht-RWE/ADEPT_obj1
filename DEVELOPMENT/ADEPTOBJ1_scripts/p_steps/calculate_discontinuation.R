@@ -1,3 +1,13 @@
+###############################################################################################################################################################################
+# <<< Sub-objective 1.2: Discontinuation rate >>> 
+# Measure: Annual discontinuation rate of ASM
+# Numerator: Number of individuals who have a gap of ≥120 days between treatment episodes of an ASM in each calendar year
+# Denominator: The number of prevalent ASM users in that calendar year in the data source 
+# Stratification by: Individual drug substance, drug sub-groups, age groups, calendar year, data source
+
+# Pending: Stratification by age groups
+###############################################################################################################################################################################
+
 print("===============================================================================")
 print("========================= CALCULATING DISCONTINUATION =========================")
 print("===============================================================================")
@@ -23,6 +33,12 @@ if(pop_prefix=="PC"){files_prevalence_counts <- files_prevalence_counts[!grepl("
 # Loop through each treatment episode file
 for (episode in seq_along(files_episodes)) {
   
+  episode_filename <- files_episodes[episode]
+  if (is.na(episode_filename)) stop("Missing episode filename")
+  episode_name <- gsub("_treatment_episode\\.rds$", "", episode_filename)
+  
+  print(episode_name)
+  
   # Read the treatment episode file
   dt <- readRDS(file.path(paths$D3_dir, "tx_episodes", "individual", files_episodes[episode]))
   
@@ -36,7 +52,10 @@ for (episode in seq_along(files_episodes)) {
   dt[, next_start := shift(episode.start, type = "lead"), by = .(person_id)]
   
   # Convert all dates to IDate
-  dt[, c("episode.start", "episode.end", "exit_date", "next_start") := lapply(.SD, as.IDate), .SDcols = c("exit_date", "episode.start", "episode.end", "next_start")]
+  dt[, episode.start := as.IDate(episode.start)]
+  dt[, episode.end   := as.IDate(episode.end)]
+  dt[, exit_date     := as.IDate(exit_date)]
+  dt[, next_start    := as.IDate(next_start)]
   
   # Flag discontinuation events
   dt[, discontinuer_flag := fifelse(is.na(next_start), (exit_date - episode.end > 120), (next_start - episode.end > 120))]
@@ -84,21 +103,21 @@ for (episode in seq_along(files_episodes)) {
       if (nrow(discontinued_all[n_total == 0 & N != 0]) > 0) {warning(red("Warning: Denominator zero with non-zero numerator."))}
       
       # Save data where odd values 
-      if(nrow(discontinued_all[N > n_total])>0) fwrite(discontinued_all[N > n_total], file.path(paths$D5_dir, "1.2_discontinued", paste0(gsub("_treatment_episode\\.rds$", "", files_episodes[episode]), "_num_gt_denominator.csv")))
-      if(nrow(discontinued_all[n_total == 0 & N != 0])>0) fwrite(discontinued_all[n_total == 0 & N != 0], file.path(paths$D5_dir, "1.2_discontinued", paste0(gsub("_treatment_episode\\.rds$", "", files_episodes[episode]), "_denominator_zero_numerator_nonzero.csv")))
-      
-      # Create column marking if rate is computable 
-      discontinued_all[, rate_computable := n_total > 0]
-      
-      # rename columns
-      setnames(discontinued_all, "N", "n_treated")
-      
-      # Save dataset 
-      saveRDS(discontinuers, file.path(paths$D4_dir, "1.2_discontinued", paste0(gsub("_treatment_episode\\.rds$", "", files_episodes[episode]), "_discontinued_data.rds")))
-      
-      # Save results 
-      saveRDS(discontinued_all, file.path(paths$D5_dir, "1.2_discontinued", paste0(gsub("_treatment_episode\\.rds$", "", files_episodes[episode]), "_discontinued.rds")))
-      
+      if(nrow(discontinued_all[N > n_total])>0) fwrite(discontinued_all[N > n_total], file.path(paths$D5_dir, "1.2_discontinued", paste0(episode_name, "_num_gt_denominator.csv")))
+      if(nrow(discontinued_all[n_total == 0 & N != 0])>0) fwrite(discontinued_all[n_total == 0 & N != 0], file.path(paths$D5_dir, "1.2_discontinued", paste0(episode_name, "_denominator_zero_numerator_nonzero.csv")))
+        
+        # Create column marking if rate is computable 
+        discontinued_all[, rate_computable := n_total > 0]
+        
+        # rename columns
+        setnames(discontinued_all, "N", "n_treated")
+        
+        # Save dataset 
+        saveRDS(discontinuers, file.path(paths$D4_dir, "1.2_discontinued", paste0(gsub("_treatment_episode\\.rds$", "", files_episodes[episode]), "_discontinued_data.rds")))
+        
+        # Save results 
+        saveRDS(discontinued_all, file.path(paths$D5_dir, "1.2_discontinued", paste0(gsub("_treatment_episode\\.rds$", "", files_episodes[episode]), "_discontinued.rds")))
+        
     } else {
       
       warning("No matching prevalence file found for: ", gsub("_treatment_episode\\.rds$", "", files_episodes[episode]))

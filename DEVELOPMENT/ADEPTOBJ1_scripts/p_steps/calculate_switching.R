@@ -1,3 +1,13 @@
+###############################################################################################################################################################################
+# <<< Sub-objective 1.2: Switching rate >>> 
+# Measure: Annual switching rate from one ASM to another ASM or to an alternative medication
+# Numerator: Total number of individuals who have ≥1 treatment episode for a specific ASM and discontinued, with ≥1 treatment episode for a different ASM or alternative medication, during the last treatment episode of the ASM or within the discontinuation period of the ASM in each calendar year
+# Denominator: The number of prevalent ASM users in that calendar year in the data source 
+# Stratification by: Individual drug substance, calendar year, data source
+
+###############################################################################################################################################################################
+
+
 print("===============================================================================")
 print("========================= CALCULATE SWITCHING =================================")
 print("===============================================================================")
@@ -176,6 +186,13 @@ for (pfx in seq_along(unique_prefixes)) {
   
   switchers <- rbindlist(lapply(file.path(paths$D3_dir, "tmp", group), function(f) as.data.table(readRDS(f))), use.names = TRUE, fill = TRUE)
   
+  # Keep only the first switch per person across all types (exposures and altmeds)
+  setorder(switchers, person_id, rx_date)
+  switchers <- switchers[!duplicated(person_id)]
+  
+  # Keep only if year(rx_date) falls between start and end follow up
+  switchers <- switchers[rx_date >= start_follow_up & rx_date <= end_follow_up, ]
+  
   message("Processing switchers for: ", current_prefix)
   
   # Switchers need to be between start and end follow up
@@ -218,8 +235,8 @@ for (pfx in seq_along(unique_prefixes)) {
       if (nrow(switcher_all[n_total == 0 & N != 0]) > 0) {warning(red("Warning: Denominator zero with non-zero numerator."))}
       
       # Save data where odd values 
-      if(nrow(switcher_all[N > n_total])>0) fwrite(switcher_all[N > n_total], file.path(paths$D5_dir, "1.2_discontinued", paste0(gsub("_treatment_episode\\.rds$", "", files_episodes[episode]), "_num_gt_denominator.csv")))
-      if(nrow(switcher_all[n_total == 0 & N != 0])>0) fwrite(switcher_all[n_total == 0 & N != 0], file.path(paths$D5_dir, "1.2_discontinued", paste0(gsub("_treatment_episode\\.rds$", "", files_episodes[episode]), "_denominator_zero_numerator_nonzero.csv")))
+      if(nrow(switcher_all[N > n_total])>0) fwrite(switcher_all[N > n_total], file.path(paths$D5_dir, "1.2_switching", paste0(current_prefix, "_num_gt_denominator.csv")))
+      if(nrow(switcher_all[n_total == 0 & N != 0])>0) fwrite(switcher_all[n_total == 0 & N != 0], file.path(paths$D5_dir, "1.2_switching", paste0(current_prefix, "_denominator_zero_numerator_nonzero.csv")))
       
       # Create column marking if rate is computable 
       switcher_all[, rate_computable := n_total > 0]

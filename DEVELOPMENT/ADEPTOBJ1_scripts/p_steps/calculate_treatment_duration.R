@@ -1,3 +1,12 @@
+###############################################################################################################################################################################
+# <<< Sub-objective 1.2: Treatment duration >>> 
+# Measure: Annual treatment duration mean & median of ASM
+# Calculation: Mean, median, minimum, maximum, interquartile range, and SD (in months) of treatment episodes for all individuals with ≥1 treatment episode of an ASM within a calendar year in the data source
+# Stratification by: Individual drugs, age groups, calendar year, data source
+
+# Pending: Stratification by age groups
+###############################################################################################################################################################################
+
 print("=========================================================================")
 print("========================= TREATMENT DURATION ============================")
 print("=========================================================================")
@@ -36,9 +45,9 @@ for (episode in seq_along(files_episodes)) {
   # If episode.end is before startfu then delete
   # If episode.start is before start_fu, change episode.start to start_fu
   # If episode.end is after end_fu, change episode.end to end_fu
-  dt <- dt[!(episode.end<start_follow_up),]
-  dt <-dt[episode.start<start_follow_up, episode.start := start_follow_up]
-  dt <-dt[episode.end > end_follow_up, episode.end := end_follow_up]
+  dt <- dt[!(episode.end < start_follow_up),]
+  dt <- dt[episode.start < start_follow_up, episode.start := start_follow_up]
+  dt <- dt[episode.end   > end_follow_up, episode.end := end_follow_up]
   
   if(nrow(dt)>0){
     
@@ -46,18 +55,13 @@ for (episode in seq_along(files_episodes)) {
     dt[, year_start := year(episode.start)]
     dt[, year_end := year(episode.end)]
     
-    # If episode.end is before startfu then delete
-    # If episode.start is before start_fu, change episode.start to start_fu
-    # If episode.end is after end_fu, change episode.end to end_fu
-    dt <- dt[!(episode.end<start_follow_up),]
-    dt <-dt[episode.start<start_follow_up, episode.start := start_follow_up]
-    dt <-dt[episode.end > end_follow_up, episode.end := end_follow_up]
-    
     # Calculate Treatment Duration where you don't break down the treatment episode per year. You calculate treatment duration and count it in the year the episode started 
     dt_not_expanded <- copy(dt)
     
     # Count the number of days of treatment episode
     dt_not_expanded <- dt_not_expanded[,total_days := as.numeric(episode.end - episode.start) + 1]
+    
+    dt_not_expanded[, year_episode.start := year(episode.start)]
     
     # Aggregate based on episode.start.date
     stats_by_episode_start_year <- dt_not_expanded[, .(
@@ -67,7 +71,7 @@ for (episode in seq_along(files_episodes)) {
       max_days    = max(total_days, na.rm = TRUE),
       iqr_days    = IQR(total_days, na.rm = TRUE),
       sd_days     = sd(total_days, na.rm = TRUE)
-    ), by = year(episode.start)]
+    ), by = year_episode.start]
     
     
     # Expand each row into multiple rows, one for each year spanned by the episode
@@ -100,7 +104,7 @@ for (episode in seq_along(files_episodes)) {
       print(neg_durations[, .(person_id, episode.start, episode.end, year, treatment_start, treatment_end, duration_in_year)])
     }
     
-    # Sum total treatment months per person per year
+    # Sum total treatment days per person per year
     summary_by_person_year <- dt_expanded[, .(total_days = sum(duration_in_year)), by = .(person_id, year)]
     
     # Stats by Year

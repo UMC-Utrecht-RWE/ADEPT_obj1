@@ -41,7 +41,9 @@ step1 <- 'Set start and end date to date format and if end date is empty fill wi
 print('Set start and end date to date format and if end date is empty fill with end study date') 
 
 # Convert start and end dates to Date format
-lapply(c("op_start_date", "op_end_date"), function(x) OBSERVATION_PERIODS <- OBSERVATION_PERIODS[, eval(x) := as.IDate(as.character(get(x)), "%Y%m%d")])
+# lapply(c("op_start_date", "op_end_date"), function(x) OBSERVATION_PERIODS <- OBSERVATION_PERIODS[, eval(x) := as.IDate(as.character(get(x)), "%Y%m%d")])
+OBSERVATION_PERIODS[, op_start_date := as.IDate(as.character(op_start_date), "%Y%m%d")]
+OBSERVATION_PERIODS[, op_end_date   := as.IDate(as.character(op_end_date), "%Y%m%d")]
 
 # Fill missing end dates with end of study date
 OBSERVATION_PERIODS <- OBSERVATION_PERIODS[is.na(op_end_date), op_end_date := end_study_date]

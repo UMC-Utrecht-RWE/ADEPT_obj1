@@ -26,7 +26,7 @@ med_files <- list.files(path = CDM_dir, pattern = "MEDICINES", ignore.case = TRU
 for (med in seq_along(med_files)) {
   
   # Extract the medicine file name 
-  current_table <- gsub(".csv", "", med_files[med],)
+  current_table <- gsub(".csv", "", med_files[med])
   
   # Print message
   cat(blue$bold(paste0("searching in: ", current_table)), "\n")

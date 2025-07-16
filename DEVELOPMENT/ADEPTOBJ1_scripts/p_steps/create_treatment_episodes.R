@@ -79,6 +79,8 @@ for (exposure in seq_along(files_exposures)) {
     treat_episode <- treat_episode[episode.start < end_follow_up]
     treat_episode <- treat_episode[episode.end > episode.start]
     
+    treat_episode <- unique(treat_episode)
+    
     # Save output if treatment episode has at least one row
     if(nrow(treat_episode)>0) saveRDS(treat_episode, file = file.path(paths$D3_dir, "tx_episodes", "individual", paste0(gsub("\\.rds$", "", files_exposures[exposure]), "_treatment_episode.rds")))
   }

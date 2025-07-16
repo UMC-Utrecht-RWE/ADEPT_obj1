@@ -78,6 +78,9 @@ for (group in seq_along(group_folders)) {
     treat_episode <- treat_episode[episode.start < end_follow_up]
     treat_episode <- treat_episode[episode.end > episode.start]
     
+    # Remove duplicates
+    treat_episode <- unique(treat_episode)
+    
     # Save output if treatment episode has at least 1 row
     if(nrow(treat_episode)>0) saveRDS(treat_episode, file = file.path(paths$D3_dir, "tx_episodes", "groups", paste0(pop_prefix, "_", group_folders[group], "_treatment_episode.rds")))
   }

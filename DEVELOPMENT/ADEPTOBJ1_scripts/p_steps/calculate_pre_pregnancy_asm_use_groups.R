@@ -1,3 +1,13 @@
+###############################################################################################################################################################################
+# <<< Sub-objective 1.3: Pre-pregnancy use rate >>> 
+# Measure: Annual pre-pregnancy ASM use rate
+# Numerator: The number of unique pregnancies with ≥1 treatment episode in the year prior to pregnancy, falling within both 12-6 months before pregnancy and 6-0 months before pregnancy.
+# Denominator: Total number of unique pregnancies in that calendar year in the data source
+# Stratification by: Overall, individual drug substance, drug sub-groups, calendar year, data source
+
+# Pending: Stratification by Overall?
+###############################################################################################################################################################################
+
 print("=====================================================================================")
 print("========================= CALCULATING PRE-PREGNANCY ASM USE =========================")
 print("=====================================================================================")

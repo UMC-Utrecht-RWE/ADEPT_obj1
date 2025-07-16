@@ -34,7 +34,7 @@ for(pop in seq_along(populations)){
     assign("study_population", study_population_sex, envir = .GlobalEnv)
     
     # Denominator Counts
-    source(file.path(thisdir, "p_steps", "denominator_annual.R"), local = TRUE)
+    source(file.path(thisdir, "p_steps", "calculate_denominator_annual.R"), local = TRUE)
     
     # Create concept sets
     source(file.path(thisdir, "p_steps", "create_concept_sets.R"), local = TRUE)
@@ -68,6 +68,9 @@ for(pop in seq_along(populations)){
     # Calculate prevalence - groups
     source(file.path(thisdir, "p_steps", "calculate_prevalence_groups.R"), local = TRUE)
     
+    # Treatment Durations
+    source(file.path(thisdir, "p_steps", "calculate_treatment_duration.R"), local = TRUE)
+    
     # Calculate Discontinuers 
     source(file.path(thisdir, "p_steps", "calculate_discontinuation.R"), local = TRUE)
     
@@ -82,9 +85,6 @@ for(pop in seq_along(populations)){
     
     # Find Polytherapy
     source(file.path(thisdir, "p_steps", "calculate_polytherapy.R"), local = TRUE)
-    
-    # Treatment Durations
-    source(file.path(thisdir, "p_steps", "calculate_treatment_duration.R"), local = TRUE)
     
     # Baseline Tables 
     source(file.path(thisdir, "p_steps", "create_baseline_tables.R"), local = TRUE)

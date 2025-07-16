@@ -31,12 +31,10 @@ SelectionCriteria <- list(
   include_if_not_older_than_55_before_study_start = expression(sex_at_instance_creation == "M" | date_max > start_study_date),
   # Ensures that a spell starts before it ends.
   op_start_date_before_op_end_date = expression(op_start_date < op_end_date),
-  # Ensures spell duration is at least 364 days.
-  spell_less_than_year = expression((op_end_date-op_start_date) >= 364),
   # Ensures that spell overlaps with study period, including partially before/after.
   study_period_and_spell_overlap = expression(op_start_date %between% intv | op_end_date %between% intv | (op_start_date < start_study_date & op_end_date > end_study_date)),
   # Spell has to be at least 365 days 
-  spells_less_then_lookback_period = expression((op_end_date - op_start_date) > lookback_period),
+  spells_more_than_lookback_period = expression((op_end_date - op_start_date) > lookback_period),
   # Ensures time from spell start to study end is enough to satisfy lookback.
   remaning_time_to_end_study_date_less_then_lookback_period = expression((end_study_date - op_start_date) > lookback_period)
  

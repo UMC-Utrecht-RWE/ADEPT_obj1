@@ -1,6 +1,16 @@
-print("==============================================================================")
-print("========================= CALCULATING CONTINUOUS USE =========================")
-print("==============================================================================")
+###############################################################################################################################################################################
+# <<< Sub-objective 1.3: Continuous use rate >>> 
+# Measure: Annual continuous rate of ASM use during pregnancy
+# Numerator: The number of pre-pregnancy users of an ASM within a calendar year that also runs into the first, second and third trimester of pregnancy 
+# Denominator: Total number of pregnancies in that calendar year in the data source
+# Stratification by: Overall, individual drug substance, drug sub-groups, indication, calendar year, data source
+
+# Pending: Stratification by Overall, indication
+###############################################################################################################################################################################
+
+print("===============================================================================================")
+print("========================= CALCULATING CONTINUOUS USE DURING PREGNANCY =========================")
+print("===============================================================================================")
 
 # List all treatment episode files matching population prefix
 files_episodes <- list.files(file.path(paths$D4_dir, "1.3_pre-pregnancy_use_rate"), pattern = "_12_0_window_data\\.rds$")
@@ -92,7 +102,7 @@ for (episode in seq_along(files_episodes)) {
     saveRDS(continuous_rate_all, file = file.path(paths$D5_dir, "1.3_continuous_use_rate", paste0(treatment_name, "_continuous_use_rate_t1_trimester_counts.rds")))
     
   } else {
-    message(red(paste0("There was no ASM initiation of ", treatment_name, " in the t1 trimester")))
+    message(red(paste0("There was no continuous use of ", treatment_name, " in the t1 trimester")))
   }
   
   # <<< t2 Trimester Overlap:  >>> # 
@@ -141,7 +151,7 @@ for (episode in seq_along(files_episodes)) {
     saveRDS(continuous_rate_all, file = file.path(paths$D5_dir, "1.3_continuous_use_rate", paste0(treatment_name, "_continuous_use_rate_t2_trimester_counts.rds")))
     
   } else {
-    message(red(paste0("There was no ASM initiation of ", treatment_name, " in the t2 trimester")))
+    message(red(paste0("There was no continuous use of ", treatment_name, " in the t2 trimester")))
   }
   
   
@@ -190,7 +200,7 @@ for (episode in seq_along(files_episodes)) {
     saveRDS(continuous_rate_all, file = file.path(paths$D5_dir, "1.3_continuous_use_rate", paste0(treatment_name, "_continuous_use_rate_t3_trimester_counts.rds")))
     
   } else {
-    message(red(paste0("There was no ASM initiation of ", treatment_name, " in the t3 trimester")))
+    message(red(paste0("There was no continuous use of ", treatment_name, " in the t3 trimester")))
   }  
   
   
@@ -239,6 +249,6 @@ for (episode in seq_along(files_episodes)) {
     saveRDS(continuous_rate_all, file = file.path(paths$D5_dir, "1.3_continuous_use_rate", paste0(treatment_name, "_continuous_use_rate_all_trimester_counts.rds")))
     
   } else {
-    message(red(paste0("There was no ASM initiation of ", treatment_name, " in all trimesters")))
+    message(red(paste0("There was no continuous use of ", treatment_name, " in all trimesters")))
   } 
 }
