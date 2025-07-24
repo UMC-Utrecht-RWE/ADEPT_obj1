@@ -88,7 +88,7 @@ for (episode in seq_along(files_episodes)) {
     saveRDS(dt_expanded, file.path(paths$D4_dir, "1.1_prevalence", paste0(gsub("_treatment_episode\\.rds$", "", files_episodes[episode]), "_prevalence_data.rds")))
     
     # Save results 
-    saveRDS(prevalence_all, file.path(paths$D5_dir, "1.1_prevalence", paste0(gsub("_treatment_episode\\.rds$", "", files_episodes[episode]), "_prevalence.rds")))
+    saveRDS(prevalence_all, file.path(paths$D5_dir, "1.1_prevalence", paste0(gsub("_treatment_episode\\.rds$", "", files_episodes[episode]), "_prevalence_counts.rds")))
     
   } else {
     

@@ -78,7 +78,7 @@ for (episode in seq_along(files_episodes)) {
     discontinued_counts <- discontinuers[, .("N" = .N), by = year]
     
     # Match corresponding prevalence file
-    matched_prevalence_file <- files_prevalence_counts[gsub("_prevalence\\.rds$", "", files_prevalence_counts) == gsub("_treatment_episode\\.rds$", "", files_episodes[episode])]
+    matched_prevalence_file <- files_prevalence_counts[gsub("_prevalence_counts\\.rds$", "", files_prevalence_counts) == gsub("_treatment_episode\\.rds$", "", files_episodes[episode])]
     
     if (length(matched_prevalence_file) == 1) {
       
@@ -116,7 +116,7 @@ for (episode in seq_along(files_episodes)) {
         saveRDS(discontinuers, file.path(paths$D4_dir, "1.2_discontinued", paste0(gsub("_treatment_episode\\.rds$", "", files_episodes[episode]), "_discontinued_data.rds")))
         
         # Save results 
-        saveRDS(discontinued_all, file.path(paths$D5_dir, "1.2_discontinued", paste0(gsub("_treatment_episode\\.rds$", "", files_episodes[episode]), "_discontinued.rds")))
+        saveRDS(discontinued_all, file.path(paths$D5_dir, "1.2_discontinued", paste0(gsub("_treatment_episode\\.rds$", "", files_episodes[episode]), "_discontinued_counts.rds")))
         
     } else {
       

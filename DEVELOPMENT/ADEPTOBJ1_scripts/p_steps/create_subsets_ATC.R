@@ -122,72 +122,72 @@ for (varname in unique(file_info$Varname)) {
 # Clean up temp folder 
 invisible(file.remove(list.files(file.path(paths$D3_dir, "tmp"), full.names = TRUE)))
 
-# <<< MOVE FILES TO CORRESPONDING FOLDERS >>> 
-
-# Get names of all immediate sub-folders inside the main D3 directory
-# Use basename to extract folder names (not full paths)
-subfolder_names <- basename(list.dirs(paths$D3_dir, full.names = TRUE, recursive = FALSE))
-# Get a list of all .rds files inside D3 directory, return their full file paths
-subset_files <- list.files(paths$D3_dir, pattern = ".rds$", full.names = TRUE)
-
-# Load functions 
-source(file.path(thisdir, "p_steps", "functions","extract_var_name.R"), local = TRUE)
-source(file.path(thisdir, "p_steps", "functions","find_matching_row.R"), local = TRUE)
-
-# Track files that were successfully copied
-copied_files <- character()
-
-# Loop through each file path in the subset_files vector
-for (fpath in subset_files) {
-  
-  # Extract the variable name from the filename using the helper function
-  varname <- extract_varname(fpath)
-  
-  # Find the matching row in the ATC_concept_sets table for this variable name
-  cs_row <- find_matching_row(varname, ATC_concept_sets)
-  
-  # If no unique matching row was found, print a message and skip to next file
-  if (is.null(cs_row)) {
-    message("No unique matching row found for: ", varname)
-    next
-  }
-  
-  # Define which columns/flags we want to check for TRUE values
-  flags <- c("exposure", "cov", "algorithm_input")
-  
-  # Initialize a flag to track if the file was copied to any subfolder
-  file_copied <- FALSE  
-  
-  # Iterate through each subfolder name (these correspond to the flags)
-  for (sf_name in subfolder_names) {
-    
-    # Find the flag name matching the folder name, case-insensitive
-    flag_col <- flags[tolower(flags) == tolower(sf_name)]
-    
-    # If the flag column exists and the corresponding flag in cs_row is TRUE
-    if (length(flag_col) == 1 && isTRUE(cs_row[[flag_col]])) {
-      
-      # Print a message indicating the file is being copied and to which folder
-      message("Moving '", basename(fpath), "' into folder: ", sf_name)
-      
-      # Construct the destination path combining base directory, subfolder, and filename
-      dest_path <- file.path(paths$D3_dir, sf_name, basename(fpath))
-      
-      # Copy the file to the destination folder, allowing overwrite
-      success <- file.copy(fpath, dest_path, overwrite = TRUE)
-      
-      # If copy was successful, set the file_copied flag to TRUE
-      if (success) file_copied <- TRUE
-    }
-  }
-  
-  # If file was copied at least once, append its path to the copied_files vector
-  if (file_copied) copied_files <- c(copied_files, fpath)
-}
-
-# Delete only successfully copied files
-if (length(copied_files) > 0) invisible(file.remove(copied_files))
-
-
-
-
+# # <<< MOVE FILES TO CORRESPONDING FOLDERS >>> 
+# 
+# # Get names of all immediate sub-folders inside the main D3 directory
+# # Use basename to extract folder names (not full paths)
+# subfolder_names <- basename(list.dirs(paths$D3_dir, full.names = TRUE, recursive = FALSE))
+# # Get a list of all .rds files inside D3 directory, return their full file paths
+# subset_files <- list.files(paths$D3_dir, pattern = ".rds$", full.names = TRUE)
+# 
+# # Load functions 
+# source(file.path(thisdir, "p_steps", "functions","extract_var_name.R"), local = TRUE)
+# source(file.path(thisdir, "p_steps", "functions","find_matching_row.R"), local = TRUE)
+# 
+# # Track files that were successfully copied
+# copied_files <- character()
+# 
+# # Loop through each file path in the subset_files vector
+# for (fpath in subset_files) {
+#   
+#   # Extract the variable name from the filename using the helper function
+#   varname <- extract_varname(fpath)
+#   
+#   # Find the matching row in the ATC_concept_sets table for this variable name
+#   cs_row <- find_matching_row(varname, ATC_concept_sets)
+#   
+#   # If no unique matching row was found, print a message and skip to next file
+#   if (is.null(cs_row)) {
+#     message("No unique matching row found for: ", varname)
+#     next
+#   }
+#   
+#   # Define which columns/flags we want to check for TRUE values
+#   flags <- c("exposure", "cov", "algorithm_input")
+#   
+#   # Initialize a flag to track if the file was copied to any subfolder
+#   file_copied <- FALSE  
+#   
+#   # Iterate through each subfolder name (these correspond to the flags)
+#   for (sf_name in subfolder_names) {
+#     
+#     # Find the flag name matching the folder name, case-insensitive
+#     flag_col <- flags[tolower(flags) == tolower(sf_name)]
+#     
+#     # If the flag column exists and the corresponding flag in cs_row is TRUE
+#     if (length(flag_col) == 1 && isTRUE(cs_row[[flag_col]])) {
+#       
+#       # Print a message indicating the file is being copied and to which folder
+#       message("Moving '", basename(fpath), "' into folder: ", sf_name)
+#       
+#       # Construct the destination path combining base directory, subfolder, and filename
+#       dest_path <- file.path(paths$D3_dir, sf_name, basename(fpath))
+#       
+#       # Copy the file to the destination folder, allowing overwrite
+#       success <- file.copy(fpath, dest_path, overwrite = TRUE)
+#       
+#       # If copy was successful, set the file_copied flag to TRUE
+#       if (success) file_copied <- TRUE
+#     }
+#   }
+#   
+#   # If file was copied at least once, append its path to the copied_files vector
+#   if (file_copied) copied_files <- c(copied_files, fpath)
+# }
+# 
+# # Delete only successfully copied files
+# if (length(copied_files) > 0) invisible(file.remove(copied_files))
+# 
+# 
+# 
+# 

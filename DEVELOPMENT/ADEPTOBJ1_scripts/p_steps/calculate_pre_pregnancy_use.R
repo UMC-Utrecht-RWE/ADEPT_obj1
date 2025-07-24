@@ -32,6 +32,15 @@ pregnancies <- unique(pregnancies)
 pregnancies[, pregnancy_start_date := as.IDate(pregnancy_start_date)]
 pregnancies[, pregnancy_end_date   := as.IDate(pregnancy_end_date)]
 
+# Merge pregnancies with study population to get start and end follow up. We want to keep only pregnancy starts within this period
+pregnancies <- merge(pregnancies, study_population[, .(person_id, start_follow_up, end_follow_up)], by = "person_id", all.x = TRUE)
+
+# Keep only pregnancies that start between start and end follow up 
+pregnancies <- pregnancies[pregnancy_start_date >= start_follow_up & pregnancy_start_date <= end_follow_up,]
+
+# Drop the start and end follow up columns as these will be available again when merged with treatment episodes
+pregnancies <- pregnancies[,start_follow_up := NULL][, end_follow_up := NULL]
+
 # Add pre-pregnancy windows
 pregnancies[, window_12_6_start := pregnancy_start_date - 365]
 pregnancies[, window_12_6_end   := pregnancy_start_date - 183]
@@ -79,6 +88,9 @@ for (episode in seq_along(files_episodes)) {
   # Merge treatment episode with pregnancies file on person id
   dt_12_6 <- dt[pregnancies, on = .(person_id), nomatch = 0]
   
+  # Keep only if pregnancy start is between start and end follow up 
+  dt_12_6 <- dt_12_6[pregnancy_start_date >= start_follow_up & pregnancy_start_date <= end_follow_up,]
+  
   # Filter for episodes that fall within the 12-6 month period before pregnancy start 
   dt_12_6 <- dt_12_6[episode.start <= window_12_6_end & episode.end >= window_12_6_start]
   
@@ -88,7 +100,7 @@ for (episode in seq_along(files_episodes)) {
   # Check if any pre-pregnancy ASM use was found 
   if(nrow(dt_12_6)>0){
     
-    # Count the number of pregnancies with ASM use in the 12–6 month window, grouped by pregnancy year
+    # Count the number of pregnancies with ASM use in the 12–6 month window, grouped by year of pregnancy start
     pre_pregnancy_counts <- pregnancies[pregnancy_id %in% preg_ids_12_6, .N, by = preg_year]
     
     # Merge with template to get all years 
@@ -129,6 +141,9 @@ for (episode in seq_along(files_episodes)) {
   
   # Merge treatment episode with pregnancies file on person id
   dt_6_0 <- dt[pregnancies, on = .(person_id), nomatch = 0]
+  
+  # Keep only if pregnancy start is between start and end follow up 
+  dt_6_0 <- dt_6_0[pregnancy_start_date >= start_follow_up & pregnancy_start_date <= end_follow_up,]
   
   # Filter for episodes that fall within the 6-0 month period before pregnancy start 
   dt_6_0 <- dt_6_0[episode.start <= window_6_0_end & episode.end >= window_6_0_start]
@@ -180,6 +195,9 @@ for (episode in seq_along(files_episodes)) {
   
   # Merge treatment episode with pregnancies file on person id
   dt_12_0 <- dt[pregnancies, on = .(person_id), nomatch = 0]
+  
+  # Keep only if pregnancy start is between start and end follow up 
+  dt_12_0 <- dt_12_0[pregnancy_start_date >= start_follow_up & pregnancy_start_date <= end_follow_up,]
   
   # Filter for episodes that fall within the 12-0 month period before pregnancy start 
   dt_12_0 <- dt_12_0[episode.start <= window_6_0_end & episode.end >= window_12_6_start]

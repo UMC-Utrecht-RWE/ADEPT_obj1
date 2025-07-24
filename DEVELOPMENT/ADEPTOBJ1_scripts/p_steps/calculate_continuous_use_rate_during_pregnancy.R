@@ -21,14 +21,7 @@ files_episodes <- files_episodes[grepl(paste0("^", pop_prefix, "_"), files_episo
 # Drop PC_HOSP files if pop_prefix is PC
 if(pop_prefix == "PC") files_episodes <- files_episodes[!grepl("PC_HOSP", files_episodes)]
 
-# Create vector of study years from your study dates (must exist in environment)
-study_years <- seq(year(start_study_date), year(end_study_date))
-
-# Create template table with all years zeroed
-template_years <- data.table(preg_year = study_years)
-
-# Calculate total pregnancies per year (denominator)
-total_preg_by_year <- pregnancies[, .(Freq = uniqueN(pregnancy_id)), by = preg_year]
+# Pregnancy file loaded and cleaned in pre-pregnancy script
 
 # Loop through each treatment episode file
 for (episode in seq_along(files_episodes)) {
@@ -56,11 +49,10 @@ for (episode in seq_along(files_episodes)) {
   dt[, t2_start := pregnancy_start_date + 91][, t2_end := pregnancy_start_date + 180]
   dt[, t3_start := pregnancy_start_date + 181][, t3_end := pregnancy_end_date]
   
+  # <<< Continuation into T1  >>> # 
   
-  # <<< t1 Trimester Overlap:  >>> # 
-  
-  # Filter for episodes that fall within the 1st trimester
-  dt_t1 <- dt[episode.start < pregnancy_start_date & episode.end >= t1_start & episode.end <= t1_end]
+  # Filter for episodes that continued through the first trimester
+  dt_t1 <- dt[episode.end >= t1_start,]
   
   # Get list of unique ids 
   preg_ids_t1 <- unique(dt_t1$pregnancy_id)
@@ -105,11 +97,10 @@ for (episode in seq_along(files_episodes)) {
     message(red(paste0("There was no continuous use of ", treatment_name, " in the t1 trimester")))
   }
   
-  # <<< t2 Trimester Overlap:  >>> # 
+  # <<< Continuation into T2 >>> # 
   
-  
-  # Filter for episodes that fall within the 2nd trimester
-  dt_t2 <- dt[episode.start < pregnancy_start_date & episode.end >= t2_start & episode.end <= t2_end]
+  # Filter for episodes that continued through the first trimester
+  dt_t2 <- dt[episode.end >= t2_start,]
   
   # Get list of unique ids 
   preg_ids_t2 <- unique(dt_t2$pregnancy_id)
@@ -155,10 +146,10 @@ for (episode in seq_along(files_episodes)) {
   }
   
   
-  # <<< t3 Trimester Overlap:  >>> # 
+  # <<< Continuation into T3   >>> # 
   
   # Filter for episodes that fall within the 3rd trimester
-  dt_t3 <- dt[episode.start < pregnancy_start_date & episode.end >= t3_start & episode.end <= t3_end]
+  dt_t3 <- dt[episode.end >= t3_start,]
 
   # Get list of unique ids 
   preg_ids_t3 <- unique(dt_t3$pregnancy_id)
@@ -204,10 +195,10 @@ for (episode in seq_along(files_episodes)) {
   }  
   
   
-  # <<< Overall:  >>> # 
+  # <<< Continuation in the whole pregnancy  >>> # 
   
   # Filter for episodes that fall within overall
-  dt_all <- dt[episode.start < pregnancy_start_date & episode.end >= pregnancy_start_date & episode.end <= pregnancy_end_date]
+  dt_all <- dt[episode.end >= t3_end, ]
 
   # Get list of unique ids 
   preg_ids_all <- unique(dt_all$pregnancy_id)

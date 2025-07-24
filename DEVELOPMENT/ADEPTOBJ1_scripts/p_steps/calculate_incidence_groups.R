@@ -1,12 +1,6 @@
-###############################################################################################################################################################################
-# <<< Sub-objective 1.1: Incidence rate >>> 
-# Measure: Annual incidence rate of ASM use
-# Numerator: Number of individuals with ≥1 treatment episode of an ASM within a calendar year and without an overlapping treatment episode during the 1-year look-back period
-# Denominator: Total number of person-time in that calendar year in the data source
-# Stratification by: Individual drug substance, drug sub-groups, age groups, indication, calendar year, data source
-
-# Pending: Stratification by age groups, indication
-###############################################################################################################################################################################
+############################################################################################
+############################################################################################
+############################################################################################
 
 print("==================================================================================")
 print("========================= CALCULATING INCIDENCE - GROUPS =========================")
@@ -86,7 +80,7 @@ for (episode in seq_along(files_episodes)) {
     saveRDS(incidence, file.path(paths$D4_dir, "1.1_incidence", paste0(gsub("_treatment_episode\\.rds$", "", files_episodes[episode]), "_incidence_data.rds")))
     
     # Save results 
-    saveRDS(incidence_all, file.path(paths$D5_dir, "1.1_incidence", paste0(gsub("_treatment_episode\\.rds$", "", files_episodes[episode]), "_incidence.rds")))
+    saveRDS(incidence_all, file.path(paths$D5_dir, "1.1_incidence", paste0(gsub("_treatment_episode\\.rds$", "", files_episodes[episode]), "_incidence_counts.rds")))
     
   } else {
     
@@ -94,14 +88,5 @@ for (episode in seq_along(files_episodes)) {
     
   }
 }
-
-
-
-
-
-
-
-
-
 
 

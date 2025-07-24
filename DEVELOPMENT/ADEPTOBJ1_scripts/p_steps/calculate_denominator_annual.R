@@ -20,6 +20,7 @@ if (nrow(study_population) > 0) {
   
   # Save denominator RDS file
   saveRDS(FUyears_dt, file.path(paths$D3_dir, "denominator", paste0(pop_prefix, "_denominator.rds")))
+  saveRDS(FUyears_dt, file.path(paths$D5_dir, "denominator", paste0(pop_prefix, "_denominator.rds")))
   
   # Create denominator plots directory if it does not exist
   denominator_plot_dir <- file.path(paths$D5_dir, "plots", "denominator")

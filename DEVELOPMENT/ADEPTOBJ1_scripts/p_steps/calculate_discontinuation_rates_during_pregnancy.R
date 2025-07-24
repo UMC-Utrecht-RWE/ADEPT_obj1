@@ -36,9 +36,6 @@ study_years <- seq(year(start_study_date), year(end_study_date))
 # Create template table with all years zeroed
 template_years <- data.table(preg_year = study_years)
 
-# Calculate total pregnancies per year (denominator)
-total_preg_by_year <- pregnancies[, .(Freq = uniqueN(pregnancy_id)), by = preg_year]
-
 # Loop through each treatment episode file
 for (episode in seq_along(files_episodes)) {
   
@@ -65,7 +62,6 @@ for (episode in seq_along(files_episodes)) {
   dt[, t2_start := pregnancy_start_date + 91][, t2_end := pregnancy_start_date + 180]
   dt[, t3_start := pregnancy_start_date + 181][, t3_end := pregnancy_end_date]
   
-  
   # First, sort by person and episode.start to ensure order
   setorder(dt, person_id, episode.start)
   
@@ -75,6 +71,7 @@ for (episode in seq_along(files_episodes)) {
   dt[, discontinuer_flag := fifelse(is.na(next_start), (exit_date - episode.end > 120), (next_start - episode.end > 120))]
   
   dt <- dt[discontinuer_flag==TRUE,]
+  
   # <<< End before pregnancy start:  >>> # 
   
   # Filter for episodes that fall within the 1st trimester

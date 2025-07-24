@@ -67,9 +67,6 @@ for(episode in seq_along(files_discontinued_episodes)){
   # Create window start and window end columns - period where switcher could be found
   dt_discontinued[, window_start := episode.end][, window_end := episode.end + 120]
   
-  # Set on key for faster searches
-  setkey(dt_discontinued, person_id, window_start, window_end)
-  
   for(exposure in seq_along(files_exposures)){
     
     if(gsub("_discontinued_data\\.rds$", "", files_discontinued_episodes[episode]) == gsub("\\.rds$", "", files_exposures[exposure])) next
@@ -87,12 +84,16 @@ for(episode in seq_along(files_discontinued_episodes)){
     
     # Set on key for faster searches
     setkey(dt_exposures, person_id, window_start, window_end)
-    
+    setkey(dt_discontinued, person_id, window_start, window_end)
+
     # Find overlaps within 120 days after discontinuation
     switchers <- foverlaps(dt_exposures, dt_discontinued, type = "within", nomatch = 0)
     
     # Remove results where its the same exposure
     switchers <- switchers[code != i.code]
+    
+    # remove any results where switch date is outside study period
+    switchers <- switchers[rx_date >= start_follow_up & rx_date <= end_follow_up,]
     
     if (nrow(switchers)>0){
       
@@ -127,15 +128,19 @@ for(episode in seq_along(files_discontinued_episodes)){
     
     # Set on key for faster searches
     setkey(dt_altmeds, person_id, window_start, window_end)
+    setkey(dt_discontinued, person_id, window_start, window_end)
     
     # Find overlaps within 120 days after discontinuation
     switchers <- foverlaps(dt_altmeds, dt_discontinued, type = "within", nomatch = 0)
-    
+
     # Remove results where its the same exposure
     switchers <- switchers[code != i.code]
     
+    # remove any results where switch date is outside study period
+    switchers <- switchers[rx_date >= start_follow_up & rx_date <= end_follow_up,]
+    
     if (nrow(switchers)>0){
-      
+
       # Get group name of alt group
       alt_group_name <- gsub("_altmed_data\\.rds$", "", files_altmeds[altmed])
       alt_group_name <- gsub(paste0(pop_prefix, "_"), "", alt_group_name)
@@ -210,7 +215,7 @@ for (pfx in seq_along(unique_prefixes)) {
     switcher_counts <- switchers[, .("N" = .N), by = year]
     
     # Match corresponding prevalence file
-    matched_prevalence_file <- files_prevalence_counts[gsub("_prevalence\\.rds$", "", files_prevalence_counts) == unique_prefixes[pfx]]
+    matched_prevalence_file <- files_prevalence_counts[gsub("_prevalence_counts\\.rds$", "", files_prevalence_counts) == unique_prefixes[pfx]]
     
     if (length(matched_prevalence_file) == 1) {
       
@@ -245,10 +250,10 @@ for (pfx in seq_along(unique_prefixes)) {
       setnames(switcher_all, "N", "n_treated")
       
       # Save dataset 
-      saveRDS(switchers, file.path(paths$D4_dir, "1.2_switching", paste0(unique_prefixes[pfx], "_switchers_data.rds")))
+      saveRDS(switchers, file.path(paths$D4_dir, "1.2_switching", paste0(unique_prefixes[pfx], "_switcher_data.rds")))
       
       # Save results 
-      saveRDS(switcher_all, file.path(paths$D5_dir, "1.2_switching", paste0(unique_prefixes[pfx], "_switched.rds")))
+      saveRDS(switcher_all, file.path(paths$D5_dir, "1.2_switching", paste0(unique_prefixes[pfx], "_switcher_counts.rds")))
       
     } else {
       
@@ -261,26 +266,3 @@ for (pfx in seq_along(unique_prefixes)) {
 
 # Clean out tmp folder
 if(length(list.files(file.path(paths$D3_dir, "tmp"), full.names = TRUE)) > 0) unlink(list.files(file.path(paths$D3_dir, "tmp"), full.names = TRUE))
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

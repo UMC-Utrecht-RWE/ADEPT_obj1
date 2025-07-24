@@ -21,31 +21,7 @@ files_episodes <- files_episodes[grepl(paste0("^", pop_prefix, "_"), files_episo
 # Drop PC_HOSP files if pop_prefix is PC
 if(pop_prefix == "PC") files_episodes <- files_episodes[!grepl("PC_HOSP", files_episodes)]
 
-# Load pregnancies file
-load(file.path(preg_dir, "D3_pregnancy_final.RData"))
-pregnancies <- as.data.table(D3_pregnancy_final)
-
-# Remove duplicates
-pregnancies <- unique(pregnancies)
-
-# Convert pregnancy dates to IDate
-pregnancies[, pregnancy_start_date := as.IDate(pregnancy_start_date)]
-pregnancies[, pregnancy_end_date   := as.IDate(pregnancy_end_date)]
-
-# Add pregnancy start year
-pregnancies[, preg_year := year(pregnancy_start_date)]
-
-# Set key for joining
-setkey(pregnancies, person_id)
-
-# Create vector of study years from your study dates (must exist in environment)
-study_years <- seq(year(start_study_date), year(end_study_date))
-
-# Create template table with all years zeroed
-template_years <- data.table(preg_year = study_years)
-
-# Calculate total pregnancies per year (denominator)
-total_preg_by_year <- pregnancies[, .(Freq = uniqueN(pregnancy_id)), by = preg_year]
+# Pregnancy file loaded and cleaned in pre-pregnancy script
 
 # Loop through each treatment episode file
 for (episode in seq_along(files_episodes)) {
@@ -80,8 +56,11 @@ for (episode in seq_along(files_episodes)) {
   # Keep episodes overlapping pregnancy
   dt_all <- dt_all[episode.start <= pregnancy_end_date & episode.end >= pregnancy_start_date]
   
-  # Exclude pregnancies where any episode started or ended within the 12 months before pregnancy star
+  # Keep pregnancies where prior treatment episode end is more than 365 days before current episode start or there is no prior episode 
   dt_all <- dt_all[pregnancy_start_date - prior_episode_end > 365 | is.na(prior_episode_end), ]
+  
+  # Keep pregnancies only if start is between start and end follow up
+  dt_all <- dt_all[pregnancy_start_date >= start_follow_up & pregnancy_start_date <= end_follow_up, ]
   
   # Get list of unique ids 
   preg_ids_all <- unique(dt_all$pregnancy_id)

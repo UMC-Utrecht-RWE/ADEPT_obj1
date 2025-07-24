@@ -53,7 +53,10 @@ for (epi1 in seq_along(files_episodes)){
     # Keep only overlapping person_ids
     common_ids <- intersect(dt1[, unique(person_id)], dt2[, unique(person_id)])
     
-    if (length(common_ids) == 0) next
+    if (length(common_ids) == 0) {
+      message(red(paste("No Polytherapy found between:", name_epi1, "and", name_epi2)))
+  next
+}
     
     dt1_sub <- dt1[person_id %in% common_ids]
     dt2_sub <- dt2[person_id %in% common_ids]
@@ -75,7 +78,6 @@ for (epi1 in seq_along(files_episodes)){
     
     # Filter ≥182 days and same calendar year
     overlaps <- overlaps[overlap_days >= 182]
-    # overlaps <- overlap_dt[overlap_days >= 182 & year(overlap_start) == year(overlap_end)]
     
     # Overlap should be between start and end fu
     overlaps <- overlaps[overlap_start >= start_follow_up & overlap_start <= end_follow_up & overlap_end >= start_follow_up & overlap_end <= end_follow_up]
@@ -164,7 +166,7 @@ for (pfx in seq_along(unique_prefixes)) {
   saveRDS(overlaps, file.path(paths$D4_dir, "1.2_polytherapy", paste0(unique_prefixes[pfx], "_polytherapy_data.rds")))
   
   # Save results 
-  saveRDS(overlap_all, file.path(paths$D5_dir, "1.2_polytherapy", paste0(unique_prefixes[pfx], "_polytherapy.rds")))
+  saveRDS(overlap_all, file.path(paths$D5_dir, "1.2_polytherapy", paste0(unique_prefixes[pfx], "_polytherapy_counts.rds")))
   
 } 
 

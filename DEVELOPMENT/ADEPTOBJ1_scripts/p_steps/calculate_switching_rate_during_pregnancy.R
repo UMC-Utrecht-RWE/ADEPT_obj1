@@ -27,7 +27,6 @@ if(pop_prefix == "PC") files_episodes <- files_episodes[!grepl("PC_HOSP", files_
 # Read in treatment episode data sets for switchers
 
 
-
 # Create vector of study years from your study dates (must exist in environment)
 study_years <- seq(year(start_study_date), year(end_study_date))
 
