@@ -1,3 +1,7 @@
+#################################################################
+# Create Diagnosis Subsets
+################################################################
+
 print("=======================================================================")
 print("========================= CREATING DX SUBSETS =========================")
 print("=======================================================================")
@@ -121,6 +125,9 @@ for (varname in unique(file_info$Varname)) {
   # Read all RDS files for this varname and combine them into one data.table
   combined_dt <- rbindlist(lapply(files_to_bind, readRDS), use.names = TRUE, fill = TRUE)
   
+  # Remove true duplicates
+  combined_dt <- unique(combined_dt)
+  
   # Save the combined data.table back to disk (overwrite or new file)
   saveRDS(combined_dt, file.path(paths$D3_dir, paste0(pop_prefix, "_", varname, ".rds")))
   
@@ -129,44 +136,3 @@ for (varname in unique(file_info$Varname)) {
 # Clean up temp folder 
 invisible(file.remove(list.files(file.path(paths$D3_dir, "tmp"), full.names = TRUE)))
 
-# ## MOVE FILES into FOLDERS
-# 
-# # List all .rds files in D3_dir
-# rds_files <- list.files(paths$D3_dir, pattern = "\\.rds$", full.names = TRUE)
-# 
-# # Create data.table with paths and extracted varnames
-# file_info <- data.table(path = rds_files, file = basename(rds_files))
-# 
-# # Extract Varname from file name by removing prefix and extension
-# file_info[, Varname := sub(paste0("^", pop_prefix, "_"), "", sub("\\.rds$", "", file))]
-# 
-# # Loop through each file
-# for (i in seq_len(nrow(file_info))) {
-#   file_path <- file_info[i, path]
-#   var <- file_info[i, Varname]
-#   
-#   # Get matching row from dx_concept_sets
-#   ref_row <- find_matching_row(var, dx_concept_sets)  # No need for code_col, exact match is enough
-#   
-#   if (is.null(ref_row)) {
-#     message(sprintf("No unique reference row found for %s. Skipping.", var))
-#     next
-#   }
-#   
-#   # Check which folders this file should go to
-#   for (col in c("cov", "indication", "algorithm_input")) {
-#     if (isTRUE(ref_row[[col]])) {
-#       target_dir <- file.path(paths$D3_dir, col)
-#       if (!dir.exists(target_dir)) dir.create(target_dir)
-#       
-#       target_path <- file.path(target_dir, basename(file_path))
-#       
-#       if (file.copy(file_path, target_path, overwrite = TRUE)) {
-#         file.remove(file_path)
-#         message(sprintf("Moved %s to %s/", basename(file_path), col))
-#       } else {
-#         message(sprintf("Failed to move %s to %s/", basename(file_path), col))
-#       }
-#     }
-#   }
-# }

@@ -5,7 +5,6 @@
 # Denominator: The number of prevalent ASM users in that calendar year in the data source 
 # Stratification by: Individual drug substance, drug sub-groups, age groups, calendar year, data source
 
-# Pending: Stratification by age groups
 ###############################################################################################################################################################################
 
 print("===============================================================================")
@@ -13,7 +12,7 @@ print("========================= CALCULATING DISCONTINUATION ===================
 print("===============================================================================")
 
 # List all episode files 
-files_episodes <- list.files(file.path(paths$D3_dir, "tx_episodes", "individual"), pattern = "\\.rds$")
+files_episodes <- list.files(file.path(paths$D3_dir, "tx_episodes"), pattern = "\\.rds$")
 
 # Filter exposures for current pop_prefix only
 files_episodes <- files_episodes[grepl(paste0("^", pop_prefix, "_"), files_episodes)]
@@ -36,11 +35,9 @@ for (episode in seq_along(files_episodes)) {
   episode_filename <- files_episodes[episode]
   if (is.na(episode_filename)) stop("Missing episode filename")
   episode_name <- gsub("_treatment_episode\\.rds$", "", episode_filename)
-  
-  print(episode_name)
-  
+
   # Read the treatment episode file
-  dt <- readRDS(file.path(paths$D3_dir, "tx_episodes", "individual", files_episodes[episode]))
+  dt <- readRDS(file.path(paths$D3_dir, "tx_episodes", files_episodes[episode]))
   
   # Print Message
   message("Processing: ", gsub("_treatment_episode\\.rds$", "", files_episodes[episode]))
@@ -61,7 +58,7 @@ for (episode in seq_along(files_episodes)) {
   dt[, discontinuer_flag := fifelse(is.na(next_start), (exit_date - episode.end > 120), (next_start - episode.end > 120))]
   
   # Keep only the discontinued episodes
-  discontinuers <- dt[discontinuer_flag == TRUE]
+  discontinuers <- dt[discontinuer_flag == TRUE,]
   
   # Keep only episodes between entry and exit date
   discontinuers <- discontinuers[episode.end >= start_follow_up & episode.end <= end_follow_up,]

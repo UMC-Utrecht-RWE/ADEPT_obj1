@@ -14,7 +14,7 @@ source(file.path(thisdir, "p_steps", "study_parameters.R"), local = TRUE)
 source(file.path(thisdir, "p_steps", "study_source_population_script.R"), local = TRUE)
 
 # clean up before moving on
-rm(list = grep("actual|SOURCE|FlowChart|inputed|METADATA|missing|OBSERVATION|persons|PT|SCHEME|Selection|SPELLS|TEMP|after|before|step", ls(), value = TRUE))
+rm(list = grep("actual|SOURCE|flow|input|metadata|observation|persons|scheme|selection|spells|TEMP|after|before|step", ls(), value = TRUE, ignore.case = TRUE))
 
 # Loads study population/populations 
 populations <- list.files(file.path(paths$D3_dir, "study_population"))
@@ -48,7 +48,7 @@ for(pop in seq_along(populations)){
     assign("study_population", study_population_sex, envir = .GlobalEnv)
     
     # Denominator Counts
-    source(file.path(thisdir, "p_steps", "calculate_denominator_annual.R"), local = TRUE)
+    source(file.path(thisdir, "p_steps", "denominator_counts.R"), local = TRUE)
     
     # Create concept sets
     source(file.path(thisdir, "p_steps", "create_concept_sets.R"), local = TRUE)
@@ -62,31 +62,23 @@ for(pop in seq_along(populations)){
     # Move algorithm inputs to folders
     source(file.path(thisdir, "p_steps", "move_files_to_folders.R"), local = TRUE)
     
-    rm(list = grep("algo|alt|ATC|bridge|cs_row|codelist|dt|file_info|matched|merged", ls(), value = TRUE))
-    
     # Create Treatment Episodes
     source(file.path(thisdir, "p_steps", "create_treatment_episodes.R"), local = TRUE)
 
-    # Create Treatment Episodes - groups
+    # Create Treatment Episodes
     source(file.path(thisdir, "p_steps", "create_treatment_episodes_groups.R"), local = TRUE)
     
     # Calculate incidence
     source(file.path(thisdir, "p_steps", "calculate_incidence.R"), local = TRUE)
 
-    # Calculate incidence - groups
-    source(file.path(thisdir, "p_steps", "calculate_incidence_groups.R"), local = TRUE)
-
     # Calculate incidence - stratification
-    source(file.path(thisdir, "p_steps", "calculate_incidence_agegroups_indication.R"), local = TRUE)
+    source(file.path(thisdir, "p_steps", "calculate_incidence_stratification.R"), local = TRUE)
 
     # Calculate prevalence
     source(file.path(thisdir, "p_steps", "calculate_prevalence.R"), local = TRUE)
 
-    # Calculate prevalence - groups
-    source(file.path(thisdir, "p_steps", "calculate_prevalence_groups.R"), local = TRUE)
-
     # Calculate prevalence - stratification
-    source(file.path(thisdir, "p_steps", "calculate_prevalence_agegroups_indication.R"), local = TRUE)
+    source(file.path(thisdir, "p_steps", "calculate_prevalence_stratification.R"), local = TRUE)
 
     # Treatment Durations
     source(file.path(thisdir, "p_steps", "calculate_treatment_duration.R"), local = TRUE)
@@ -94,12 +86,9 @@ for(pop in seq_along(populations)){
     # Calculate Discontinuers
     source(file.path(thisdir, "p_steps", "calculate_discontinuation.R"), local = TRUE)
 
-    # Calculate Discontinuers - groups
-    source(file.path(thisdir, "p_steps", "calculate_discontinuation_groups.R"), local = TRUE)
-
     # Calculate Discontinuers - stratification
-    source(file.path(thisdir, "p_steps", "calculate_discontinuation_agegroups.R"), local = TRUE)
-    
+    source(file.path(thisdir, "p_steps", "calculate_discontinuation_stratification.R"), local = TRUE)
+
     # Calculate alternative medications
     source(file.path(thisdir, "p_steps", "calculate_altmeds.R"), local = TRUE)
 
@@ -109,12 +98,14 @@ for(pop in seq_along(populations)){
     # Find Polytherapy
     source(file.path(thisdir, "p_steps", "calculate_polytherapy.R"), local = TRUE)
 
+    # Find Polytherapy
+    source(file.path(thisdir, "p_steps", "calculate_polytherapy_indications.R"), local = TRUE)
+
     # Baseline Tables
     source(file.path(thisdir, "p_steps", "create_baseline_tables.R"), local = TRUE)
 
     # Clean up
     rm(list = grep("dt|overall|incidence|prev|discontinue|overlap|switcher|treat|stat|summary|altmed", ls(), value = TRUE))
   }
-  
 }
 

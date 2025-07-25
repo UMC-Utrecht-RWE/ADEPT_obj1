@@ -1,3 +1,7 @@
+#################################################################
+# Prepare Persons Table
+################################################################
+
 # Print message 
 print('Import and append persons files')
 
@@ -57,10 +61,6 @@ persons[!is.na(day_of_death) & !is.na(month_of_death) & !is.na(year_of_death),de
 
 # Calculate age at study start by difference between birth_date and start_study_date in years, rounded down
 persons <- persons[,age_start_study := floor(time_length(interval(birth_date, start_study_date),"year"))]
-
-# Print message
-#  print('Delete abundant columns and tables')  
-# lapply(c("day_of_death","month_of_death","year_of_death"), function (x) persons <- persons[,eval(x) := NULL])
 
 # Save the cleaned persons dataset to an RDS file
 saveRDS(persons, file = file.path(paths$D3_dir, "source_population", "persons.rds"))

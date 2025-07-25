@@ -8,12 +8,12 @@
 # Pending: Stratification by Overall, age groups, indication
 ###############################################################################################################################################################################
 
-print("===================================================================================================")
-print("==================== CALCULATING ASM INITIATION RATE DURING PREGNANCY - GROUPS ====================")
-print("===================================================================================================")
+print("==========================================================================================")
+print("==================== CALCULATING ASM INITIATION RATE DURING PREGNANCY ====================")
+print("==========================================================================================")
 
 # List all incident treatment episode files matching population prefix
-files_episodes <- list.files(file.path(paths$D3_dir, "tx_episodes", "groups"), pattern = "\\.rds$")
+files_episodes <- list.files(file.path(paths$D3_dir, "tx_episodes", "individual"), pattern = "\\.rds$")
 
 # Keep only files that match population prefix AND contain "_F_" (female patients)
 files_episodes <- files_episodes[grepl(paste0("^", pop_prefix, "_"), files_episodes) & grepl("_F_", files_episodes)]
@@ -33,7 +33,7 @@ for (episode in seq_along(files_episodes)) {
   message("Processing treatment: ", treatment_name)
   
   # Load treatment episodes
-  dt <- readRDS(file.path(paths$D3_dir, "tx_episodes", "groups", files_episodes[episode]))
+  dt <- readRDS(file.path(paths$D3_dir, "tx_episodes", "individual", files_episodes[episode]))
   
   # Convert episode dates to IDate
   dt[, episode.start := as.IDate(episode.start)][, episode.end := as.IDate(episode.end)]
@@ -53,15 +53,15 @@ for (episode in seq_along(files_episodes)) {
   # Create a new column with the previous episode.end per person
   dt_all[, prior_episode_end := shift(episode.end), by = person_id]
   
-  # Keep episodes overlapping pregnancy
-  dt_all <- dt_all[episode.start <= pregnancy_end_date & episode.end >= pregnancy_start_date]
-  
   # Keep pregnancies where prior treatment episode end is more than 365 days before current episode start or there is no prior episode 
   dt_all <- dt_all[pregnancy_start_date - prior_episode_end > 365 | is.na(prior_episode_end), ]
   
   # Keep pregnancies only if start is between start and end follow up
   dt_all <- dt_all[pregnancy_start_date >= start_follow_up & pregnancy_start_date <= end_follow_up, ]
-  
+
+  # Keep episodes only if they start after pregnancy
+  dt_all <- dt_all[episode.start >= pregnancy_start_date & episode.start <= pregnancy_end_date, ]
+
   # Get list of unique ids 
   preg_ids_all <- unique(dt_all$pregnancy_id)
   
@@ -72,7 +72,7 @@ for (episode in seq_along(files_episodes)) {
     initiation_rate_counts <- pregnancies[pregnancy_id %in% preg_ids_all, .N, by = preg_year]
     
     # Merge with template to get all years 
-    initiation_rate_all <- merge(template_years[, .(preg_year)], initiation_rate_counts, by = "preg_year", all.x = TRUE)
+    initiation_rate_all <- merge(empty_dt[, .(preg_year)], initiation_rate_counts, by = "preg_year", all.x = TRUE)
     
     # Merge with all pregnancies to get denominator
     initiation_rate_all <- merge(initiation_rate_all, total_preg_by_year, by = "preg_year", all.x = TRUE)
@@ -98,10 +98,10 @@ for (episode in seq_along(files_episodes)) {
     setnames(initiation_rate_all, c("N", "Freq"), c("n_treated", "n_total"))
     
     # Save files 
-    saveRDS(dt_all, file = file.path(paths$D4_dir, "1.3_initiation_rate_during_pregnancy", paste0(treatment_name, "_initiation_rate_all_trimester_data.rds")))
-    saveRDS(initiation_rate_all, file = file.path(paths$D5_dir, "1.3_initiation_rate_during_pregnancy", paste0(treatment_name, "_initiation_rate_all_trimester_counts.rds")))
+    saveRDS(dt_all, file = file.path(paths$D4_dir, "1.3_initiation_rate_during_pregnancy", paste0(treatment_name, "_initiation_rates_during_pregnancy_data.rds")))
+    saveRDS(initiation_rate_all, file = file.path(paths$D5_dir, "1.3_initiation_rate_during_pregnancy", paste0(treatment_name, "_initiation_rates_during_pregnancy_counts.rds")))
     
   } else {
-    message(red(paste0("There was no ASM initiation of ", treatment_name, " in all trimesters")))
+    message(red(paste0("There was no ASM initiation of ", treatment_name)))
   } 
 }

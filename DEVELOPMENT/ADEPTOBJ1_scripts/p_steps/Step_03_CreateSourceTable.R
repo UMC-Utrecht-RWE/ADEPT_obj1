@@ -1,29 +1,28 @@
-#Author: Roel Elbers MSc.
-#email: r.j.h.elbers@umcutrecht.nl
-#Organisation: UMC Utrecht, Utrecht, The Netherlands
-#Date: 15/07/2021
+#################################################################
+# Create Source Table
+################################################################
 
-# If subpopulation flag is TRUE, create SCHEME_03 data.table with file names based on subpopulations
+# If SUBP == TRUE, create a scheme table (SCHEME_03) that lists:
+#   - The input file names for observation spells per subpopulation (e.g., "PC_OBS_SPELLS.rds")
+#   - The output file names for the resulting source population files
+#   - The output folder name
+# This scheme table will be used in a loop to process each subpopulation separately.
 if(SUBP) {
-  
   SCHEME_03 <- copy(subpopulation_meanings)
-  SCHEME_03 <- SCHEME_03[, ':=' (file_in = paste0(subpopulations,"_OBS_SPELLS.rds"), 
-                                 file_out = paste0(subpopulations,"_source_population.rds"), 
-                                 folder_out = "tmp2") ]
-  # SCHEME_03 <- rbind(data.frame(subpopulations = c("ALL"),meaning_sets = "ALL",file_in = "ALL_OBS_SPELLS.rds", file_out = "ALL_source_population.rds", folder_out = "tmp2"),SCHEME_03)
+  SCHEME_03 <- SCHEME_03[, ':=' (file_in = paste0(subpopulations, "_OBS_SPELLS.rds"), file_out = paste0(subpopulations, "_source_population.rds"))]
 }
 
-# If subpopulation flag is FALSE, create SCHEME_03 with a single entry for "ALL"
-if(!SUBP) SCHEME_03 <- data.frame(subpopulations = c("ALL"),
-                                  file_in = "ALL_OBS_SPELLS.rds", 
-                                  file_out = "ALL_source_population.rds", 
-                                  folder_out = "tmp2")
 
-# SCHEME_03$nrows <- as.integer(NA)
-# SCHEME_03$ncols <- as.integer(NA)
-# SCHEME_03$ncolsneeded <- 19
+# If SUBP == FALSE create a simplified scheme with only one row corresponding to the entire population ("ALL"):
+#   - file_in:   the input spells file for all persons
+#   - file_out:  the output file where the combined source population will be saved
+#   - folder_out: name of the output folder for temporary/intermediate use
+if(!SUBP) {
+  SCHEME_03 <- data.table(subpopulations = "ALL")
+  SCHEME_03[, `:=` (file_in = paste0(subpopulations, "_OBS_SPELLS.rds"), file_out = paste0(subpopulations, "_source_population.rds"))]
+}
 
-# Read in Persons File
+# Load persons file 
 persons <- readRDS(file.path(paths$D3_dir, "source_population", "persons.rds"))
 
 # Loop over each row (subpopulation) in SCHEME_03
@@ -46,20 +45,22 @@ for(i in 1:nrow(SCHEME_03)){
   SOURCE_POPULATION <- merge(persons, SPELLS, by = "person_id")
   
   # Print Message
-  print(paste0("If op_start_date is before birth_date replace op_start_date with birth_date ",SCHEME_03[["subpopulations"]][i]))
+  print(paste0("If op_start_date is before birth_date replace op_start_date with birth_date ", SCHEME_03[["subpopulations"]][i]))
+  SOURCE_POPULATION[op_start_date < birth_date, op_start_date := birth_date]
+  SOURCE_POPULATION[op_start_date < birth_date, op_start_date := birth_date]
   
   # Print message
-  print(paste0("Calculate age at op_start_date and op_end_date and dates of which Age_min and Age_max are reached  ",SCHEME_03[["subpopulations"]][i]))
+  print(paste0("Calculate age at op_start_date and op_end_date and dates of which age_min and age_max are reached  ",SCHEME_03[["subpopulations"]][i]))
   
   # Calculate age at op_start_date and op_end_date and dates for min and max age limits
   SOURCE_POPULATION <- SOURCE_POPULATION[, ':=' 
                                          ( age_op_start_date = floor(time_length(interval(birth_date, op_start_date),"year")),
                                            age_op_end_date   = floor(time_length(interval(birth_date, op_end_date),"year")),
-                                           date_min          = as.IDate(add_with_rollback(birth_date, period(age_min,units = "year"), roll_to_first = T, preserve_hms = T))
+                                           date_min          = as.IDate(add_with_rollback(birth_date, period(age_min, units = "year"), roll_to_first = T, preserve_hms = T))
                                          )
   ]  
   
-  # Set date_max conditionally based on sex
+  # Calculate age_max in women
   SOURCE_POPULATION[sex_at_instance_creation == "F", date_max := as.IDate(add_with_rollback(birth_date, period(age_max + 1, units = "year"), roll_to_first = TRUE, preserve_hms = TRUE)) - 1]
   SOURCE_POPULATION[sex_at_instance_creation != "F", date_max := as.IDate(NA)] 
   
@@ -82,7 +83,7 @@ for(i in 1:nrow(SCHEME_03)){
  
   
   # Add a column indicating the current subpopulation
-  SOURCE_POPULATION <- SOURCE_POPULATION[, Population := SCHEME_03[["subpopulations"]][i]]
+  SOURCE_POPULATION <- SOURCE_POPULATION[, population := SCHEME_03[["subpopulations"]][i]]
   
   # Save file
   saveRDS(SOURCE_POPULATION, file = file.path(paths$D3_dir, "source_population", SCHEME_03[["file_out"]][i])

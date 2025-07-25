@@ -1,3 +1,7 @@
+#################################################################
+# Create Treatment Episodes - Individual Medicines 
+#################################################################
+
 print("===============================================================================")
 print("========================= CREATING TREATMENT EPISODES =========================")
 print("===============================================================================")
@@ -9,7 +13,7 @@ files_exposures <- list.files(file.path(paths$D3_dir, "exposure"))
 files_exposures <- files_exposures[grepl(paste0("^", pop_prefix, "_"), files_exposures)]
 
 # If pop_prefix is PC, then drop any that are PC_HOSP
-if(pop_prefix=="PC"){files_exposures <- files_exposures[!grepl("PC_HOSP", files_exposures)]}
+if(pop_prefix=="PC") files_exposures <- files_exposures[!grepl("PC_HOSP", files_exposures)]
 
 # Vector of patterns to exclude
 exclude_patterns <- c("DP_ANTIEPINEW", "DP_ANTIEPIOLD", "DP_GABAPENTINOIDS", "DP_BENZOANTIEPILEPTIC")
@@ -19,9 +23,6 @@ pattern <- paste(exclude_patterns, collapse = "|")
 
 # Filter out files containing any of the patterns
 files_exposures <- files_exposures[!grepl(pattern, files_exposures)]
-
-# Create folder for treatment episodes
-dir.create(file.path(paths$D3_dir, "tx_episodes", "individual"), recursive = TRUE, showWarnings = FALSE)
 
 # For each one, create treatment episodes and save in treatment episodes folder with the same name + suffix treatment_episode
 for (exposure in seq_along(files_exposures)) {
@@ -40,9 +41,9 @@ for (exposure in seq_along(files_exposures)) {
   
   # Remove duplicates
   dt <- unique(dt)
-  
+
   # Print message
-  message("Processing: ", gsub(".rds", "", files_exposures[exposure]))
+  message("Processing: ", paste0(pop_prefix, "_", atc_group))
   
   if(nrow(dt)>0){
     # Create Treatment Episode
@@ -84,13 +85,14 @@ for (exposure in seq_along(files_exposures)) {
     
     # Apply episode validity filters
     treat_episode <- treat_episode[episode.end > entry_date - 90]
-    treat_episode[episode.end > end_follow_up, episode.end := end_follow_up]
+    treat_episode <- treat_episode[episode.end > end_follow_up, episode.end := end_follow_up]
     treat_episode <- treat_episode[episode.start < end_follow_up]
     treat_episode <- treat_episode[episode.end > episode.start]
     
+    # Remove duplicates
     treat_episode <- unique(treat_episode)
     
     # Save output if treatment episode has at least one row
-    if(nrow(treat_episode)>0) saveRDS(treat_episode, file = file.path(paths$D3_dir, "tx_episodes", "individual", paste0(gsub("\\.rds$", "", files_exposures[exposure]), "_treatment_episode.rds")))
+    if(nrow(treat_episode)>0) saveRDS(treat_episode, file = file.path(paths$D3_dir, "tx_episodes", paste0(pop_prefix, "_", atc_group, "_treatment_episode.rds")))
   }
 }

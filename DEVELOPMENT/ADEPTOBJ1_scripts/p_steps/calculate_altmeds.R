@@ -26,7 +26,7 @@ if(pop_prefix=="PC") files_altmeds <- files_altmeds[!grepl("PC_HOSP", files_altm
 for (altmed in seq_along(files_altmeds)) {
   
   # print message
-  message("Processing group: ", tools::file_path_sans_ext(files_altmeds[altmed]))
+  message("Processing group: ", gsub("_algo_med\\.rds$", "", files_altmeds[altmed]))
   
   # load file
   dt <- readRDS(file.path(paths$D3_dir, "alternatives", files_altmeds[altmed]))

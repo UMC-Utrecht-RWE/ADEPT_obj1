@@ -6,7 +6,7 @@
 # and in the case of multiple spells, the most recent is taken, and the others are discarded, resulting in one spell per personID
 
 # Initialize empty list to store spells info for flowchart
-flow_chart_create_spells <- list()
+FlowChartCreateSpells <- list()
 
 # Print message
 print('Import and append observation periods files') 
@@ -234,14 +234,14 @@ if (SUBP) {
     after <- nrow(TEMP)
     
     # Store flowchart info for this subpopulation
-    flow_chart_create_spells[[paste0("Spells_", subpopulation_meanings[["subpopulations"]][i])]]$step <- "01_CreateSpells"
-    flow_chart_create_spells[[paste0("Spells_", subpopulation_meanings[["subpopulations"]][i])]]$original_unique_ID <- original_unique_ID
-    flow_chart_create_spells[[paste0("Spells_", subpopulation_meanings[["subpopulations"]][i])]]$population <- subpopulation_meanings[["subpopulations"]][i]
-    flow_chart_create_spells[[paste0("Spells_", subpopulation_meanings[["subpopulations"]][i])]]$before <- before
-    flow_chart_create_spells[[paste0("Spells_", subpopulation_meanings[["subpopulations"]][i])]]$after <- after
+    FlowChartCreateSpells[[paste0("Spells_", subpopulation_meanings[["subpopulations"]][i])]]$step <- "01_CreateSpells"
+    FlowChartCreateSpells[[paste0("Spells_", subpopulation_meanings[["subpopulations"]][i])]]$original_unique_ID <- original_unique_ID
+    FlowChartCreateSpells[[paste0("Spells_", subpopulation_meanings[["subpopulations"]][i])]]$population <- subpopulation_meanings[["subpopulations"]][i]
+    FlowChartCreateSpells[[paste0("Spells_", subpopulation_meanings[["subpopulations"]][i])]]$before <- before
+    FlowChartCreateSpells[[paste0("Spells_", subpopulation_meanings[["subpopulations"]][i])]]$after <- after
     
     # Save flowchart list to file
-    saveRDS(flow_chart_create_spells, file = file.path(paths$D5_dir, "flowcharts", "SUBPOP_flowchart_overlap.rds"))
+    saveRDS(FlowChartCreateSpells, file = file.path(paths$D5_dir, "flowcharts", "SUBPOP_flowchart_overlap.rds"))
   }
   
   # If no subpopulations exist
@@ -297,40 +297,6 @@ if (SUBP) {
   # Print Message
   print("store FlowChart data on attrition")
   
-  # *** HERE IS THE COMBINED FLOWCHART TABLE INCLUDING MISSING START/END DATES ***
-  
-  combined_steps <- c(
-    "Original number of OBSERVATION PERIODS",
-    "Rows with missing start date",
-    "Rows with missing end date",
-    "Original number of unique person IDs",
-    "Number of OBSERVATION PERIODS after concatenating observations with gaps <= 7 days",
-    "Number of OBSERVATION PERIODS after selecting the most recent observation (one spell per unique ID)"
-  )
-  
-  combined_counts <- c(
-    nrow(OBSERVATION_PERIODS),
-    sum(is.na(OBSERVATION_PERIODS$op_start_date)),
-    sum(is.na(OBSERVATION_PERIODS$op_end_date)),
-    length(unique(OBSERVATION_PERIODS$person_id)),
-    after_CreateSpells,
-    select_most_recent
-  )
-  
-  flow_chart_create_spells_combined <- data.frame(
-    Step = combined_steps,
-    Count = combined_counts,
-    stringsAsFactors = FALSE
-  )
-  
-  saveRDS(flow_chart_create_spells_combined, file = file.path(paths$D5_dir, "flowcharts", "flow_chart_create_spells.rds"))
   
   
-  # Save overlap info if exists
-  # If an object called flowchart_overlap exists, Save it
-  if (exists("flowchart_overlap")) {
-    saveRDS(flowchart_overlap, file = file.path(paths$D5_dir, "flowcharts", "SUBPOP_flowchart_overlap.rds"))
-  }
-}
-
-
+    

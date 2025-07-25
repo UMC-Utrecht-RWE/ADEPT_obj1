@@ -1,4 +1,6 @@
-# Creates a list of selection criteria used to extract the study population from the source population
+#################################################################
+# Create Selection Criteria List
+################################################################
 
 # Load CDM source 
 CDM_SOURCE <- fread(file.path(CDM_dir, list.files(CDM_dir, pattern = "^CDM_SOURCE")))
@@ -15,29 +17,34 @@ intv <- c(start_study_date, end_study_date)
 # Create Selection Criteria List
 
 SelectionCriteria <- list(
-  # Sex (Male or Female)
-  sex = expression(sex_at_instance_creation=="F" | sex_at_instance_creation=="M"),
-  # Year of birth is not missing and is not absurd
-  no_year_of_birth = expression(!is.na(year_of_birth) & year_of_birth >= 1900 & year_of_birth <= as.numeric(format(Sys.Date(), "%Y"))),
-  # Year of death is not missing if day and month is provided 
-  no_year_of_death = expression(!(is.na(year_of_death) & (!is.na(day_of_death) | !is.na(month_of_death)))),
-  # Year of death is not greater than year of birth and not in the future
-  year_of_death_greater_than_year_of_birth = expression (is.na(year_of_death) | (year_of_death >= year_of_birth & year_of_death <= as.numeric(format(Sys.Date(), "%Y")))),
-  # Ensures num_spell, op_start_date, and op_end_date are not missing.
-  no_observation_time = expression(!is.na(num_spell) & !is.na(op_start_date) & !is.na(op_end_date)),
-  # Persons >12 after end_study date 
-  include_if_not_younger_than_12_after_study_end= expression(date_min < end_study_date),
-  # Persons >55 before start_study date
-  include_if_not_older_than_55_before_study_start = expression(sex_at_instance_creation == "M" | date_max > start_study_date),
-  # Ensures that a spell starts before it ends.
-  op_start_date_before_op_end_date = expression(op_start_date < op_end_date),
-  # Ensures that spell overlaps with study period, including partially before/after.
-  study_period_and_spell_overlap = expression(op_start_date %between% intv | op_end_date %between% intv | (op_start_date < start_study_date & op_end_date > end_study_date)),
-  # Spell has to be at least 365 days 
-  spells_more_than_lookback_period = expression((op_end_date - op_start_date) > lookback_period),
-  # Ensures time from spell start to study end is enough to satisfy lookback.
-  remaning_time_to_end_study_date_less_then_lookback_period = expression((end_study_date - op_start_date) > lookback_period)
- 
+  
+  # Sex is defined as either male or female.
+  sex_not_defined = expression(sex_at_instance_creation=="F" | sex_at_instance_creation=="M"),
+  
+  # Year of birth is not missing or is complete
+  birth_date_incomplete = expression(!is.na(year_of_birth) & year_of_birth >= 1900 & year_of_birth <= as.numeric(format(Sys.Date(), "%Y"))),
+  
+  # Year of death is not missing in the case that death has been recorded.
+  death_date_incomplete = expression(!(is.na(year_of_death) & (!is.na(day_of_death) | !is.na(month_of_death)))),
+  
+  # Year of death is not greater than year of birth and is less than current year 
+  year_of_death_greater_than_year_of_birth = expression(is.na(year_of_death) | (year_of_death >= year_of_birth & year_of_death <= as.numeric(format(Sys.Date(), "%Y")))),
+  
+  # Number of individuals within the source population with at least one year of available data in the data source.
+  observation_period_less_than_1_year = expression((op_end_date - op_start_date) > 365), 
+  
+  # Persons who turn 12 before end_study_date
+  persons_younger_than_12_before_end_study_date = expression(date_min < end_study_date),
+  
+  # All males and women who are below 56 at start_study_date 
+  women_older_than_56_before_start_study_date = expression(sex_at_instance_creation == "M" | date_max > start_study_date),
+  
+  # observation period overlaps study period
+  observation_period_does_not_overlap_study_period = expression(op_start_date %between% intv | op_end_date %between% intv | (op_start_date < start_study_date & op_end_date > end_study_date)),
+
+  # This is similar to observation_period_greater_than_1_year when lookback is 365 days, however some DEAPS will have shorter look back 
+  not_enough_lookback_time = expression((op_end_date - op_start_date) > lookback_period)
+  
 )
 
 
@@ -69,6 +76,3 @@ if (length(subpop_value) > 0 && !is.na(subpop_value) && subpop_value != "") {
   SUBP <- FALSE
   
 }
-
-
-

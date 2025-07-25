@@ -1,6 +1,10 @@
-print("======================================================================================")
+#################################################################
+# Move files to folders
+#################################################################
+
+print("=========================================================================")
 print("========================= MOVE FILES TO FOLDERS =========================")
-print("======================================================================================")
+print("=========================================================================")
 
 # Define flags to check
 flags <- c("exposure", "cov", "indication", "alternatives", "algorithm_input")
@@ -131,25 +135,13 @@ copied_files <- unique(copied_files)
 # Loop through all copied files and delete the originals to avoid duplication
 for (f in copied_files) {if (file_exists(f)) {file_delete(f)}}
 
-
-###########################################################################################################
-###########################################################################################################
-##################################################################################
-#################################################################################
-#################################################################################
-#################################################################################
-#################################################################################
-#################################################################################
+# Bind algorithm inputs before moving to folders 
 
 bind_and_save_group <- function(group_name) {
-  # List all folders under algorithm_input
   alg_folders <- data.table(folder_path = list.dirs(file.path(paths$D3_dir, "algorithm_input"), recursive = TRUE, full.names = TRUE))
   alg_folders[, Varname := basename(folder_path)]
   
-  # Get algorithm names for this group
   algos <- bridge[get(group_name) == TRUE & algorithm == TRUE, .(Varname)]
-  
-  # Match folders with algorithm names
   matched <- alg_folders[algos, on = "Varname", nomatch = 0]
   
   to_folder <- file.path(paths$D3_dir, group_name)
@@ -161,23 +153,31 @@ bind_and_save_group <- function(group_name) {
     
     rds_files <- list.files(from_folder, pattern = "\\.rds$", full.names = TRUE)
     
-    # Check if the folder contains any .rds files
     if (length(rds_files) == 0) {
-      message("No inputs in folder: ", basename(from_folder), " (", group_name, ")")
+      unlink(from_folder, recursive = TRUE, force = TRUE)
       next
     }
     
-    dt_list <- lapply(rds_files, function(f) {
-      dt <- readRDS(f)
-      return(dt)
-    })
+    # Separate medicine vs diagnosis files
+    is_medicine <- grepl(paste0("^", pop_prefix, "_DP_"), basename(rds_files))
+    med_files <- rds_files[is_medicine]
+    diag_files <- rds_files[!is_medicine]
     
-    combined_dt <- rbindlist(dt_list, use.names = TRUE, fill = TRUE)
+    # Bind and save medicine files
+    if (length(med_files) > 0) {
+      med_list <- lapply(med_files, readRDS)
+      combined_med <- rbindlist(med_list, use.names = TRUE, fill = TRUE)
+      saveRDS(combined_med, file = file.path(to_folder, paste0(pop_prefix, "_", algo_name, "_algo_med.rds")))
+    }
     
-    saveRDS(combined_dt, file = file.path(to_folder, paste0(pop_prefix, "_", algo_name, ".rds")))
+    # Bind and save diagnosis files
+    if (length(diag_files) > 0) {
+      diag_list <- lapply(diag_files, readRDS)
+      combined_diag <- rbindlist(diag_list, use.names = TRUE, fill = TRUE)
+      saveRDS(combined_diag, file = file.path(to_folder, paste0(pop_prefix, "_", algo_name, "_algo_dx.rds")))
+    }
     
-    # Delete original folder
-    unlink(from_folder, recursive = TRUE)
+    unlink(from_folder, recursive = TRUE, force = TRUE)
   }
   
   message("Finished processing group: ", group_name)

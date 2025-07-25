@@ -1,18 +1,12 @@
-
-#Author: Roel Elbers MSc.
-#email: r.j.h.elbers@umcutrecht.nl
-#Organisation: UMC Utrecht, Utrecht, The Netherlands
-#Date: 15/07/2021
-
+#################################################################
+# Add Variables To Source Population
+################################################################
 
 
 #Create variables
 if(SUBP) {
-  
   SCHEME_05 <- copy(subpopulation_meanings)
-  SCHEME_05 <- SCHEME_05[, ':=' (file_in = paste0(subpopulations,"_source_population.rds"), file_out = paste0(subpopulations,"_source_population.rds"),folder_in = file.path(paths$D3_dir, "source_population"), folder_out = file.path(paths$D3_dir, "source_population")) ]
-  # SCHEME_05 <- rbind(data.frame(subpopulations = c("ALL"),meaning_sets = "ALL",file_in = "ALL_source_population.rds", file_out = "ALL_source_population.rds",folder_in = std_pop_tmp, folder_out = std_pop_tmp),SCHEME_05)  
-
+  SCHEME_05 <- SCHEME_05[, ':=' (file_in = paste0(subpopulations,"_source_population.rds"), file_out = paste0(subpopulations,"_source_population.rds"),folder_in = file.path(paths$D3_dir, "source_population"), folder_out = file.path(paths$D3_dir, "source_population"))]
 }
 
 if(!SUBP) SCHEME_05 <- data.frame(subpopulations = c("ALL"),file_in = "ALL_source_population.rds", file_out = "ALL_source_population.rds",folder_in = file.path(paths$D3_dir, "source_population"), folder_out = file.path(paths$D3_dir, "source_population"))

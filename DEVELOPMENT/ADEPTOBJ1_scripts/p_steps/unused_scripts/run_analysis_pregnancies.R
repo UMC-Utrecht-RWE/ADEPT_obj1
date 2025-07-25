@@ -32,9 +32,11 @@ for(pop in seq_along(populations)){
 
   # Continued Use during pregnancy
   source(file.path(thisdir, "p_steps", "calculate_continuous_use_rate_during_pregnancy.R"), local = TRUE)
-  # 
-  # # Continued Use during pregnancy
-  # source(file.path(thisdir, "p_steps", "calculate_discontinuation_rates_during_pregnancy.R"), local = TRUE)
+
+  # Continued Use during pregnancy
+  source(file.path(thisdir, "p_steps", "calculate_discontinuation_rates_pregnancy.R"), local = TRUE)
   
+  # Continued Use during pregnancy
+  source(file.path(thisdir, "p_steps", "calculate_switching_rate_during_pregnancy.R"), local = TRUE)
 }
 

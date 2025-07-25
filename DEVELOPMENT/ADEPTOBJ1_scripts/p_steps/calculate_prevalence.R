@@ -5,7 +5,6 @@
 # Denominator: Total number of individuals in that calendar year in the data source
 # Stratification by: Individual drug substance, drug sub-groups, age groups, indication, calendar year, data source
 
-# Pending: Stratification by age groups, indication
 ###############################################################################################################################################################################
 
 print("==========================================================================")
@@ -13,7 +12,7 @@ print("========================= CALCULATING PREVALENCE ========================
 print("==========================================================================")
 
 # List all episode files 
-files_episodes <- list.files(file.path(paths$D3_dir, "tx_episodes", "individual"), pattern = "\\.rds$")
+files_episodes <- list.files(file.path(paths$D3_dir, "tx_episodes"), pattern = "\\.rds$")
 
 # Filter exposures for current pop_prefix only
 files_episodes <- files_episodes[grepl(paste0("^", pop_prefix, "_"), files_episodes)]
@@ -28,7 +27,7 @@ denominator <- readRDS(file.path(paths$D3_dir, "denominator", paste0(pop_prefix,
 for (episode in seq_along(files_episodes)) {
   
   # Read the treatment episode file
-  dt <- readRDS(file.path(paths$D3_dir, "tx_episodes", "individual", files_episodes[episode]))
+  dt <- readRDS(file.path(paths$D3_dir, "tx_episodes", files_episodes[episode]))
   
   # Print Message
   message("Processing: ", gsub("_treatment_episode\\.rds$", "", files_episodes[episode]))

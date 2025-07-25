@@ -1,3 +1,12 @@
+###############################################################################################################################################################################
+# <<< Sub-objective 1.1: Prevalence rate >>> 
+# Measure: Annual prevalence rate of ASM use
+# Numerator: Number of individuals with ≥1 treatment episode of an ASM within a calendar year 
+# Denominator: Total number of individuals in that calendar year in the data source
+# Stratification by: Individual drug substance, drug sub-groups, age groups, indication, calendar year, data source
+
+###############################################################################################################################################################################
+
 print("=======================================================================================================")
 print("========================= STRATIFYING PREVALENCE BY AGE GROUPS AND INDICATION =========================")
 print("=======================================================================================================")
@@ -52,50 +61,51 @@ for(episode in seq_along(files_prevalence_episodes)){
   dt <- readRDS(file.path(paths$D4_dir, "1.1_prevalence", files_prevalence_episodes[episode]))
   
   #<<< AGE GROUPS >>>#
-  
-  # create date Jan 1 in the year of treatment - we will calculate age with this date & convert dates to IDate
-  agegroups <- dt[, birth_date := as.IDate(birth_date)][, jan1 := as.IDate(paste0(year, "-01-01"))]
-  
-  # create column - age at Jan 1 of treatment year 
-  agegroups <- agegroups[, age_at_start_of_year := floor(time_length(interval(birth_date, jan1), unit = "years"))]
-  
-  # create age groups
-  agegroups <- agegroups[, age_group := fifelse(age_at_start_of_year >= 12 & age_at_start_of_year < 19, "12-18.99",
-                                                fifelse(age_at_start_of_year >= 19 & age_at_start_of_year < 35, "19-34.99",
-                                                        fifelse(age_at_start_of_year >= 35 & age_at_start_of_year < 55, "35-54.99",
-                                                                fifelse(age_at_start_of_year >= 55 & age_at_start_of_year < 75, "55-74.99",
-                                                                        fifelse(age_at_start_of_year >= 75, "75+", "UNKNOWN")))))]
-  
-  
-  # extract year from group by date column - this is already in the dataset as year
-  
-  # Keep one row per person_id - episode.start - year 
-  agegroups <- unique(agegroups, by = c("person_id", "episode.start", "year"))
-  
-  # count groups per year
-  agegroup_counts <- agegroups[, .N, by = .(year, age_group)]
-  
-  # merge counts with empty dt
-  agegroup_counts <- merge(all_combinations_agegroups, agegroup_counts, by = c("year", "age_group"), all.x = TRUE)
-  
-  # if is.na(N), replace it with 0
-  agegroup_counts <- agegroup_counts[is.na(N), N := 0]
-  
-  # calculate denominator per year 
-  agegroup_counts <- agegroup_counts[, Freq := sum(N), by = year]
-  
-  # if is.na(Freq), replace it with 0
-  agegroup_counts <- agegroup_counts[is.na(Freq), Freq := 0]
-  
-  # calculate rate, if N = 0 and Freq = 0 then change the rate to 0 
-  agegroup_counts <- agegroup_counts[, rate := round(100 * N / Freq, 3)][N == 0 & Freq == 0, rate := 0]
-  
-  # create a column marking if rate is computable aka TRUE. It will be false if denominator is 0
-  agegroup_counts <- agegroup_counts[, rate_computable := Freq > 0]
-  
-  # save counts
-  saveRDS(agegroup_counts, file.path(paths$D5_dir, "1.1_prevalence", "stratified", paste0(gsub("_prevalence_data\\.rds$", "_prevalence_agegroup_counts.rds", files_prevalence_episodes[episode]))))
-  
+  if (grepl("DP_ANTIEPINEW|DP_ANTIEPIOLD|DP_BENZOANTIEPILEPTIC|DP_GABAPENTINOIDS", files_incidence_episodes[episode])) {
+    
+    # create date Jan 1 in the year of treatment - we will calculate age with this date & convert dates to IDate
+    agegroups <- dt[, birth_date := as.IDate(birth_date)][, jan1 := as.IDate(paste0(year, "-01-01"))]
+    
+    # create column - age at Jan 1 of treatment year 
+    agegroups <- agegroups[, age_at_start_of_year := floor(time_length(interval(birth_date, jan1), unit = "years"))]
+    
+    # create age groups
+    agegroups <- agegroups[, age_group := fifelse(age_at_start_of_year >= 12 & age_at_start_of_year < 19, "12-18.99",
+                                                  fifelse(age_at_start_of_year >= 19 & age_at_start_of_year < 35, "19-34.99",
+                                                          fifelse(age_at_start_of_year >= 35 & age_at_start_of_year < 55, "35-54.99",
+                                                                  fifelse(age_at_start_of_year >= 55 & age_at_start_of_year < 75, "55-74.99",
+                                                                          fifelse(age_at_start_of_year >= 75, "75+", "UNKNOWN")))))]
+    
+    
+    # extract year from group by date column - this is already in the dataset as year
+    
+    # Keep one row per person_id - episode.start - year 
+    agegroups <- unique(agegroups, by = c("person_id", "episode.start", "year"))
+    
+    # count groups per year
+    agegroup_counts <- agegroups[, .N, by = .(year, age_group)]
+    
+    # merge counts with empty dt
+    agegroup_counts <- merge(all_combinations_agegroups, agegroup_counts, by = c("year", "age_group"), all.x = TRUE)
+    
+    # if is.na(N), replace it with 0
+    agegroup_counts <- agegroup_counts[is.na(N), N := 0]
+    
+    # calculate denominator per year 
+    agegroup_counts <- agegroup_counts[, Freq := sum(N), by = year]
+    
+    # if is.na(Freq), replace it with 0
+    agegroup_counts <- agegroup_counts[is.na(Freq), Freq := 0]
+    
+    # calculate rate, if N = 0 and Freq = 0 then change the rate to 0 
+    agegroup_counts <- agegroup_counts[, rate := round(100 * N / Freq, 3)][N == 0 & Freq == 0, rate := 0]
+    
+    # create a column marking if rate is computable aka TRUE. It will be false if denominator is 0
+    agegroup_counts <- agegroup_counts[, rate_computable := Freq > 0]
+    
+    # save counts
+    saveRDS(agegroup_counts, file.path(paths$D5_dir, "1.1_prevalence", "stratified", paste0(gsub("_prevalence_data\\.rds$", "_prevalence_agegroup_counts.rds", files_prevalence_episodes[episode]))))
+  }
   #<<< INDICATIONS >>>#
   
   # prepare data for foverlaps

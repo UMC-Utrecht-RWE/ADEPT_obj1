@@ -1,3 +1,7 @@
+###################################################
+# Set DEAP flags
+###################################################
+
 # List of all DAPs
 deap_names <- c("BIFAP", "CPRD", "EFEMERIS", "FIN_REG", "NOR_REG", "PHARMO", "SIDIAP", "VAL_PAD", "VID")
 

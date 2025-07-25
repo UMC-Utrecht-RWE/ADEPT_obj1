@@ -1,3 +1,7 @@
+#################################################################
+# Create Treatment Episodes - Grouped Medicines 
+#################################################################
+
 print("======================================================================================")
 print("========================= CREATING TREATMENT EPISODES GROUPS =========================")
 print("======================================================================================")
@@ -20,14 +24,11 @@ pattern <- paste(exclude_patterns, collapse = "|")
 # Filter out files containing any of the patterns
 files_exposures <- files_exposures[grepl(pattern, files_exposures)]
 
-# Create folder for treatment episodes
-dir.create(file.path(paths$D3_dir, "tx_episodes", "groups"), recursive = TRUE, showWarnings = FALSE)
-
 # For each one, create treatment episodes and save in treatment episodes folder with the same name + suffix treatment_episode
 for (exposure in seq_along(files_exposures)) {
   
   # Extract ATC group from file name: remove prefix and .rds
-  atc_group <- gsub(paste0("^", pop_prefix, "_"), "", gsub("\\.rds$", "", files_exposures[exposure]))
+  atc_group <- gsub("_algo_med\\.rds$", "", gsub(paste0("^", pop_prefix, "_"), "", files_exposures[exposure]))
   
   # Read the current file
   dt <- readRDS(file.path(paths$D3_dir, "exposure", files_exposures[exposure]))
@@ -40,10 +41,11 @@ for (exposure in seq_along(files_exposures)) {
   
   # Remove duplicates
   dt <- unique(dt)
-  
+
   # Print message
-  message("Processing: ", gsub(".rds", "", files_exposures[exposure]))
+  message("Processing: ", paste0(pop_prefix, "_", atc_group))
   
+  if(nrow(dt)>0){
     # Create treatment episodes (NO carry-over)
     treat_episode <- compute.treatment.episodes(
       data = dt,
@@ -67,12 +69,14 @@ for (exposure in seq_along(files_exposures)) {
       gap.days.colname = "gap.days",
       date.format = "%Y-%m-%d",
       parallel.backend = "none",
+      parallel.threads = "auto",
+      suppress.warnings = FALSE,
       return.data.table = TRUE
     )
     
     # Add the atc_group column to treatment episode 
-    treat_episode[, atc_group := files_exposures[exposure]]
-    
+    treat_episode[, atc_group := atc_group]
+
     # Merge with dt to get unique ATC
     treat_episode <- merge(treat_episode, dt[, .(person_id, rx_date, code)], by.x = c("person_id", "episode.start"), by.y = c("person_id", "rx_date"), all.x = TRUE)
     
@@ -81,7 +85,7 @@ for (exposure in seq_along(files_exposures)) {
     
     # Apply episode validity filters
     treat_episode <- treat_episode[episode.end > entry_date - 90]
-    treat_episode[episode.end > end_follow_up, episode.end := end_follow_up]
+    treat_episode <- treat_episode[episode.end > end_follow_up, episode.end := end_follow_up]
     treat_episode <- treat_episode[episode.start < end_follow_up]
     treat_episode <- treat_episode[episode.end > episode.start]
     
@@ -89,6 +93,6 @@ for (exposure in seq_along(files_exposures)) {
     treat_episode <- unique(treat_episode)
     
     # Save output if treatment episode has at least 1 row
-    if(nrow(treat_episode)>0) saveRDS(treat_episode, file = file.path(paths$D3_dir, "tx_episodes", "groups" , paste0(pop_prefix, "_", atc_group, "_treatment_episode.rds")))
+    if(nrow(treat_episode)>0) saveRDS(treat_episode, file = file.path(paths$D3_dir, "tx_episodes" , paste0(pop_prefix, "_", atc_group, "_treatment_episode.rds")))
   }
-
+}

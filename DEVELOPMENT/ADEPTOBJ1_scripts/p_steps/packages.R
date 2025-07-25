@@ -1,6 +1,6 @@
-# ==========================
-# Load Required Packages
-# ==========================
+###################################################
+# Load Packages
+###################################################
 
 # Function to check if each package is installed.
 # If not, it installs the package and then loads it.
@@ -16,7 +16,7 @@ load_package <- function(pkg) {
 }
 
 # List of all required packages
-required_packages <- c("data.table", "lubridate", "RcppAlgos", "stringr", "readxl", "readr", "fs", "crayon", "AdhereR")
+required_packages <- c( "AdhereR", "crayon", "data.table", "fs", "lubridate", "RcppAlgos", "readr", "readxl", "stringr")
 
 # Load each package
 invisible(lapply(required_packages, load_package))
