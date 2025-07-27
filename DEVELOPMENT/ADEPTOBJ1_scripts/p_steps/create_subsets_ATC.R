@@ -23,6 +23,9 @@ for (i in seq_len(nrow(ATC_concept_sets))) {
   for (code in codes) ATC_codelist[[code]] <- list(match_type = exact)
 }
 
+# Initialize unmatched code tracker
+unmatched_log <- data.table(med_file = character(), code = character(), match_type = character())
+
 #<<< LOAD MEDICINES FILES >>> 
 med_files <- list.files(path = CDM_dir, pattern = "MEDICINES", ignore.case = TRUE) 
 
@@ -90,10 +93,22 @@ for (med in seq_along(med_files)) {
       
     } else {
       
+      # If no matches found, log the unmatched code
+      unmatched_log <- rbind(unmatched_log, data.table(
+        med_file = current_table,
+        code = current_code,
+        match_type = ifelse(exact, "exact", "prefix")
+      ), use.names = TRUE, fill = TRUE)
+      
+      save
+      # print message
       cat(red(paste0("No matching records found for: ", current_code)), "\n")
     }
   }
 }
+
+# Save unmatched codes
+fwrite(unmatched_log, file.path(paths$D3_dir, paste0(pop_prefix, "_unmatched_ATC_codes.csv"))
 
 # <<< CONCATENATE SUBSETS AND SAVE IN FOLDERS >>> 
 

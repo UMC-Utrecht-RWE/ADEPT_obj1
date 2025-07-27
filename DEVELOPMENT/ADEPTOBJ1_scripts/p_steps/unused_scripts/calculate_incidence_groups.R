@@ -1,24 +1,19 @@
-###############################################################################################################################################################################
-# <<< Sub-objective 1.1: Incidence rate >>> 
-# Measure: Annual incidence rate of ASM use
-# Numerator: Number of individuals with ≥1 treatment episode of an ASM within a calendar year and without an overlapping treatment episode during the 1-year look-back period
-# Denominator: Total number of person-time in that calendar year in the data source
-# Stratification by: Individual drug substance, drug sub-groups, age groups, indication, calendar year, data source
+############################################################################################
+############################################################################################
+############################################################################################
 
-###############################################################################################################################################################################
-
-print("=========================================================================")
-print("========================= CALCULATING INCIDENCE =========================")
-print("=========================================================================")
+print("==================================================================================")
+print("========================= CALCULATING INCIDENCE - GROUPS =========================")
+print("==================================================================================")
 
 # List all episode files 
-files_episodes <- list.files(file.path(paths$D3_dir, "tx_episodes"), pattern = "\\.rds$")
+files_episodes <- list.files(file.path(paths$D3_dir, "tx_episodes", "groups"), pattern = "\\.rds$")
 
 # Filter exposures for current pop_prefix only
 files_episodes <- files_episodes[grepl(paste0("^", pop_prefix, "_"), files_episodes)]
 
 # If pop_prefix is PC, then drop any that are PC_HOSP
-if(pop_prefix=="PC") files_episodes <- files_episodes[!grepl("PC_HOSP", files_episodes)]
+if(pop_prefix=="PC"){files_episodes <- files_episodes[!grepl("PC_HOSP", files_episodes)]}
 
 # Load denominator file
 denominator <- readRDS(file.path(paths$D3_dir, "denominator", paste0(pop_prefix, "_denominator.rds")))
@@ -27,10 +22,7 @@ denominator <- readRDS(file.path(paths$D3_dir, "denominator", paste0(pop_prefix,
 for (episode in seq_along(files_episodes)) {
   
   # Read the treatment episode file
-  dt <- readRDS(file.path(paths$D3_dir, "tx_episodes", files_episodes[episode]))
-  
-  # Remove duplicates
-  dt <- unique(dt, by = c("person_id", "episode.start"))
+  dt <- readRDS(file.path(paths$D3_dir, "tx_episodes", "groups", files_episodes[episode]))
   
   # Print Message
   message("Processing: ", gsub("_treatment_episode\\.rds$", "", files_episodes[episode]))
@@ -38,7 +30,7 @@ for (episode in seq_along(files_episodes)) {
   # Order episodes by person & start date
   setorder(dt, person_id, episode.start)
   
-  # Flag incident episodes: an episode is incident if the gap since the previous episode end 365 days
+  # Flag “incident” episodes: an episode is incident if the gap since the previous episode’s end ≥ 365 days
   dt[, prev_end       := shift(episode.end, 1, type = "lag"), by = .(person_id)]
   dt[, gap_since_prev := as.numeric(difftime(episode.start, prev_end, units = "days"))]
   dt[, incident_flag := is.na(prev_end) | gap_since_prev > 365]

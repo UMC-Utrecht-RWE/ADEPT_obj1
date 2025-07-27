@@ -39,7 +39,7 @@ for (exposure in seq_along(files_exposures)) {
   # Add atc_group column
   dt[, atc_group := atc_group]
   
-  # Remove duplicates
+  # Remove true duplicates
   dt <- unique(dt)
 
   # Print message
@@ -82,6 +82,9 @@ for (exposure in seq_along(files_exposures)) {
     
     # Merge with study population to get start, end follow ups, entry/exit dates
     treat_episode <- merge(treat_episode, study_population[, .(person_id, sex_at_instance_creation, birth_date, start_follow_up, end_follow_up, entry_date, exit_date)], by = "person_id")
+    
+    # Convert date columns to IDate
+    treat_episode[, `:=`(episode.start = as.IDate(episode.start), episode.end = as.IDate(episode.end))]
     
     # Apply episode validity filters
     treat_episode <- treat_episode[episode.end > entry_date - 90]

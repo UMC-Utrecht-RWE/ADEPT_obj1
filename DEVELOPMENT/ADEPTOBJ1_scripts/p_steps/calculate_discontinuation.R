@@ -42,17 +42,14 @@ for (episode in seq_along(files_episodes)) {
   # Print Message
   message("Processing: ", gsub("_treatment_episode\\.rds$", "", files_episodes[episode]))
   
+  # Remove duplicates
+  dt <- unique(dt, by = c("person_id", "episode.start"))
+  
   # Order episodes by person & start date
   setorder(dt, person_id, episode.start)
   
   # Get next episode start date
   dt[, next_start := shift(episode.start, type = "lead"), by = .(person_id)]
-  
-  # Convert all dates to IDate
-  dt[, episode.start := as.IDate(episode.start)]
-  dt[, episode.end   := as.IDate(episode.end)]
-  dt[, exit_date     := as.IDate(exit_date)]
-  dt[, next_start    := as.IDate(next_start)]
   
   # Flag discontinuation events
   dt[, discontinuer_flag := fifelse(is.na(next_start), (exit_date - episode.end > 120), (next_start - episode.end > 120))]

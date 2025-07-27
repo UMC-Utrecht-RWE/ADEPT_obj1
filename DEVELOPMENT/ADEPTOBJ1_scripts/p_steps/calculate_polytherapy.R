@@ -44,6 +44,10 @@ for (epi1 in seq_along(files_episodes)){
     dt1 <- as.data.table(readRDS(file.path(paths$D3_dir, "tx_episodes", files_episodes[epi1])))
     dt2 <- as.data.table(readRDS(file.path(paths$D3_dir, "tx_episodes", files_episodes[epi2])))
     
+    # Remove duplicates
+    dt1 <- unique(dt1, by = c("person_id", "episode.start"))
+    dt2 <- unique(dt2, by = c("person_id", "episode.start"))
+    
     # Drop unnecessary columns 
     dt1[,c("episode.ID", "end.episode.gap.days", "episode.duration"):= NULL]
     dt2[,c("episode.ID", "end.episode.gap.days", "episode.duration"):= NULL]
@@ -63,9 +67,6 @@ for (epi1 in seq_along(files_episodes)){
     dt1_sub <- dt1[person_id %in% common_ids]
     dt2_sub <- dt2[person_id %in% common_ids]
     
-    dt1_sub[, `:=`(window_start = as.IDate(window_start), window_end = as.IDate(window_end))]
-    dt2_sub[, `:=`(window_start = as.IDate(window_start), window_end = as.IDate(window_end))]
-    
     # Set keys
     setkey(dt1_sub, person_id, window_start, window_end)
     setkey(dt2_sub, person_id, window_start, window_end)
@@ -74,8 +75,8 @@ for (epi1 in seq_along(files_episodes)){
     overlaps <- foverlaps(dt1_sub, dt2_sub, type = "any", nomatch = 0L)
     
     # Calculate overlap duration
-    overlaps[, overlap_start := as.IDate(pmax(window_start, i.window_start))]
-    overlaps[, overlap_end   := as.IDate(pmin(window_end, i.window_end))]
+    overlaps[, overlap_start := pmax(window_start, i.window_start)]
+    overlaps[, overlap_end   := pmin(window_end, i.window_end)]
     overlaps[, overlap_days  := as.numeric(overlap_end - overlap_start) + 1]
     
     # Filter ≥182 days and same calendar year
@@ -108,7 +109,7 @@ files_overlaps  <- list.files(file.path(paths$D3_dir, "tmp"), pattern = "\\.rds$
 files_overlaps <- files_overlaps[grepl(paste0("^", pop_prefix, "_"), files_overlaps)]
 
 # If pop_prefix is PC, then drop any that are PC_HOSP
-if(pop_prefix=="PC"){files_overlaps <- files_overlaps[!grepl("PC_HOSP", files_overlaps)]}
+if(pop_prefix=="PC") files_overlaps <- files_overlaps[!grepl("PC_HOSP", files_overlaps)]
 
 # ===================== OVERALL POLYTHERAPY RATE =========================
 

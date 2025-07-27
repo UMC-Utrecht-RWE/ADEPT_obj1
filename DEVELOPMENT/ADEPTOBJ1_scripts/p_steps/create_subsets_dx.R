@@ -15,6 +15,9 @@ dx_concept_sets <- unique(dx_concept_sets)
 # Create a column in algorithm input for values with no dot
 dx_concept_sets[, code_nodot := gsub("\\.", "", code)]
 
+# Initialize unmatched code tracker
+unmatched_log <- data.table(event_file = character(), code = character(), match_type = character())
+
 #<<< LOAD EVENTS FILES >>> 
 event_files <- list.files(path = CDM_dir, pattern = "EVENTS", ignore.case = TRUE) 
 
@@ -96,11 +99,21 @@ for (event in seq_along(event_files)) {
       
     } else {
       
+      # If no matches found, log the unmatched code
+      unmatched_log <- rbind(unmatched_log, data.table(
+        event_file = current_table,
+        code = varnames[var],
+        match_type = ifelse(exact, "exact", "prefix")
+      ), use.names = TRUE, fill = TRUE)
+      
       cat(red(paste0("No matching records found for: ", varnames[var]), "\n"))
       
     }
   }
 }
+
+# Save unmatched codes
+fwrite(unmatched_log, file.path(paths$D3_dir, paste0(pop_prefix, "_unmatched_dx_codes.csv"))
 
 
 # <<< CONCATENATE SUBSETS AND SAVE IN FOLDERS >>>

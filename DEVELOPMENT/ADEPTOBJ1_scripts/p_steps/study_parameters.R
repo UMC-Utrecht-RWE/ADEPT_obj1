@@ -3,6 +3,7 @@
 ###################################################
 
 # start_study_date is defined in to_run.R
+start_study_date <- as.IDate(start_study_date)
 
 # study_end_date
 # Read CDM source file to get recommended end date, and assign to end_study_date

@@ -169,7 +169,7 @@ for(episode in seq_along(files_prevalence_episodes)){
                                         repeated <- .SD[rep(1L, length(years))]
                                         repeated[, year := years]
                                         repeated
-                                      }, by = .I]
+                                      }, by = .(person_id, episode.start)]
   
   
   # Remove prevalence that falls outside start and end follow up

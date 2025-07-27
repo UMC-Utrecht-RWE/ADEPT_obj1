@@ -29,7 +29,7 @@ for (episode in seq_along(files_episodes)) {
   dt <- readRDS(file.path(paths$D3_dir, "tx_episodes", files_episodes[episode]))
   
   # Remove duplicates
-  dt <- unique(dt)
+  dt <- unique(dt, by = c("person_id", "episode.start"))
   
   # Extract drug name from file name
   episode_name <- gsub(paste0("^", pop_prefix, "_"), "", files_episodes[episode])

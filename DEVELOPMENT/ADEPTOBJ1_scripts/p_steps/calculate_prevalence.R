@@ -18,7 +18,7 @@ files_episodes <- list.files(file.path(paths$D3_dir, "tx_episodes"), pattern = "
 files_episodes <- files_episodes[grepl(paste0("^", pop_prefix, "_"), files_episodes)]
 
 # If pop_prefix is PC, then drop any that are PC_HOSP
-if(pop_prefix=="PC"){files_episodes <- files_episodes[!grepl("PC_HOSP", files_episodes)]}
+if(pop_prefix=="PC") files_episodes <- files_episodes[!grepl("PC_HOSP", files_episodes)]
 
 # Load denominator file
 denominator <- readRDS(file.path(paths$D3_dir, "denominator", paste0(pop_prefix, "_denominator.rds")))
@@ -32,6 +32,9 @@ for (episode in seq_along(files_episodes)) {
   # Print Message
   message("Processing: ", gsub("_treatment_episode\\.rds$", "", files_episodes[episode]))
   
+  # Remove duplicates
+  dt <- unique(dt, by = c("person_id", "episode.start"))
+
   # Order episodes by person & start date
   setorder(dt, person_id, episode.start)
   
@@ -40,13 +43,13 @@ for (episode in seq_along(files_episodes)) {
   dt[, end_year   := year(episode.end)]
   
   # Generate one row per person-year-ATC
-  dt_expanded <- dt[, 
-                    { 
+  dt_expanded <- dt[,
+                    {
                       years    <- seq(start_year, end_year)
                       repeated <- .SD[rep(1L, length(years))]
                       repeated[, year := years]
                       repeated
-                    }, by = .I]
+                    }, by = .(person_id, episode.start)]
   
   # Remove prevalence that falls outside start and end follow up
   dt_expanded <- dt_expanded[year >= year(start_follow_up) & year <= year(end_follow_up),]
