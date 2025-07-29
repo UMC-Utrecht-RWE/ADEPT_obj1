@@ -41,9 +41,10 @@ for(episode in seq_along(files_discontinued_episodes)){
   dt <- readRDS(file.path(paths$D4_dir, "1.2_discontinued", files_discontinued_episodes[episode]))
   
   #<<< AGE GROUPS >>>#
-  
   # convert dates to IDate 
-  agegroups <- dt[, birth_date := as.IDate(birth_date)][, episode.end := as.IDate(episode.end)]
+  agegroups <- copy(dt)
+  
+  agegroups <- agegroups[, birth_date := as.IDate(birth_date)][, episode.end := as.IDate(episode.end)]
   
   # create column - age at episode end
   agegroups <- agegroups[, age_at_episode_end := floor(time_length(interval(birth_date, episode.end), unit = "years"))]

@@ -146,7 +146,7 @@ bind_and_save_group <- function(group_name) {
   matched <- alg_folders[algos, on = "Varname", nomatch = 0]
   
   to_folder <- file.path(paths$D3_dir, group_name)
-  dir_create(to_folder, recurse = TRUE)
+  dir_create(to_folder)
   
   for (i in seq_len(nrow(matched))) {
     from_folder <- matched$folder_path[i]
@@ -155,7 +155,8 @@ bind_and_save_group <- function(group_name) {
     rds_files <- list.files(from_folder, pattern = "\\.rds$", full.names = TRUE)
     
     if (length(rds_files) == 0) {
-      unlink(from_folder, recurse = TRUE, force = TRUE)
+      unlink(from_folder, recursive = TRUE, force = TRUE)
+      
       next
     }
     

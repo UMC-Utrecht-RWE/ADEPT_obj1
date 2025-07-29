@@ -2,7 +2,7 @@
 # Create Selection Criteria List
 ################################################################
 
-# Load CDM source 
+# Load CDM source
 CDM_SOURCE <- fread(file.path(CDM_dir, list.files(CDM_dir, pattern = "^CDM_SOURCE")))
 
 # Extract data from table 

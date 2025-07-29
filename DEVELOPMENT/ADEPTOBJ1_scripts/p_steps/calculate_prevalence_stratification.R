@@ -63,8 +63,10 @@ for(episode in seq_along(files_prevalence_episodes)){
   #<<< AGE GROUPS >>>#
   if (grepl("DP_ANTIEPINEW|DP_ANTIEPIOLD|DP_BENZOANTIEPILEPTIC|DP_GABAPENTINOIDS", files_prevalence_episodes[episode])) {
     
-    # create date Jan 1 in the year of treatment - we will calculate age with this date & convert dates to IDate
-    agegroups <- dt[, birth_date := as.IDate(birth_date)][, jan1 := as.IDate(paste0(year, "-01-01"))]
+    # convert dates to IDate 
+    agegroups <- copy(dt)
+    
+    agegroups <- agegroups[, birth_date := as.IDate(birth_date)][, jan1 := as.IDate(paste0(year, "-01-01"))]
     
     # create column - age at Jan 1 of treatment year 
     agegroups <- agegroups[, age_at_start_of_year := floor(time_length(interval(birth_date, jan1), unit = "years"))]
@@ -108,18 +110,19 @@ for(episode in seq_along(files_prevalence_episodes)){
   }
   #<<< INDICATIONS >>>#
   
+  dt_temp <- copy(dt)
   # prepare data for foverlaps
   # incident episodes
-  dt <- dt[, start_window := episode.start - lookback_period][, end_window := episode.start]
+  dt_temp <- dt_temp[, start_window := episode.start - lookback_period][, end_window := episode.start]
   # indication data
   dt_indication <- dt_indication[, start_event := event_date][, end_event := event_date]
   
   # set keys 
-  setkey(dt, person_id, start_window, end_window)
+  setkey(dt_temp, person_id, start_window, end_window)
   setkey(dt_indication, person_id, start_event, end_event)
   
   # perform overlap join 
-  indications <- foverlaps(dt, 
+  indications <- foverlaps(dt_temp, 
                            dt_indication[, .(person_id, event_date, code, coding_system, event_definition, start_event, end_event)], 
                            by.x = c("person_id", "start_window", "end_window"),
                            by.y = c("person_id", "start_event", "end_event"), 

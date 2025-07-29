@@ -80,7 +80,7 @@ for (epi1 in seq_along(files_episodes)){
     overlaps[, overlap_days  := as.numeric(overlap_end - overlap_start) + 1]
     
     # Filter ≥182 days and same calendar year
-    overlaps <- overlaps[overlap_days >= 182]
+    overlaps <- overlaps[overlap_days >= 10]
     
     # Overlap should be between start and end fu
     overlaps <- overlaps[overlap_start >= start_follow_up & overlap_start <= end_follow_up & overlap_end >= start_follow_up & overlap_end <= end_follow_up]

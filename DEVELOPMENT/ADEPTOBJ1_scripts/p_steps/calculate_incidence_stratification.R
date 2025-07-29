@@ -90,7 +90,9 @@ for(episode in seq_along(files_incidence_episodes)){
   if (grepl("DP_ANTIEPINEW|DP_ANTIEPIOLD|DP_BENZOANTIEPILEPTIC|DP_GABAPENTINOIDS", files_incidence_episodes[episode])) {
     
     # convert dates to IDate 
-    agegroups <- dt[, birth_date := as.IDate(birth_date)][, episode.start := as.IDate(episode.start)]
+    agegroups <- copy(dt)
+    
+    agegroups <- agegroups[, birth_date := as.IDate(birth_date)][, episode.start := as.IDate(episode.start)]
     
     # create column - age at episode start 
     agegroups <- agegroups[, age_at_episode_start := floor(time_length(interval(birth_date, episode.start), unit = "years"))]

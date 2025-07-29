@@ -17,7 +17,7 @@ print("=========================================================================
 
 # Read in Pre-pregnancy Data
 # List all pre pregnancy data matching population prefix
-files_prepregnancy <- list.files(file.path(paths$D4_dir, "1.3_pre-pregnancy_use_rate"), pattern = "_pre_pregnancy_data\\.rds$")
+files_prepregnancy <- list.files(file.path(paths$D4_dir, "1.3_pre-pregnancy_use"), pattern = "_pre_pregnancy_data\\.rds$")
 
 # Keep only files that match population prefix AND contain "_F_" (female patients)
 files_prepregnancy <- files_prepregnancy[grepl(paste0("^", pop_prefix, "_"), files_prepregnancy)]
@@ -29,18 +29,15 @@ if(pop_prefix == "PC") files_prepregnancy <- files_prepregnancy[!grepl("PC_HOSP"
 # switcher Episodes
 files_switcher_episodes <- list.files(file.path(paths$D4_dir, "1.2_switching"), pattern = "\\.rds$")
 
-# Filter exposures for current pop_prefix only
-files_switcher_episodes <- files_switcher_episodes[grepl(paste0("^", pop_prefix, "_"), files_switcher_episodes)]
+# Filter exposures for Females only
+files_switcher_episodes <- files_switcher_episodes[grepl("_F_", files_switcher_episodes)]
 
 # If pop_prefix is PC, then drop any that are PC_HOSP
 if(pop_prefix=="PC") files_switcher_episodes <- files_switcher_episodes[!grepl("PC_HOSP", files_switcher_episodes)]
 
 # Read in Pre-pregnancy Counts 
 # List count files files matching population prefix
-files_counts <- list.files(file.path(paths$D5_dir, "1.3_pre-pregnancy_use_rate"), pattern = "_pre_pregnancy_counts\\.rds$")
-
-# Keep only files that match population prefix AND contain "_F_" (female patients)
-files_counts <- files_counts[grepl(paste0("^", pop_prefix, "_"), files_counts)]
+files_counts <- list.files(file.path(paths$D5_dir, "1.3_pre-pregnancy_use"), pattern = "_pre_pregnancy_counts\\.rds$")
 
 # Drop PC_HOSP files if pop_prefix is PC
 if(pop_prefix == "PC") files_counts <- files_counts[!grepl("PC_HOSP", files_counts)]
@@ -52,9 +49,9 @@ get_treatment_key <- function(x, suffix) gsub(suffix, "", x)
 treatment_keys <- get_treatment_key(files_prepregnancy, "_pre_pregnancy_data.rds")
 
 # Match corresponding files by treatment key
-prepreg_map <- setNames(file.path(paths$D4_dir, "1.3_pre-pregnancy_use_rate", files_prepregnancy), treatment_keys)
+prepreg_map <- setNames(file.path(paths$D4_dir, "1.3_pre-pregnancy_use", files_prepregnancy), treatment_keys)
 switcher_map <- setNames(file.path(paths$D4_dir, "1.2_switching", files_switcher_episodes), treatment_keys)
-counts_map  <- setNames(file.path(paths$D5_dir, "1.3_pre-pregnancy_use_rate", files_counts), treatment_keys)
+counts_map  <- setNames(file.path(paths$D5_dir, "1.3_pre-pregnancy_use", files_counts), treatment_keys)
 
 for (trt in seq_along(treatment_keys)) {
   
@@ -70,12 +67,10 @@ for (trt in seq_along(treatment_keys)) {
   dt_pre <- readRDS(prepreg_map[[trt]])
   dt_switch <- readRDS(switcher_map[[trt]])
   dt_cnt <- readRDS(counts_map[[trt]])
-  print(treatment)
-  print(nrow(dt_pre))
-  print(nrow(dt_switch))
+
   # Merge on person_id
   dt <- merge(dt_pre[,.(person_id, pregnancy_start_date, pregnancy_end_date)], dt_switch, by = "person_id", all = FALSE)
-  print(nrow(dt))
+
   # Convert dates to IDate
   date_cols <- c("pregnancy_start_date", "pregnancy_end_date", "rx_date")
   dt[, (date_cols) := lapply(.SD, as.IDate), .SDcols = date_cols]
@@ -107,7 +102,7 @@ for (trt in seq_along(treatment_keys)) {
     dt[, preg_year := year(pregnancy_start_date)]
     
     # Remove duplicates: Keep only one person id per year
-    dt <- unique(dt, by = c("person_id", "year"))
+    dt <- unique(dt, by = c("person_id", "preg_year"))
     
     # Count number of switchers per year
     switcher_counts <- dt[, .("N" = .N), by = preg_year]
@@ -130,8 +125,8 @@ for (trt in seq_along(treatment_keys)) {
     if (nrow(switcher_all[n_total == 0 & N != 0]) > 0) {warning(red("Warning: Denominator zero with non-zero numerator."))}
     
     # Save data where odd values 
-    if(nrow(switcher_all[N > n_total])>0) fwrite(switcher_all[N > n_total], file.path(paths$D5_dir, "1.4_switcher_use_rate", paste0(current_prefix, "_num_gt_denominator.csv")))
-    if(nrow(switcher_all[n_total == 0 & N != 0])>0) fwrite(switcher_all[n_total == 0 & N != 0], file.path(paths$D5_dir, "1.4_switcher_use_rate", paste0(current_prefix, "_denominator_zero_numerator_nonzero.csv")))
+    if(nrow(switcher_all[N > n_total])>0) fwrite(switcher_all[N > n_total], file.path(paths$D5_dir, "1.4_pregnancy_switching", paste0(treatment, "_num_gt_denominator.csv")))
+    if(nrow(switcher_all[n_total == 0 & N != 0])>0) fwrite(switcher_all[n_total == 0 & N != 0], file.path(paths$D5_dir, "1.4_pregnancy_switching", paste0(treatment, "_denominator_zero_numerator_nonzero.csv")))
     
     # Create column marking if rate is computable 
     switcher_all[, rate_computable := n_total > 0]
@@ -140,10 +135,10 @@ for (trt in seq_along(treatment_keys)) {
     setnames(switcher_all, "N", "n_treated")
     
     # Save dataset 
-    saveRDS(dt_before, file.path(paths$D4_dir, "1.4_switcher_use_rate", paste0(unique_prefixes[pfx], "_switcher_in_pregnancy_data.rds")))
+    saveRDS(dt, file.path(paths$D4_dir, "1.4_pregnancy_switching", paste0(treatment, "_switcher_in_pregnancy_data.rds")))
     
     # Save results 
-    saveRDS(switcher_all, file.path(paths$D5_dir, "1.4_switcher_use_rate", paste0(unique_prefixes[pfx], "_switcher_in_pregnancy_counts.rds")))
+    saveRDS(switcher_all, file.path(paths$D5_dir, "1.4_pregnancy_switching", paste0(treatment, "_switcher_in_pregnancy_counts.rds")))
     
   } else {
     

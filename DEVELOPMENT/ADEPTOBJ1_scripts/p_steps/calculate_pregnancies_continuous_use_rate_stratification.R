@@ -1,25 +1,20 @@
 ###############################################################################################################################################################################
-# <<< Sub-objective 1.2: Polytherapy rate >>> 
-# Measure: Annual polytherapy rate of ASM
-# Numerator: The number of individuals who use ≥2 distinct ASMs in a calendar year with ≥182 days overlap between the treatment episodes 
-# Denominator: Total number of study population in that calendar year in the data source
-# Stratification by: indication, calendar year, data source
-
+# <<< Sub-objective 1.3: Initiation rate during pregnancy >>> 
+# Measure: Annual initiation rate of ASM during pregnancy
+# Numerator: Number of pregnancies in a calendar year with ≥1 treatment episode of an ASM during any trimester, but no treatment episode in the 12 months prior to pregnancy start
+# Denominator: Total number of pregnancies in that calendar year in the data source
+# Stratification by: Overall, individual drug substance, drug sub-groups, age groups, indication, calendar year, data source
 ###############################################################################################################################################################################
 
+print("=================================================================================================")
+print("========================= STRATIFYING CONTINUOUS USE RATE BY INDICATION =========================")
+print("=================================================================================================")
 
-print("=========================================================================================")
-print("========================= STRATIFYING POLYTHERAPY BY INDICATION =========================")
-print("=========================================================================================")
-
-# get list of polytherapy files 
-files_polytherapy_episodes <- list.files(file.path(paths$D4_dir, "1.2_polytherapy"), pattern = "\\.rds$")
-
-# filter for pop_prefix
-files_polytherapy_episodes <- files_polytherapy_episodes[grepl(paste0("^", pop_prefix, "_"), files_polytherapy_episodes)]
+# get list of [incidence files prevalence files
+files_cont_use_episodes <- list.files(file.path(paths$D4_dir, "1.3_pregnancy_continuous"), pattern = "\\.rds$")
 
 # if pop_prefix is PC, then drop any that are PC_HOSP
-if(pop_prefix=="PC") files_polytherapy_episodes <- files_polytherapy_episodes[!grepl("PC_HOSP", files_polytherapy_episodes)]
+if(pop_prefix=="PC") files_cont_use_episodes <- files_cont_use_episodes[!grepl("PC_HOSP", files_cont_use_episodes)]
 
 # list all files in the indication folder
 files_indication <- list.files(file.path(paths$D3_dir, "indication"), pattern = "\\.rds$", full.names = TRUE)
@@ -37,7 +32,7 @@ dt_indication <- rbindlist(lapply(files_indication, readRDS), use.names = TRUE, 
 dt_indication <- unique(dt_indication)
 
 # create a folder for stratified counts
-dir.create(file.path(paths$D5_dir, "1.2_polytherapy", "stratified"), showWarnings = FALSE, recursive = TRUE)
+dir.create(file.path(paths$D5_dir, "1.3_pregnancy_continuous", "stratified"), showWarnings = FALSE, recursive = TRUE)
 
 # set stratification levels 
 # indications
@@ -49,46 +44,41 @@ all_years  <- seq(year(start_study_date), year(end_study_date))
 all_combinations_indications <- CJ(year = all_years, indication = indication_levels, unique = TRUE)
 
 # loop over episodes
-for(episode in seq_along(files_polytherapy_episodes)){
+for(episode in seq_along(files_cont_use_episodes)){
   
   # print message
-  # message("Processing: ", gsub("_polytherapy_data\\.rds$", "", files_polytherapy_episodes[episode]))
-  
+  message("Processing: ", sub("_continuous_use_rate_data\\.rds$", "", files_cont_use_episodes[episode]))
+
   # load current episode
-  dt <- readRDS(file.path(paths$D4_dir, "1.2_polytherapy", files_polytherapy_episodes[episode]))
+  dt <- readRDS(file.path(paths$D4_dir, "1.3_pregnancy_continuous", files_cont_use_episodes[episode]))
   
   #<<< INDICATIONS >>>#
   
-  # prepare data for foverlaps
-  # polytherapy episodes
-  # drop unnecessary columns
+  # incident episodes
   dt_temp <- copy(dt)
   
-  dt_temp <- dt_temp[, .(person_id, atc_group, episode.start, episode.end, i.atc_group, i.episode.start, i.episode.end, overlap_start, overlap_end, overlap_days, start_follow_up, end_follow_up)] 
-  
-  setnames(dt_temp,c("atc_group", "episode.start", "episode.end", "i.atc_group", "i.episode.start", "i.episode.end"), c("atc_group1", "episode.start1", "episode.end1", "atc_group2", "episode.start2", "episode.end2"))          
-  
-  dt_temp <- dt_temp[, start_window := overlap_start - lookback_period][, end_window := overlap_start]
-  
-  # Drop unnecessary columns
-  dt_indication <- dt_indication[, .(person_id, event_date, event_definition)] 
-   # indication data
+  dt_temp <- dt_temp[, start_window := episode.start - lookback_period][, end_window := episode.start]
+  # indication data
   dt_indication <- dt_indication[, start_event := event_date][, end_event := event_date]
-
+  
   # set keys 
   setkey(dt_temp, person_id, start_window, end_window)
   setkey(dt_indication, person_id, start_event, end_event)
   
   # perform overlap join 
   indications <- foverlaps(dt_temp, 
-                           dt_indication, 
+                           dt_indication[, .(person_id, event_date, code, coding_system, event_definition, start_event, end_event)], 
                            by.x = c("person_id", "start_window", "end_window"),
                            by.y = c("person_id", "start_event", "end_event"), 
                            nomatch = NA
   )
   
-  # calculate difference in days between overlap start and event date of indication 
-  indications <- indications[, diff_days := as.numeric(difftime(overlap_start, event_date, units = "days"))]
+  # drop unnecessary columns
+  indications <- indications[, .SD, .SDcols = c("person_id", "event_date", "code",  "event_definition", "episode.start", "i.code", "atc_group", 
+                                                "sex_at_instance_creation", "birth_date", "start_follow_up", "end_follow_up", "entry_date", "exit_date")]
+  
+  # calculate difference in days between episode start and event date of indication 
+  indications <- indications[, diff_days := as.numeric(difftime(episode.start, event_date, units = "days"))]
   
   # create column indication: 
   # if more than one rx is present, and epilepsy is among them, then priority is epilepsy
@@ -102,7 +92,7 @@ for(episode in seq_along(files_polytherapy_episodes)){
         row <- .SD[event_definition == "N_EPILEPSY_COV"][1]
         row[, indication := "N_EPILEPSY_COV"]
         row
-      } else if (all(is.na(event_date)) & all(is.na(event_definition))) {
+      } else if (all(is.na(event_date)) & all(is.na(code))) {
         row <- .SD[1]
         row[, indication := "UNKNOWN"]
         row
@@ -112,14 +102,14 @@ for(episode in seq_along(files_polytherapy_episodes)){
         row
       }
     },
-    by = .(person_id, overlap_start)
+    by = .(person_id, episode.start)
   ]
   
   # extract year from group by date column - episode.start
-  indications <- indications[, year := year(overlap_start)]
+  indications <- indications[, year := year(episode.start)]
   
   # Keep one row per person_id - episode.start
-  indications <- unique(indications, by = c("person_id", "overlap_start"))
+  indications <- unique(indications, by = c("person_id", "episode.start"))
   
   # count groups per year
   indication_counts <- indications[, .N, by = .(year, indication)]
@@ -143,10 +133,7 @@ for(episode in seq_along(files_polytherapy_episodes)){
   indication_counts <- indication_counts[, rate_computable := Freq > 0]
   
   # save counts
-  saveRDS(indication_counts, file.path(paths$D5_dir, "1.2_polytherapy", "stratified", paste0(gsub("_polytherapy_data\\.rds$", "_polytherapy_indication_counts.rds", files_polytherapy_episodes[episode]))))
-  
-  
+  saveRDS(indication_counts, file.path(paths$D5_dir, "1.3_pregnancy_continuous", "stratified", paste0(sub("_initiation_rates.*$", "", files_preg_init_episodes[episode]), "_initiation_rates_during_pregnancy_indication_counts.rds")))
 }
-
 
 

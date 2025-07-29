@@ -117,4 +117,4 @@ flow_chart_source_to_study_combined <- rbindlist(flow_chart_source_to_study_list
 saveRDS(flow_chart_source_to_study_combined, file = file.path(paths$D5_dir, "flowcharts", "flowchart_source_to_study.rds"))
 
 saveRDS(flow_chart_check_lookback, file = file.path(paths$D5_dir, "flowcharts", "flow_chart_check_lookback.rds"))
-saveRDS(SCHEME_04, file = file.path(paths$D3_dir, "study_population", "scheme_04.rds"))
+saveRDS(SCHEME_04, file = file.path(paths$D5_dir, "flowcharts", "scheme_04.rds"))

@@ -13,10 +13,7 @@ print("========================= CALCULATING CONTINUOUS USE DURING PREGNANCY ===
 print("===============================================================================================")
 
 # List all treatment episode files matching population prefix
-files_episodes <- list.files(file.path(paths$D4_dir, "1.3_pre-pregnancy_use_rate"), pattern = "_pre_pregnancy_data\\.rds$")
-
-# Keep only files that match population prefix AND contain "_F_" (female patients)
-files_episodes <- files_episodes[grepl(paste0("^", pop_prefix, "_"), files_episodes)]
+files_episodes <- list.files(file.path(paths$D4_dir, "1.3_pre-pregnancy_use"))
 
 # Drop PC_HOSP files if pop_prefix is PC
 if(pop_prefix == "PC") files_episodes <- files_episodes[!grepl("PC_HOSP", files_episodes)]
@@ -34,7 +31,7 @@ for (episode in seq_along(files_episodes)) {
   message("Processing: ", treatment_name)
   
   # Load treatment episodes
-  dt <- readRDS(file.path(paths$D4_dir, "1.3_pre-pregnancy_use_rate", files_episodes[episode]))
+  dt <- readRDS(file.path(paths$D4_dir, "1.3_pre-pregnancy_use", files_episodes[episode]))
   
   # Convert episode dates to IDate
   dt[, episode.start := as.IDate(episode.start)][, episode.end := as.IDate(episode.end)]
@@ -98,19 +95,19 @@ for (episode in seq_along(files_episodes)) {
     continuous_rate_all[, rate_computable := Freq > 0]
     
     # Set warnings if Numerator > than Denominator or if Denominator is 0 and Numerator is >0
-    if (nrow(continuous_rate_all[N > Freq]) > 0) {warning(red("Warning: Some numerator values exceed denominator."))}
-    if (nrow(continuous_rate_all[Freq == 0 & N != 0]) > 0) {warning(red("Warning: Denominator zero with non-zero numerator."))}
+    if (nrow(continuous_rate_all[N > Freq]) > 0) warning(red("Warning: Some numerator values exceed denominator."))
+    if (nrow(continuous_rate_all[Freq == 0 & N != 0]) > 0) warning(red("Warning: Denominator zero with non-zero numerator."))
     
     # Save data where odd values 
-    if(nrow(continuous_rate_all[N > Freq])>0) fwrite(continuous_rate_all[N > Freq], file.path(paths$D5_dir, "1.3_continuous_use_rate", treatment_name, "_t1_num_gt_denominator.csv"))
-    if(nrow(continuous_rate_all[Freq == 0 & N != 0])>0) fwrite(continuous_rate_all[Freq == 0 & N != 0], file.path(paths$D5_dir, "1.3_continuous_use_rate", treatment_name, "_t1_denominator_zero_numerator_nonzero.csv"))
+    if (nrow(continuous_rate_all[N > Freq]) > 0) fwrite(continuous_rate_all[N > Freq], file.path(paths$D5_dir, "1.3_pregnancy_continuous", paste0(treatment_name, "_t1_num_gt_denominator.csv")))
+    if (nrow(continuous_rate_all[Freq == 0 & N != 0]) > 0) fwrite(continuous_rate_all[Freq == 0 & N != 0], file.path(paths$D5_dir, "1.3_pregnancy_continuous", paste0(treatment_name, "_t1_denominator_zero_numerator_nonzero.csv")))
     
     # Rename columns 
     setnames(continuous_rate_all, c("N", "Freq"), c("n_treated", "n_total"))
     
     # Save files 
-    saveRDS(dt_all_trimester_overlap, file = file.path(paths$D4_dir, "1.3_continuous_use_rate", paste0(treatment_name, "_continuous_use_rate_data.rds")))
-    saveRDS(continuous_rate_all, file = file.path(paths$D5_dir, "1.3_continuous_use_rate", paste0(treatment_name, "_continuous_use_rate_counts.rds")))
+    saveRDS(dt_all_trimester_overlap, file = file.path(paths$D4_dir, "1.3_pregnancy_continuous", paste0(treatment_name, "_continuous_use_rate_data.rds")))
+    saveRDS(continuous_rate_all, file = file.path(paths$D5_dir, "1.3_pregnancy_continuous", paste0(treatment_name, "_continuous_use_rate_counts.rds")))
     
   } else {
     message(red(paste0("There was no continuous use of ", treatment_name, " in the t1 trimester")))

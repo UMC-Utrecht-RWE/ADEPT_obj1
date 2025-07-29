@@ -60,6 +60,9 @@ for(episode in seq_along(files_preg_init_episodes)){
   dt <- readRDS(file.path(paths$D4_dir, "1.3_pregnancy_initiation", files_preg_init_episodes[episode]))
   
   #<<< AGE GROUPS >>>#
+  agegroups <- copy(dt)
+  
+  agegroups <- agegroups[, birth_date := as.IDate(birth_date)][, episode.start := as.IDate(episode.start)]
   
   # create column - age at episode start 
   agegroups <- agegroups[, age_at_episode_start := floor(time_length(interval(birth_date, episode.start), unit = "years"))]
@@ -72,10 +75,11 @@ for(episode in seq_along(files_preg_init_episodes)){
                                                                         fifelse(age_at_episode_start >= 75, "75+", "UNKNOWN")))))]
   
   
-  # extract year from group by date column - this is already in the dataset as year
+  # extract year from group by date column - episode.start
+  agegroups <- agegroups[, year := year(episode.start)]
   
   # Keep one row per person_id - episode.start - year 
-  agegroups <- unique(agegroups, by = c("person_id", "episode.start", "year"))
+  agegroups <- unique(agegroups, by = c("person_id", "episode.start"))
   
   # count groups per year
   agegroup_counts <- agegroups[, .N, by = .(year, age_group)]
@@ -99,22 +103,23 @@ for(episode in seq_along(files_preg_init_episodes)){
   agegroup_counts <- agegroup_counts[, rate_computable := Freq > 0]
   
   # save counts
-  saveRDS(agegroup_counts, file.path(paths$D5_dir, "1.3_pregnancy_initiation", "stratified", paste0(sub("_initiation_rates.*$", "", files_preg_init_episodes[episode]))))
+  saveRDS(agegroup_counts, file.path(paths$D5_dir, "1.3_pregnancy_initiation", "stratified", paste0(sub("_initiation_rates.*$", "", files_preg_init_episodes[episode]), "_initiation_rates_during_pregnancy_agegroup_counts.rds")))
   
   #<<< INDICATIONS >>>#
   
-  # prepare data for foverlaps
   # incident episodes
-  dt <- dt[, start_window := episode.start - lookback_period][, end_window := episode.start]
+  dt_temp <- copy(dt)
+  
+  dt_temp <- dt_temp[, start_window := episode.start - lookback_period][, end_window := episode.start]
   # indication data
   dt_indication <- dt_indication[, start_event := event_date][, end_event := event_date]
   
   # set keys 
-  setkey(dt, person_id, start_window, end_window)
+  setkey(dt_temp, person_id, start_window, end_window)
   setkey(dt_indication, person_id, start_event, end_event)
   
   # perform overlap join 
-  indications <- foverlaps(dt, 
+  indications <- foverlaps(dt_temp, 
                            dt_indication[, .(person_id, event_date, code, coding_system, event_definition, start_event, end_event)], 
                            by.x = c("person_id", "start_window", "end_window"),
                            by.y = c("person_id", "start_event", "end_event"), 
@@ -122,9 +127,8 @@ for(episode in seq_along(files_preg_init_episodes)){
   )
   
   # drop unnecessary columns
-  indications <- indications[, .SD, .SDcols = c("person_id", "event_date", "code",  "event_definition", "episode.start", "episode.end", "i.code", "atc_group",
-                                                "sex_at_instance_creation", "birth_date", "start_follow_up", "end_follow_up", "entry_date", "exit_date",
-                                                "start_year", "end_year")]
+  indications <- indications[, .SD, .SDcols = c("person_id", "event_date", "code",  "event_definition", "episode.start", "i.code", "atc_group", 
+                                                "sex_at_instance_creation", "birth_date", "start_follow_up", "end_follow_up", "entry_date", "exit_date")]
   
   # calculate difference in days between episode start and event date of indication 
   indications <- indications[, diff_days := as.numeric(difftime(episode.start, event_date, units = "days"))]
@@ -154,27 +158,14 @@ for(episode in seq_along(files_preg_init_episodes)){
     by = .(person_id, episode.start)
   ]
   
-  # order dataset by person id and episode start
-  setorder(indications, person_id, episode.start)
+  # extract year from group by date column - episode.start
+  indications <- indications[, year := year(episode.start)]
   
-  # expand dataset to get all prevalence years
-  indications_expanded <- indications[, 
-                                      { 
-                                        years    <- seq(year(episode.start), year(episode.end))
-                                        repeated <- .SD[rep(1L, length(years))]
-                                        repeated[, year := years]
-                                        repeated
-                                      }, by = .(person_id, episode.start)]
-  
-  
-  # Remove prevalence that falls outside start and end follow up
-  indications_expanded <- indications_expanded[year >= year(start_follow_up) & year <= year(end_follow_up),]
-  
-  # Keep only unique person_id - episode.start - year combinations
-  indications_expanded <- unique(indications_expanded, by = c("person_id", "episode.start", "year"))
+  # Keep one row per person_id - episode.start
+  indications <- unique(indications, by = c("person_id", "episode.start"))
   
   # count groups per year
-  indication_counts <- indications_expanded[, .N, by = .(year, indication)]
+  indication_counts <- indications[, .N, by = .(year, indication)]
   
   # merge counts with empty dt
   indication_counts <- merge(all_combinations_indications, indication_counts, by = c("year", "indication"), all.x = TRUE)
@@ -195,8 +186,7 @@ for(episode in seq_along(files_preg_init_episodes)){
   indication_counts <- indication_counts[, rate_computable := Freq > 0]
   
   # save counts
-  saveRDS(indication_counts, file.path(paths$D5_dir, "1.3_pregnancy_initiation", "stratified", paste0(sub("_initiation_rates.*$", "", files_preg_init_episodes[episode]))))
-  
+  saveRDS(indication_counts, file.path(paths$D5_dir, "1.3_pregnancy_initiation", "stratified", paste0(sub("_initiation_rates.*$", "", files_preg_init_episodes[episode]), "_initiation_rates_during_pregnancy_indication_counts.rds")))
 }
 
 

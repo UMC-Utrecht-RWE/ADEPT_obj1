@@ -23,16 +23,25 @@ for(pop in seq_along(populations)){
   # Initiation Rates during pregnancy
   source(file.path(thisdir, "p_steps", "calculate_pregnancies_initiation_rate.R"), local = TRUE)
 
-  # Initiation Rates during pregnancy - groups
-  source(file.path(thisdir, "p_steps", "calculate_initiation_rate_during_pregnancy_groups.R"), local = TRUE)
+  # Initiation Rates during pregnancy - stratification 
+  source(file.path(thisdir, "p_steps", "calculate_pregnancies_initiation_rate_stratification.R"), local = TRUE)
 
   # Continued Use during pregnancy
-  source(file.path(thisdir, "p_steps", "calculate_continuous_use_rate_during_pregnancy.R"), local = TRUE)
-
-  # Continued Use during pregnancy
-  source(file.path(thisdir, "p_steps", "calculate_discontinuation_rates_pregnancy.R"), local = TRUE)
+  source(file.path(thisdir, "p_steps", "calculate_pregnancies_continuous_use_rate.R"), local = TRUE)
   
-  # Continued Use during pregnancy
-  source(file.path(thisdir, "p_steps", "calculate_switching_rate_during_pregnancy.R"), local = TRUE)
+  # Continued Use during pregnancy - stratification
+  source(file.path(thisdir, "p_steps", "calculate_pregnancies_continuous_use_rate_stratification.R"), local = TRUE)
+  
+  # Discontinuation during pregnancy
+  source(file.path(thisdir, "p_steps", "calculate_pregnancies_discontinuation_rate.R"), local = TRUE)
+
+  # Switching during pregnancy
+  source(file.path(thisdir, "p_steps", "calculate_pregnancies_switching_rate.R"), local = TRUE)
+  
+  # TODO Polytherapy during pregnancy
+  # source(file.path(thisdir, "p_steps", "calculate_pregnancies_polytherapy_rate.R"), local = TRUE)
+  
+  # TODO Polytherapy during pregnancy - stratification
+  # source(file.path(thisdir, "p_steps", "calculate_pregnancies_polytherapy_rate.R"), local = TRUE)
 }
 
