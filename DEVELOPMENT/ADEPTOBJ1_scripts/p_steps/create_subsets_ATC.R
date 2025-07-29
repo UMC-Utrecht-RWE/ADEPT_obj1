@@ -34,8 +34,8 @@ for (med in seq_along(med_files)) {
   # Extract the medicine file name 
   current_table <- gsub(".csv", "", med_files[med])
   
-  # Print message
-  cat(blue$bold(paste0("searching in: ", current_table)), "\n")
+  # print message
+  message(blue$bold("searching in: ",  current_table))
   
   # Read Current Medicines file
   dt <- fread(file.path(CDM_dir, med_files[med]), stringsAsFactors = FALSE)
@@ -68,8 +68,7 @@ for (med in seq_along(med_files)) {
   for (current_code in names(ATC_codelist)) {
     
     # print message
-    cat(paste0("looking for: ", current_code), "\n")
-    
+    message("looking for: ", current_code)
     # Check for match_type
     exact <- ATC_codelist[[current_code]]$match_type
     
@@ -92,23 +91,20 @@ for (med in seq_along(med_files)) {
       saveRDS(subset_dt, file.path(paths$D3_dir,"tmp", paste0(varname, "-", current_table,".rds")))
       
     } else {
-      
+      # print message
+      message(red("no matching records found for: ", current_code))
       # If no matches found, log the unmatched code
       unmatched_log <- rbind(unmatched_log, data.table(
         med_file = current_table,
         code = current_code,
         match_type = ifelse(exact, "exact", "prefix")
       ), use.names = TRUE, fill = TRUE)
-      
-      save
-      # print message
-      cat(red(paste0("No matching records found for: ", current_code)), "\n")
     }
   }
 }
 
 # Save unmatched codes
-fwrite(unmatched_log, file.path(paths$D3_dir, paste0(pop_prefix, "_unmatched_ATC_codes.csv"))
+fwrite(unmatched_log, file.path(paths$D5_dir, paste0(pop_prefix, "_unmatched_ATC_codes.csv")))
 
 # <<< CONCATENATE SUBSETS AND SAVE IN FOLDERS >>> 
 

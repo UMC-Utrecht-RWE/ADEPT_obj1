@@ -22,20 +22,20 @@ if(!SUBP) {
   SCHEME_04[, `:=` (file_in = "ALL_source_population.rds", file_out = "ALL_study_population.rds")]
 }
 
-# Initialize a data table to track selection criteria and attrition across study subpopulations
-flow_chart_source_to_study <- data.table(
-  selection_criteria = rep(NA, length(SelectionCriteria)),
-  subpopulation      = rep(SUBP, length(SelectionCriteria)),
-  before             = rep(NA, length(SelectionCriteria)),
-  after              = rep(NA, length(SelectionCriteria)),
-  attrition          = rep(NA, length(SelectionCriteria))
-)
-
-# Initialize a list 
+# Initialize lists 
 flow_chart_check_lookback <- list()
+flow_chart_source_to_study_list <- list()
 
 # Loop through each row in the SCHEME_04 table, each representing a subpopulation and its input/output file
 for(i in 1:nrow(SCHEME_04)){
+  
+  flow_chart_source_to_study <- data.table(
+    selection_criteria = names(SelectionCriteria),
+    subpopulation      = SCHEME_04[["subpopulations"]][i],
+    before             = NA_integer_,
+    after              = NA_integer_,
+    attrition          = NA_integer_
+  )
   
   # Load the source dataset for the current subpopulation
   SOURCE <- readRDS(file.path(paths$D3_dir, "source_population", SCHEME_04[["file_in"]][i]))
@@ -47,7 +47,7 @@ for(i in 1:nrow(SCHEME_04)){
   for (j in 1:length(SelectionCriteria)){
     
     # Print message   
-    print(names(SelectionCriteria)[j])
+    message(names(SelectionCriteria)[j])
     
     # Count rows before applying criterion
     before <- nrow(SOURCE)
@@ -67,6 +67,9 @@ for(i in 1:nrow(SCHEME_04)){
     flow_chart_source_to_study$attrition[j]          <- attrition
   }
   
+  # 
+  flow_chart_source_to_study_list[[i]] <- flow_chart_source_to_study
+  
   # Print message 
   print(paste0("Set start_follow up date and end follow_up_date ",SCHEME_04[["subpopulations"]][i]))
   
@@ -74,8 +77,10 @@ for(i in 1:nrow(SCHEME_04)){
   SOURCE[, entry_plus_1yr := as.IDate(seq(entry_date, length.out = 2, by = "1 year")[2], origin = "1970-01-01"), by = 1:nrow(SOURCE)]
   
   # create columns start and end follow up
-  study_population <- SOURCE[, start_follow_up := pmax(start_study_date, entry_plus_1yr, date_min, na.rm = TRUE)]
-  study_population <- study_population[, end_follow_up := pmin(end_study_date, exit_date, date_creation, recommended_end_date, date_max, na.rm = TRUE)]
+  SOURCE[, start_follow_up := pmax(start_study_date, entry_plus_1yr, date_min, na.rm = TRUE)]
+  SOURCE[, end_follow_up := pmin(end_study_date, exit_date, date_creation, recommended_end_date, date_max, na.rm = TRUE)]
+  study_population <- copy(SOURCE)
+  
   
   # attrition
   before <- nrow(study_population)
@@ -104,21 +109,12 @@ for(i in 1:nrow(SCHEME_04)){
   SCHEME_04[i,"nrows"] <- nrow(study_population)
   SCHEME_04[i,"ncols"] <- ncol(study_population)
   
+  # save files 
   saveRDS(study_population, file = file.path(paths$D3_dir, "study_population", SCHEME_04[["file_out"]][i]))
-  saveRDS(flow_chart_source_to_study, file = file.path(paths$D5_dir, "flowcharts", "flowchart_source_to_study.rds"))
-  
 } 
+
+flow_chart_source_to_study_combined <- rbindlist(flow_chart_source_to_study_list, use.names = TRUE, fill = TRUE)
+saveRDS(flow_chart_source_to_study_combined, file = file.path(paths$D5_dir, "flowcharts", "flowchart_source_to_study.rds"))
 
 saveRDS(flow_chart_check_lookback, file = file.path(paths$D5_dir, "flowcharts", "flow_chart_check_lookback.rds"))
 saveRDS(SCHEME_04, file = file.path(paths$D3_dir, "study_population", "scheme_04.rds"))
-
-
-
-
-
-
-
-
-
-
-

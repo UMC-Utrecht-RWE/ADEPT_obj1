@@ -13,7 +13,7 @@ print("========================= CALCULATING PRE-PREGNANCY ASM USE =============
 print("=====================================================================================")
 
 # List all treatment episode files matching population prefix
-files_episodes <- list.files(file.path(paths$D3_dir, "tx_episodes", "individual"), pattern = "\\.rds$")
+files_episodes <- list.files(file.path(paths$D3_dir, "tx_episodes"), pattern = "\\.rds$")
 
 # Keep only files that match population prefix AND contain "_F_" (female patients)
 files_episodes <- files_episodes[grepl(paste0("^", pop_prefix, "_"), files_episodes) & grepl("_F_", files_episodes)]
@@ -65,14 +65,11 @@ for (episode in seq_along(files_episodes)) {
   # Get name of current ASM
   treatment_name <- gsub("_treatment_episode\\.rds$", "", files_episodes[episode])
   
-  # Print Message
-  message("Processing: ", treatment_name)
-  
   # Load treatment episodes
-  dt <- readRDS(file.path(paths$D3_dir, "tx_episodes", "individual", files_episodes[episode]))
+  dt <- readRDS(file.path(paths$D3_dir, "tx_episodes", files_episodes[episode]))
   
-  # Remove true duplicates
-  dt <- unique(dt)
+  # Remove duplicates
+  dt <- unique(dt, by = c("person_id", "episode.start"))
   
   # Convert episode dates to IDate
   dt[, episode.start := as.IDate(episode.start)][, episode.end := as.IDate(episode.end)]
@@ -103,6 +100,9 @@ for (episode in seq_along(files_episodes)) {
   # Check if any pre-pregnancy ASM use was found 
   if(nrow(dt_12_0)>0){
     
+    # Print Message
+    message(paste0("There is pre-pregnancy use of ", treatment_name, " in the 12-0 month window"))
+    
     # Count the number of pregnancies with ASM use in the 6-0 month window, grouped by pregnancy year
     pre_pregnancy_counts <- pregnancies[pregnancy_id %in% preg_ids_12_0, .N, by = preg_year]
     
@@ -122,8 +122,8 @@ for (episode in seq_along(files_episodes)) {
     pre_pregnancy_all[, rate_computable := Freq > 0]
     
     # Set warnings if Numerator > than Denominator or if Denominator is 0 and Numerator is >0
-    if (nrow(pre_pregnancy_all[N > Freq]) > 0) {warning(red("Warning: Some numerator values exceed denominator."))}
-    if (nrow(pre_pregnancy_all[Freq == 0 & N != 0]) > 0) {warning(red("Warning: Denominator zero with non-zero numerator."))}
+    if (nrow(pre_pregnancy_all[N > Freq]) > 0) warning(red("Warning: Some numerator values exceed denominator."))
+    if (nrow(pre_pregnancy_all[Freq == 0 & N != 0]) > 0) warning(red("Warning: Denominator zero with non-zero numerator."))
     
     # Save data where odd values 
     if(nrow(pre_pregnancy_all[N > Freq])>0) fwrite(pre_pregnancy_all[N > Freq], file.path(paths$D5_dir, "1.3_pre-pregnancy_use_rate", paste0(treatment_name, "_all_num_gt_denominator.csv")))
@@ -133,8 +133,8 @@ for (episode in seq_along(files_episodes)) {
     setnames(pre_pregnancy_all, c("N", "Freq"), c("n_treated", "n_total"))
     
     # Save files 
-    saveRDS(dt_12_0, file = file.path(paths$D4_dir, "1.3_pre-pregnancy_use_rate", paste0(treatment_name, "_pre_pregnancy_data.rds")))
-    saveRDS(pre_pregnancy_all, file = file.path(paths$D5_dir, "1.3_pre-pregnancy_use_rate", paste0(treatment_name, "_pre_pregnancy_counts.rds")))
+    saveRDS(dt_12_0, file = file.path(paths$D4_dir, "1.3_pre-pregnancy_use", paste0(treatment_name, "_pre_pregnancy_data.rds")))
+    saveRDS(pre_pregnancy_all, file = file.path(paths$D5_dir, "1.3_pre-pregnancy_use", paste0(treatment_name, "_pre_pregnancy_counts.rds")))
     
   } else {
     message(red(paste0("There was no pre-pregnancy use of ", treatment_name, " in the 12-0 month window")))

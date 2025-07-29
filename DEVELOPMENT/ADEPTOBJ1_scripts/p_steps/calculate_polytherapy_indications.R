@@ -64,16 +64,16 @@ for(episode in seq_along(files_polytherapy_episodes)){
   # polytherapy episodes
   # drop unnecessary columns
   dt <- dt[, .(person_id, atc_group, episode.start, episode.end, i.atc_group, i.episode.start, i.episode.end, overlap_start, overlap_end, overlap_days, start_follow_up, end_follow_up)] 
+  
   setnames(dt,c("atc_group", "episode.start", "episode.end", "i.atc_group", "i.episode.start", "i.episode.end"), c("atc_group1", "episode.start1", "episode.end1", "atc_group2", "episode.start2", "episode.end2"))          
+  
   dt <- dt[, start_window := overlap_start - lookback_period][, end_window := overlap_start]
   
-
   # Drop unnecessary columns
   dt_indication <- dt_indication[, .(person_id, event_date, event_definition)] 
    # indication data
   dt_indication <- dt_indication[, start_event := event_date][, end_event := event_date]
 
-  
   # set keys 
   setkey(dt, person_id, start_window, end_window)
   setkey(dt_indication, person_id, start_event, end_event)

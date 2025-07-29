@@ -33,7 +33,7 @@ for (episode in seq_along(files_episodes)) {
   message("Processing: ", gsub("_treatment_episode\\.rds$", "", files_episodes[episode]))
   
   # Remove duplicates
-  dt <- unique(dt, by = c("person_id", "episode.start"))
+  dt <- unique(dt, by = c("person_id", "episode.start", "episode.end"))
 
   # Order episodes by person & start date
   setorder(dt, person_id, episode.start)

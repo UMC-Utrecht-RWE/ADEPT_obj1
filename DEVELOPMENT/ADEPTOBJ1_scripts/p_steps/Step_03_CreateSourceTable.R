@@ -47,7 +47,7 @@ for(i in 1:nrow(SCHEME_03)){
   # Print Message
   print(paste0("If op_start_date is before birth_date replace op_start_date with birth_date ", SCHEME_03[["subpopulations"]][i]))
   SOURCE_POPULATION[op_start_date < birth_date, op_start_date := birth_date]
-  SOURCE_POPULATION[op_start_date < birth_date, op_start_date := birth_date]
+
   
   # Print message
   print(paste0("Calculate age at op_start_date and op_end_date and dates of which age_min and age_max are reached  ",SCHEME_03[["subpopulations"]][i]))
@@ -61,8 +61,12 @@ for(i in 1:nrow(SCHEME_03)){
   ]  
   
   # Calculate age_max in women
-  SOURCE_POPULATION[sex_at_instance_creation == "F", date_max := as.IDate(add_with_rollback(birth_date, period(age_max + 1, units = "year"), roll_to_first = TRUE, preserve_hms = TRUE)) - 1]
-  SOURCE_POPULATION[sex_at_instance_creation != "F", date_max := as.IDate(NA)] 
+  SOURCE_POPULATION[, date_max := fifelse(
+    sex_at_instance_creation == "F",
+    as.IDate(add_with_rollback(birth_date, period(age_max + 1, units = "year"), roll_to_first = TRUE, preserve_hms = TRUE)) - 1,
+    as.IDate(NA)
+  )]
+  
   
   # Adjust op_start date to latest of these values: 
   ## date person turned min age: 12 (date_min)
@@ -70,7 +74,7 @@ for(i in 1:nrow(SCHEME_03)){
   ## start of study period: 20000101
   SOURCE_POPULATION <- SOURCE_POPULATION[, entry_date:= pmax(date_min, op_start_date, start_study_date, na.rm = TRUE)]
   
-  # Adjust op_end date to latest of these values: 
+  # Adjust op_end date to earliest of these values:
   ## date person turned max age - 56 (date_max) - females only
   ## moving out of data source - op_end_date
   ## death

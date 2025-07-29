@@ -18,14 +18,10 @@ for(pop in seq_along(populations)){
   study_population <- study_population[sex_at_instance_creation=="F",]
   
   # Pre-pregnancy ASM use - Individual
-  
   source(file.path(thisdir, "p_steps", "calculate_pre_pregnancy_use.R"), local = TRUE)
   
-  # Pre-pregnancy ASM use - Groups 
-  source(file.path(thisdir, "p_steps", "calculate_pre_pregnancy_use_groups.R"), local = TRUE)
-  
   # Initiation Rates during pregnancy
-  source(file.path(thisdir, "p_steps", "calculate_initiation_rate_during_pregnancy.R"), local = TRUE)
+  source(file.path(thisdir, "p_steps", "calculate_pregnancies_initiation_rate.R"), local = TRUE)
 
   # Initiation Rates during pregnancy - groups
   source(file.path(thisdir, "p_steps", "calculate_initiation_rate_during_pregnancy_groups.R"), local = TRUE)

@@ -34,7 +34,7 @@ OBSERVATION_PERIODS[, op_start_date := as.IDate(as.character(op_start_date), "%Y
 OBSERVATION_PERIODS[, op_end_date   := as.IDate(as.character(op_end_date), "%Y%m%d")]
 
 # Fill missing end dates with end of study date
-OBSERVATION_PERIODS <- OBSERVATION_PERIODS[is.na(op_end_date), op_end_date := end_study_date]
+OBSERVATION_PERIODS[is.na(op_end_date), op_end_date := end_study_date]
 
 # For flow chart
 step1_nrow <- nrow(OBSERVATION_PERIODS) # Count rows after date formatting

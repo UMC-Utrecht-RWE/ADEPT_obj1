@@ -76,9 +76,8 @@ for(episode in seq_along(files_discontinued_episodes)){
     dt_exposures <- as.data.table(readRDS(file.path(paths$D3_dir, "exposure", files_exposures[exposure])))
     
     # Remove duplicates
+    dt_exposures <- unique(dt_exposures, by = c("person_id", "code", "rx_date"))
 
-    dt_exposures <- unique(dt, by = c("person_id", "code", "rx_date"))
-    
     # Keep needed cols only 
     dt_exposures <- dt_exposures[, .(person_id, code, Varname, rx_date)]
     

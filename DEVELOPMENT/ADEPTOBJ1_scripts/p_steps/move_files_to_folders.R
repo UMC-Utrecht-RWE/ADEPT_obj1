@@ -22,7 +22,7 @@ file_info[, Varname := trimws(Varname)]
 merged <- merge(file_info, bridge, by = "Varname", all.x = TRUE)
 
 # Track which files were successfully copied to at least one folder
-files_copied <- character()
+copied_files <- character()
 
 # Loop over flags
 for (flag in flags) {
@@ -53,7 +53,7 @@ for (flag in flags) {
       tryCatch({
         file_copy(source_path, dest_path, overwrite = TRUE)
         # message(sprintf("Copied '%s' to folder '%s'", row$file, flag))
-        files_copied <- unique(c(files_copied, row$file))
+        copied_files <- unique(c(copied_files, row$file))
       }, error = function(e) {
         message(sprintf("Failed to copy '%s' to folder '%s': %s", row$file, flag, e$message))
       })
@@ -64,7 +64,7 @@ for (flag in flags) {
 # === DELETE ORIGINALS for files that were copied ===
 
 # Only one original path per file
-original_files_to_delete <- file_info[file %in% files_copied]
+original_files_to_delete <- file_info[file %in% copied_files]
 original_files_to_delete <- unique(original_files_to_delete, by = "file")
 
 for (i in seq_len(nrow(original_files_to_delete))) {
@@ -81,7 +81,7 @@ for (i in seq_len(nrow(original_files_to_delete))) {
 
 # === REPORT UNCOPIED FILES ===
 
-not_copied <- setdiff(file_info$file, files_copied)
+not_copied <- setdiff(file_info$file, copied_files)
 if (length(not_copied) > 0) {
   message("\nFiles NOT copied to any folder:")
   for (file in not_copied) message(" - ", file)
@@ -102,15 +102,16 @@ for (algo in unique(algorithm_map$Algorithm)) {
   varnames <- algorithm_map[Algorithm == algo, VariableName]
   
   # Create a directory named after the current algorithm inside the algorithm input directory
-  algo_dir <- file.path(file.path(paths$D3_dir, "algorithm_input"), algo)
+  algo_dir <- file.path(paths$D3_dir, "algorithm_input", algo)
+ 
   # Create the directory if it does not exist
-  dir_create(file.path(file.path(paths$D3_dir, "algorithm_input"), algo))
+  dir_create(file.path(paths$D3_dir, "algorithm_input", algo))
   
   # Loop through each variable name for this algorithm
   for (v in varnames) {
     
     # Construct the filename for the variable's RDS file based on population prefix and variable name
-    src <- file.path(file.path(paths$D3_dir, "algorithm_input"), paste0(pop_prefix, "_", v, ".rds"))
+    src <- file.path(paths$D3_dir, "algorithm_input", paste0(pop_prefix, "_", v, ".rds"))
     
     # Check if the RDS file exists before trying to copy it
     if (file_exists(src)) {
@@ -145,7 +146,7 @@ bind_and_save_group <- function(group_name) {
   matched <- alg_folders[algos, on = "Varname", nomatch = 0]
   
   to_folder <- file.path(paths$D3_dir, group_name)
-  dir.create(to_folder, recursive = TRUE, showWarnings = FALSE)
+  dir_create(to_folder, recurse = TRUE)
   
   for (i in seq_len(nrow(matched))) {
     from_folder <- matched$folder_path[i]
@@ -154,7 +155,7 @@ bind_and_save_group <- function(group_name) {
     rds_files <- list.files(from_folder, pattern = "\\.rds$", full.names = TRUE)
     
     if (length(rds_files) == 0) {
-      unlink(from_folder, recursive = TRUE, force = TRUE)
+      unlink(from_folder, recurse = TRUE, force = TRUE)
       next
     }
     
@@ -188,3 +189,4 @@ bind_and_save_group("alternatives")
 bind_and_save_group("exposure")
 bind_and_save_group("indication")
 bind_and_save_group("cov")
+

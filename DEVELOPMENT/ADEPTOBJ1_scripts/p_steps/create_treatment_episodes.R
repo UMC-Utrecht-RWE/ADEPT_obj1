@@ -40,7 +40,7 @@ for (exposure in seq_along(files_exposures)) {
   dt[, atc_group := atc_group]
   
   # Remove true duplicates
-  dt <- unique(dt)
+  dt <- unique(dt, by = c("person_id", "atc_group", "rx_date"))
 
   # Print message
   message("Processing: ", paste0(pop_prefix, "_", atc_group))
@@ -87,10 +87,10 @@ for (exposure in seq_along(files_exposures)) {
     treat_episode[, `:=`(episode.start = as.IDate(episode.start), episode.end = as.IDate(episode.end))]
     
     # Apply episode validity filters
-    treat_episode <- treat_episode[episode.end > entry_date - 90]
-    treat_episode <- treat_episode[episode.end > end_follow_up, episode.end := end_follow_up]
-    treat_episode <- treat_episode[episode.start < end_follow_up]
-    treat_episode <- treat_episode[episode.end > episode.start]
+    treat_episode <- treat_episode[episode.end > entry_date - 90,]
+    treat_episode <- treat_episode[episode.start < end_follow_up,]
+    treat_episode[episode.end > end_follow_up, episode.end := end_follow_up]
+    treat_episode <- treat_episode[episode.end > episode.start,]
     
     # Remove duplicates
     treat_episode <- unique(treat_episode)

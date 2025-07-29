@@ -43,7 +43,7 @@ for (episode in seq_along(files_episodes)) {
   message("Processing: ", gsub("_treatment_episode\\.rds$", "", files_episodes[episode]))
   
   # Remove duplicates
-  dt <- unique(dt, by = c("person_id", "episode.start"))
+  dt <- unique(dt, by = c("person_id", "episode.start", "episode.end"))
   
   # Order episodes by person & start date
   setorder(dt, person_id, episode.start)
@@ -52,7 +52,7 @@ for (episode in seq_along(files_episodes)) {
   dt[, next_start := shift(episode.start, type = "lead"), by = .(person_id)]
   
   # Flag discontinuation events
-  dt[, discontinuer_flag := fifelse(is.na(next_start), (exit_date - episode.end > 120), (next_start - episode.end > 120))]
+  dt[, discontinuer_flag := fifelse(is.na(next_start), (exit_date - episode.end >= 120), (next_start - episode.end >= 120))]
   
   # Keep only the discontinued episodes
   discontinuers <- dt[discontinuer_flag == TRUE,]

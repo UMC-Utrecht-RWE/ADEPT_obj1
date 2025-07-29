@@ -48,7 +48,7 @@ for(pop in seq_along(populations)){
     assign("study_population", study_population_sex, envir = .GlobalEnv)
     
     # Denominator Counts
-    source(file.path(thisdir, "p_steps", "denominator_counts.R"), local = TRUE)
+    source(file.path(thisdir, "p_steps", "calculate_denominator.R"), local = TRUE)
     
     # Create concept sets
     source(file.path(thisdir, "p_steps", "create_concept_sets.R"), local = TRUE)

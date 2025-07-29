@@ -37,7 +37,7 @@ SelectionCriteria <- list(
   persons_younger_than_12_before_end_study_date = expression(date_min < end_study_date),
   
   # All males and women who are below 56 at start_study_date 
-  women_older_than_56_before_start_study_date = expression(sex_at_instance_creation == "M" | date_max > start_study_date),
+  women_older_than_55_before_start_study_date = expression(sex_at_instance_creation == "M" | date_max > start_study_date),
   
   # observation period overlaps study period
   observation_period_does_not_overlap_study_period = expression(op_start_date %between% intv | op_end_date %between% intv | (op_start_date < start_study_date & op_end_date > end_study_date)),

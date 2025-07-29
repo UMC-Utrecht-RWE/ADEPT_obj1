@@ -1,7 +1,7 @@
 ###############################################################################################################################################################################
 # <<< Sub-objective 1.2: Treatment duration >>> 
 # Measure: Annual treatment duration mean & median of ASM
-# Calculation: Mean, median, minimum, maximum, interquartile range, and SD (in months) of treatment episodes for all individuals with ≥1 treatment episode of an ASM within a calendar year in the data source
+# Calculation: Mean, median, minimum, maximum, interquartile range, and SD (in days) of treatment episodes for all individuals with ≥1 treatment episode of an ASM within a calendar year in the data source
 # Stratification by: Individual drugs, calendar year, data source
 
 ###############################################################################################################################################################################
@@ -29,7 +29,7 @@ for (episode in seq_along(files_episodes)) {
   dt <- readRDS(file.path(paths$D3_dir, "tx_episodes", files_episodes[episode]))
   
   # Remove duplicates
-  dt <- unique(dt, by = c("person_id", "episode.start"))
+  dt <- unique(dt, by = c("person_id", "episode.start", "episode.end"))
   
   # Extract drug name from file name
   episode_name <- gsub(paste0("^", pop_prefix, "_"), "", files_episodes[episode])
@@ -42,31 +42,32 @@ for (episode in seq_along(files_episodes)) {
   dt[, episode.end := as.IDate(episode.end)]
   
   # Filter and trim to follow-up period
-  dt <- dt[!(episode.end < start_follow_up), ]
-  dt <- dt[episode.start < start_follow_up, episode.start := start_follow_up]
-  dt <- dt[episode.end > end_follow_up, episode.end := end_follow_up]
-  
+  dt <- dt[!(episode.end < start_follow_up | episode.start > end_follow_up)]
+  dt[episode.start < start_follow_up, episode.start := start_follow_up]
+  dt[episode.end > end_follow_up, episode.end := end_follow_up]
+  dt <- dt[episode.end >= episode.start]  # drop invalid records
+
   if (nrow(dt) > 0) {
     
     # Calculate episode duration
-    dt[, total_days := as.numeric(episode.end - episode.start) + 1]
+    dt[, total_months := (as.numeric(episode.end - episode.start) + 1) / 30.44]
     
     # Calculate overall treatment stats
     overall_stats <- dt[, .(
-      drug         = episode_name,
-      mean_days    = mean(total_days, na.rm = TRUE),
-      median_days  = median(total_days, na.rm = TRUE),
-      min_days     = min(total_days, na.rm = TRUE),
-      max_days     = max(total_days, na.rm = TRUE),
-      iqr_days     = IQR(total_days, na.rm = TRUE),
-      sd_days      = sd(total_days, na.rm = TRUE)
+      drug           = episode_name,
+      mean_months    = mean(total_months, na.rm = TRUE),
+      median_months  = median(total_months, na.rm = TRUE),
+      min_months     = min(total_months, na.rm = TRUE),
+      max_months     = max(total_months, na.rm = TRUE),
+      iqr_months     = IQR(total_months, na.rm = TRUE),
+      sd_months      = sd(total_months, na.rm = TRUE)
     )]
     
     # Append to summary list
     all_drug_stats[[episode_name]] <- overall_stats
     
     # Save files 
-    saveRDS(dt, file.path(paths$D4_dir, "1.2_treatment_duration", paste0(pop_prefix, "_", episode_name, "_treatment_duration.rds")))
+    saveRDS(dt, file.path(paths$D4_dir, "1.2_treatment_duration", paste0(pop_prefix, "_", episode_name, "_treatment_duration_months.rds")))
     
   } else {
     message(red(paste0("No Treatment Duration can be calculated for: ", pop_prefix, "_", episode_name)))
@@ -77,5 +78,5 @@ for (episode in seq_along(files_episodes)) {
 final_summary <- rbindlist(all_drug_stats)
 
 # Save combined summary
-saveRDS(final_summary, file.path(paths$D5_dir, "1.2_treatment_duration", paste0(pop_prefix, "_all_treatment_duration_summary_individual.rds")))
+saveRDS(final_summary, file.path(paths$D5_dir, "1.2_treatment_duration", paste0(pop_prefix, "_treatment_duration_months.rds")))
 

@@ -5,7 +5,6 @@
 # Denominator: Total number of pregnancies in that calendar year in the data source
 # Stratification by: Overall, individual drug substance, drug sub-groups, age groups, indication, calendar year, data source
 
-# Pending: Stratification by Overall, age groups, indication
 ###############################################################################################################################################################################
 
 print("==========================================================================================")
@@ -13,7 +12,7 @@ print("==================== CALCULATING ASM INITIATION RATE DURING PREGNANCY ===
 print("==========================================================================================")
 
 # List all incident treatment episode files matching population prefix
-files_episodes <- list.files(file.path(paths$D3_dir, "tx_episodes", "individual"), pattern = "\\.rds$")
+files_episodes <- list.files(file.path(paths$D3_dir, "tx_episodes"), pattern = "\\.rds$")
 
 # Keep only files that match population prefix AND contain "_F_" (female patients)
 files_episodes <- files_episodes[grepl(paste0("^", pop_prefix, "_"), files_episodes) & grepl("_F_", files_episodes)]
@@ -29,17 +28,14 @@ for (episode in seq_along(files_episodes)) {
   # Get name of current ASM
   treatment_name <- gsub("_treatment_episode\\.rds$", "", files_episodes[episode])
   
-  # Print Message
-  message("Processing treatment: ", treatment_name)
-  
   # Load treatment episodes
-  dt <- readRDS(file.path(paths$D3_dir, "tx_episodes", "individual", files_episodes[episode]))
+  dt <- readRDS(file.path(paths$D3_dir, "tx_episodes", files_episodes[episode]))
   
   # Convert episode dates to IDate
   dt[, episode.start := as.IDate(episode.start)][, episode.end := as.IDate(episode.end)]
   
-  # Remove true duplicates
-  dt <- unique(dt)
+  # Remove duplicates
+  dt <- unique(dt, by = c("person_id", "episode.start"))
   
   # Set key for joining
   setkey(dt, person_id)
@@ -67,6 +63,8 @@ for (episode in seq_along(files_episodes)) {
   
   # Check if any pre-pregnancy ASM use was found 
   if(nrow(dt_all)>0){
+    
+    message(paste0("Found ASM initiation of ", treatment_name))
     
     # Count the number of pregnancies with ASM use in the third trimester, grouped by pregnancy year
     initiation_rate_counts <- pregnancies[pregnancy_id %in% preg_ids_all, .N, by = preg_year]
@@ -98,8 +96,8 @@ for (episode in seq_along(files_episodes)) {
     setnames(initiation_rate_all, c("N", "Freq"), c("n_treated", "n_total"))
     
     # Save files 
-    saveRDS(dt_all, file = file.path(paths$D4_dir, "1.3_initiation_rate_during_pregnancy", paste0(treatment_name, "_initiation_rates_during_pregnancy_data.rds")))
-    saveRDS(initiation_rate_all, file = file.path(paths$D5_dir, "1.3_initiation_rate_during_pregnancy", paste0(treatment_name, "_initiation_rates_during_pregnancy_counts.rds")))
+    saveRDS(dt_all, file = file.path(paths$D4_dir, "1.3_pregnancy_initiation", paste0(treatment_name, "_initiation_rates_during_pregnancy_data.rds")))
+    saveRDS(initiation_rate_all, file = file.path(paths$D5_dir, "1.3_pregnancy_initiation", paste0(treatment_name, "_initiation_rates_during_pregnancy_counts.rds")))
     
   } else {
     message(red(paste0("There was no ASM initiation of ", treatment_name)))

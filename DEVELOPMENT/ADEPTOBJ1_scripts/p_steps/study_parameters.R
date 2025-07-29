@@ -15,7 +15,7 @@ end_study_date <- as.IDate(as.character(CDM_SOURCE[, recommended_end_date]), "%Y
 age_min <- 12 
 
 # Age_max is the maximum age allowed - only for females 
-age_max          <- 55 
+age_max          <- 54 
 
 # look back period - default is 365
 lookback_period  <- 365L

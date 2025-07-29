@@ -30,7 +30,7 @@ for (episode in seq_along(files_episodes)) {
   dt <- readRDS(file.path(paths$D3_dir, "tx_episodes", files_episodes[episode]))
   
   # Remove duplicates
-  dt <- unique(dt, by = c("person_id", "episode.start"))
+  dt <- unique(dt, by = c("person_id", "episode.start", "episode.end"))
   
   # Print Message
   message("Processing: ", gsub("_treatment_episode\\.rds$", "", files_episodes[episode]))

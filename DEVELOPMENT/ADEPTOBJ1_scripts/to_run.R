@@ -26,14 +26,15 @@ DEAP_data <- "CPRD"
 
 ### <<< USER INPUT >>> ###
 # Set directory where CDM tables are
-CDM_dir  <- "F:/ADEPT/Updated_CDM"
+# CDM_dir  <- "F:/ADEPT/Updated_CDM"
+CDM_dir <- "C:/Users/mgamb/Documents/GitHub/ADEPT_obj1/DEVELOPMENT/CDM_INSTANCES_mixed"
 
 # Set directory where D3_pregnancy_final file is 
-# preg_dir <- "C:/Users/mgamb/Documents/GitHub/ADEPT_obj1/DEVELOPMENT"
+preg_dir <- "C:/Users/mgamb/Documents/GitHub/ADEPT_obj1/DEVELOPMENT"
+
 # Set start study date - this is the date from which data is considered of good quality 
 # Analysis counts will be done from start_study_date + lookback period. 
 # In the default example, if start_study_date is 1999-01-01, then medicine counts will be done from 2000-01-01
-
 start_study_date <- "1999-01-01" 
 
 # === SET FLAGS === 
@@ -45,7 +46,7 @@ source(file.path(thisdir, "p_steps", "set_flags.R"), local = TRUE)
 source(file.path(thisdir, "p_steps", "run_analysis.R"), local = TRUE)
 
 # Pregnancy Counts
-# source(file.path(thisdir, "p_steps", "run_analysis_pregnancies.R"), local = TRUE)
+source(file.path(thisdir, "p_steps", "run_analysis_pregnancies.R"), local = TRUE)
 
 
 

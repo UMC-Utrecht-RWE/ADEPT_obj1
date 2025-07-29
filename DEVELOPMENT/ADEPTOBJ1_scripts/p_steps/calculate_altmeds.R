@@ -28,6 +28,9 @@ for (altmed in seq_along(files_altmeds)) {
   # print message
   message("Processing group: ", gsub("_algo_med\\.rds$", "", files_altmeds[altmed]))
   
+  # get altmed name 
+  altmed_name <- tools::file_path_sans_ext(files_altmeds[altmed])
+  
   # load file
   dt <- readRDS(file.path(paths$D3_dir, "alternatives", files_altmeds[altmed]))
   
@@ -35,7 +38,7 @@ for (altmed in seq_along(files_altmeds)) {
   dt_clean <- dt[rx_date >= start_follow_up & rx_date <= end_follow_up,]
   
   # Create a column with year of rxm and name of altmed group it comes 
-  dt_clean[, year := year(rx_date)][,source:= tools::file_path_sans_ext(files_altmeds[altmed])]
+  dt_clean[, `:=`(year = year(rx_date), source = altmed_name)]
   
   # Remove duplicates: Keep only one person id per year
   dt_clean <- unique(dt_clean, by = c("person_id", "year"))
@@ -57,8 +60,8 @@ for (altmed in seq_along(files_altmeds)) {
   if (nrow(altmed_all[Freq == 0 & N != 0]) > 0) {warning(red("Warning: Denominator zero with non-zero numerator."))}
   
   # Save data with odd values 
-  if(nrow(altmed_all[N > Freq]) > 0) fwrite(altmed_all[N > Freq], file.path(paths$D5_dir, "1.2_altmeds", paste0(pop_prefix, "_", tools::file_path_sans_ext(files_altmeds[altmed]), "_num_gt_denominator.csv")))
-  if(nrow(altmed_all[Freq == 0 & N != 0]) > 0) fwrite(altmed_all[Freq == 0 & N != 0], file.path(paths$D5_dir, "1.2_altmeds", paste0(pop_prefix, "_", tools::file_path_sans_ext(files_altmeds[altmed]), "_denominator_zero_numerator_nonzero.csv")))
+  if(nrow(altmed_all[N > Freq]) > 0) fwrite(altmed_all[N > Freq], file.path(paths$D5_dir, "1.2_altmeds", paste0(pop_prefix, "_", altmed_name, "_num_gt_denominator.csv")))
+  if(nrow(altmed_all[Freq == 0 & N != 0]) > 0) fwrite(altmed_all[Freq == 0 & N != 0], file.path(paths$D5_dir, "1.2_altmeds", paste0(pop_prefix, "_", altmed_name, "_denominator_zero_numerator_nonzero.csv")))
   
   # Create column marking if rate is computable i.e. if numerator is greater than denominator or if both numerator and denominator = 0
   altmed_all[, rate_computable := Freq > 0]
@@ -67,10 +70,10 @@ for (altmed in seq_along(files_altmeds)) {
   setnames(altmed_all, c("N", "Freq"), c("n_treated", "n_total"))
   
   # Save dataset 
-  saveRDS(dt, file.path(paths$D4_dir, "1.2_altmeds", paste0(tools::file_path_sans_ext(files_altmeds[altmed]), "_altmed_data.rds")))
+  saveRDS(dt, file.path(paths$D4_dir, "1.2_altmeds", paste0(altmed_name, "_altmed_data.rds")))
   
   # Save results 
-  saveRDS(altmed_all, file.path(paths$D5_dir, "1.2_altmeds", paste0(pop_prefix, "_",tools::file_path_sans_ext(files_altmeds[altmed]), "_altmed_counts.rds")))
+  saveRDS(altmed_all, file.path(paths$D5_dir, "1.2_altmeds", paste0(pop_prefix, "_",altmed_name, "_altmed_counts.rds")))
   
   
 }
