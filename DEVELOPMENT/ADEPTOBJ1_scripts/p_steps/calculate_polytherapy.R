@@ -80,7 +80,7 @@ for (epi1 in seq_along(files_episodes)){
     overlaps[, overlap_days  := as.numeric(overlap_end - overlap_start) + 1]
     
     # Filter ≥182 days and same calendar year
-    overlaps <- overlaps[overlap_days >= 10]
+    overlaps <- overlaps[overlap_days >= 182]
     
     # Overlap should be between start and end fu
     overlaps <- overlaps[overlap_start >= start_follow_up & overlap_start <= end_follow_up & overlap_end >= start_follow_up & overlap_end <= end_follow_up]
@@ -122,7 +122,7 @@ if(length(files_overlaps)>0){
   all_overlaps[, `:=`(overlap_start = as.IDate(overlap_start), overlap_end = as.IDate(overlap_end))]
   
   # Assign year(s) to each overlap start
-  all_overlaps <- all_overlaps[,year:= year(overlap_start)]
+  all_overlaps[,year:= year(overlap_start)]
   
   # Keep only one row per person per year
   all_overlaps_unique <- unique(all_overlaps, by = c("person_id", "year"))
@@ -141,8 +141,8 @@ if(length(files_overlaps)>0){
   overlap_all[N == 0 & Freq == 0, rate := 0]
   
   # Set warnings if Numerator > than Denominator or if Denominator is 0 and Numerator is >0
-  if (nrow(overlap_all[N > Freq]) > 0) {warning(red("Warning: Some numerator values exceed denominator."))}
-  if (nrow(overlap_all[Freq == 0 & N != 0]) > 0) {warning(red("Warning: Denominator zero with non-zero numerator."))}
+  if (nrow(overlap_all[N > Freq]) > 0) warning(red("Warning: Some numerator values exceed denominator."))
+  if (nrow(overlap_all[Freq == 0 & N != 0]) > 0) warning(red("Warning: Denominator zero with non-zero numerator."))
   
   # Save data where odd values 
   if(nrow(overlap_all[N > Freq])>0) fwrite(overlap_all[N > Freq], file.path(paths$D5_dir, "1.2_polytherapy",  "polytherapy_num_gt_denominator.csv"))

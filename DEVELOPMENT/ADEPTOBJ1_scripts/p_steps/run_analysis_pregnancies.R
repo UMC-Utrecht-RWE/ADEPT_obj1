@@ -22,13 +22,13 @@ for(pop in seq_along(populations)){
   
   # Initiation Rates during pregnancy
   source(file.path(thisdir, "p_steps", "calculate_pregnancies_initiation_rate.R"), local = TRUE)
-
+  
   # Initiation Rates during pregnancy - stratification 
   source(file.path(thisdir, "p_steps", "calculate_pregnancies_initiation_rate_stratification.R"), local = TRUE)
 
   # Continued Use during pregnancy
   source(file.path(thisdir, "p_steps", "calculate_pregnancies_continuous_use_rate.R"), local = TRUE)
-  
+
   # Continued Use during pregnancy - stratification
   source(file.path(thisdir, "p_steps", "calculate_pregnancies_continuous_use_rate_stratification.R"), local = TRUE)
   
@@ -38,10 +38,10 @@ for(pop in seq_along(populations)){
   # Switching during pregnancy
   source(file.path(thisdir, "p_steps", "calculate_pregnancies_switching_rate.R"), local = TRUE)
   
-  # TODO Polytherapy during pregnancy
-  # source(file.path(thisdir, "p_steps", "calculate_pregnancies_polytherapy_rate.R"), local = TRUE)
+  # Polytherapy during pregnancy
+  source(file.path(thisdir, "p_steps", "calculate_pregnancies_polytherapy_rate.R"), local = TRUE)
   
-  # TODO Polytherapy during pregnancy - stratification
-  # source(file.path(thisdir, "p_steps", "calculate_pregnancies_polytherapy_rate.R"), local = TRUE)
+  # Polytherapy during pregnancy - stratification
+  source(file.path(thisdir, "p_steps", "calculate_pregnancies_polytherapy_rate_stratification.R"), local = TRUE)
 }
 

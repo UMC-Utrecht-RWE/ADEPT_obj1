@@ -66,13 +66,13 @@ for(episode in seq_along(files_prevalence_episodes)){
     # convert dates to IDate 
     agegroups <- copy(dt)
     
-    agegroups <- agegroups[, birth_date := as.IDate(birth_date)][, jan1 := as.IDate(paste0(year, "-01-01"))]
+    agegroups[, birth_date := as.IDate(birth_date)][, jan1 := as.IDate(paste0(year, "-01-01"))]
     
     # create column - age at Jan 1 of treatment year 
-    agegroups <- agegroups[, age_at_start_of_year := floor(time_length(interval(birth_date, jan1), unit = "years"))]
+    agegroups[, age_at_start_of_year := floor(time_length(interval(birth_date, jan1), unit = "years"))]
     
     # create age groups
-    agegroups <- agegroups[, age_group := fifelse(age_at_start_of_year >= 12 & age_at_start_of_year < 19, "12-18.99",
+    agegroups[, age_group := fifelse(age_at_start_of_year >= 12 & age_at_start_of_year < 19, "12-18.99",
                                                   fifelse(age_at_start_of_year >= 19 & age_at_start_of_year < 35, "19-34.99",
                                                           fifelse(age_at_start_of_year >= 35 & age_at_start_of_year < 55, "35-54.99",
                                                                   fifelse(age_at_start_of_year >= 55 & age_at_start_of_year < 75, "55-74.99",
@@ -91,19 +91,19 @@ for(episode in seq_along(files_prevalence_episodes)){
     agegroup_counts <- merge(all_combinations_agegroups, agegroup_counts, by = c("year", "age_group"), all.x = TRUE)
     
     # if is.na(N), replace it with 0
-    agegroup_counts <- agegroup_counts[is.na(N), N := 0]
+    agegroup_counts[is.na(N), N := 0]
     
     # calculate denominator per year 
-    agegroup_counts <- agegroup_counts[, Freq := sum(N), by = year]
+    agegroup_counts[, Freq := sum(N), by = year]
     
     # if is.na(Freq), replace it with 0
-    agegroup_counts <- agegroup_counts[is.na(Freq), Freq := 0]
+    agegroup_counts[is.na(Freq), Freq := 0]
     
     # calculate rate, if N = 0 and Freq = 0 then change the rate to 0 
-    agegroup_counts <- agegroup_counts[, rate := round(100 * N / Freq, 3)][N == 0 & Freq == 0, rate := 0]
+    agegroup_counts[, rate := round(100 * N / Freq, 3)][N == 0 & Freq == 0, rate := 0]
     
     # create a column marking if rate is computable aka TRUE. It will be false if denominator is 0
-    agegroup_counts <- agegroup_counts[, rate_computable := Freq > 0]
+    agegroup_counts[, rate_computable := Freq > 0]
     
     # save counts
     saveRDS(agegroup_counts, file.path(paths$D5_dir, "1.1_prevalence", "stratified", paste0(gsub("_prevalence_data\\.rds$", "_prevalence_agegroup_counts.rds", files_prevalence_episodes[episode]))))
@@ -113,9 +113,9 @@ for(episode in seq_along(files_prevalence_episodes)){
   dt_temp <- copy(dt)
   # prepare data for foverlaps
   # incident episodes
-  dt_temp <- dt_temp[, start_window := episode.start - lookback_period][, end_window := episode.start]
+  dt_temp[, start_window := episode.start - lookback_period][, end_window := episode.start]
   # indication data
-  dt_indication <- dt_indication[, start_event := event_date][, end_event := event_date]
+  dt_indication[, start_event := event_date][, end_event := event_date]
   
   # set keys 
   setkey(dt_temp, person_id, start_window, end_window)
@@ -135,7 +135,7 @@ for(episode in seq_along(files_prevalence_episodes)){
                                                 "start_year", "end_year")]
   
   # calculate difference in days between episode start and event date of indication 
-  indications <- indications[, diff_days := as.numeric(difftime(episode.start, event_date, units = "days"))]
+  indications[, diff_days := as.numeric(difftime(episode.start, event_date, units = "days"))]
   
   # create column indication: 
   # if more than one rx is present, and epilepsy is among them, then priority is epilepsy
@@ -188,19 +188,19 @@ for(episode in seq_along(files_prevalence_episodes)){
   indication_counts <- merge(all_combinations_indications, indication_counts, by = c("year", "indication"), all.x = TRUE)
   
   # if is.na(N), replace it with 0
-  indication_counts <- indication_counts[is.na(N), N := 0]
+  indication_counts[is.na(N), N := 0]
   
   # calculate denominator per year 
-  indication_counts <- indication_counts[, Freq := sum(N), by = year]
+  indication_counts[, Freq := sum(N), by = year]
   
   # if is.na(Freq), replace it with 0
-  indication_counts <- indication_counts[is.na(Freq), Freq := 0]
+  indication_counts[is.na(Freq), Freq := 0]
   
   # calculate rate, if N = 0 and Freq = 0 then change the rate to 0 
-  indication_counts <- indication_counts[, rate := round(100 * N / Freq, 3)][N == 0 & Freq == 0, rate := 0]
+  indication_counts[, rate := round(100 * N / Freq, 3)][N == 0 & Freq == 0, rate := 0]
   
   # create a column marking if rate is computable aka TRUE. It will be false if denominator is 0
-  indication_counts <- indication_counts[, rate_computable := Freq > 0]
+  indication_counts[, rate_computable := Freq > 0]
   
   # save counts
   saveRDS(indication_counts, file.path(paths$D5_dir, "1.1_prevalence", "stratified", paste0(gsub("_prevalence_data\\.rds$", "_prevalence_indication_counts.rds", files_prevalence_episodes[episode]))))

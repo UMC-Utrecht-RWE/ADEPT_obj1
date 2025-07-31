@@ -41,22 +41,22 @@ for (med in seq_along(med_files)) {
   dt <- fread(file.path(CDM_dir, med_files[med]), stringsAsFactors = FALSE)
   
   # Keep only needed columns
-  dt <- dt[, .(person_id, medicinal_product_atc_code, date_dispensing, date_prescription, 
-               meaning_of_drug_record, presc_duration_days, disp_number_medicinal_product, 
-               presc_quantity_per_day, medicinal_product_id)]
+  dt[, .(person_id, medicinal_product_atc_code, date_dispensing, date_prescription, 
+         meaning_of_drug_record, presc_duration_days, disp_number_medicinal_product, 
+         presc_quantity_per_day, medicinal_product_id)]
   
   # Rename columns
   setnames(dt, c("meaning_of_drug_record", "medicinal_product_atc_code"), c("meaning", "code"))
   
   # Create rx_date column (equal to date_dispensing, unless that is missing, then equal to date_prescription)
-  dt<-dt[,rx_date:= ifelse(!is.na(date_dispensing), date_dispensing, date_prescription)][, rx_date := as.IDate(as.character(rx_date), format = "%Y%m%d")]
+  dt[,rx_date:= ifelse(!is.na(date_dispensing), date_dispensing, date_prescription)][, rx_date := as.IDate(as.character(rx_date), format = "%Y%m%d")]
   
   # Make sure person_id is character type in both data sets before merging
   dt[, person_id := as.character(person_id)]
   study_population[, person_id := as.character(person_id)]
   
   # merge dt with study population. Keep only those in study population
-  dt <- dt[study_population,on=.(person_id)]
+  dt <- dt[study_population, on=.(person_id)]
   
   # Drop any records that fall outside entry and exit dates
   dt <- dt[rx_date >= entry_date & rx_date <= exit_date]

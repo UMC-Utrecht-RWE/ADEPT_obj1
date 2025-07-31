@@ -71,9 +71,9 @@ comorbidity_levels <- c("C_CARDIOCEREBROVASCULARDESE_COV", "M_FRACTURESOSTEOPORO
                         "N_BRAININJURYALL_AESI", "N_DEMENTIAMILDCI_COV", "R_RESPCHRONICALGORITHM_COV", "V_HYPERTENSION_COV")
 
 # create empty dt year for counts to include all possible combinations
-all_years  <- seq(year(start_study_date), year(end_study_date))
-all_combinations_agegroups     <- CJ(year = all_years, age_group = age_levels, unique = TRUE)
-all_combinations_indications   <- CJ(year = all_years, indication = indication_levels, unique = TRUE)
+all_years <- seq(year(start_study_date), year(end_study_date))
+all_combinations_agegroups <- CJ(year = all_years, age_group = age_levels, unique = TRUE)
+all_combinations_indications <- CJ(year = all_years, indication = indication_levels, unique = TRUE)
 
 # loop over episodes
 for(episode in seq_along(files_incidence_episodes)){
@@ -92,20 +92,21 @@ for(episode in seq_along(files_incidence_episodes)){
     # convert dates to IDate 
     agegroups <- copy(dt)
     
-    agegroups <- agegroups[, birth_date := as.IDate(birth_date)][, episode.start := as.IDate(episode.start)]
+    # convert dates to IDate
+    agegroups[, birth_date := as.IDate(birth_date)][, episode.start := as.IDate(episode.start)]
     
     # create column - age at episode start 
-    agegroups <- agegroups[, age_at_episode_start := floor(time_length(interval(birth_date, episode.start), unit = "years"))]
+    agegroups[, age_at_episode_start := floor(time_length(interval(birth_date, episode.start), unit = "years"))]
     
     # create age groups
-    agegroups <- agegroups[, age_group := fifelse(age_at_episode_start >= 12 & age_at_episode_start < 19, "12-18.99",
-                                                  fifelse(age_at_episode_start >= 19 & age_at_episode_start < 35, "19-34.99",
-                                                          fifelse(age_at_episode_start >= 35 & age_at_episode_start < 55, "35-54.99",
-                                                                  fifelse(age_at_episode_start >= 55 & age_at_episode_start < 75, "55-74.99",
-                                                                          fifelse(age_at_episode_start >= 75, "75+", "UNKNOWN")))))]
+    agegroups[, age_group := fifelse(age_at_episode_start >= 12 & age_at_episode_start < 19, "12-18.99",
+                                     fifelse(age_at_episode_start >= 19 & age_at_episode_start < 35, "19-34.99",
+                                             fifelse(age_at_episode_start >= 35 & age_at_episode_start < 55, "35-54.99",
+                                                     fifelse(age_at_episode_start >= 55 & age_at_episode_start < 75, "55-74.99",
+                                                             fifelse(age_at_episode_start >= 75, "75+", "UNKNOWN")))))]
     
     # extract year from group by date column - episode.start
-    agegroups <- agegroups[, year := year(episode.start)]
+    agegroups[, year := year(episode.start)]
     
     # Keep one row per person_id - episode.start
     agegroups <- unique(agegroups, by = c("person_id", "episode.start"))
@@ -117,19 +118,19 @@ for(episode in seq_along(files_incidence_episodes)){
     agegroup_counts <- merge(all_combinations_agegroups, agegroup_counts, by = c("year", "age_group"), all.x = TRUE)
     
     # if is.na(N), replace it with 0
-    agegroup_counts <- agegroup_counts[is.na(N), N := 0]
+    agegroup_counts[is.na(N), N := 0]
     
     # calculate denominator per year 
-    agegroup_counts <- agegroup_counts[, Freq := sum(N), by = year]
+    agegroup_counts[, Freq := sum(N), by = year]
     
     # if is.na(Freq), replace it with 0
-    agegroup_counts <- agegroup_counts[is.na(Freq), Freq := 0]
+    agegroup_counts[is.na(Freq), Freq := 0]
     
     # calculate rate, if N = 0 and Freq = 0 then change the rate to 0 
-    agegroup_counts <- agegroup_counts[, rate := round(100 * N / Freq, 3)][N == 0 & Freq == 0, rate := 0]
+    agegroup_counts[, rate := round(100 * N / Freq, 3)][N == 0 & Freq == 0, rate := 0]
     
     # create a column marking if rate is computable aka TRUE. It will be false if denominator is 0
-    agegroup_counts <- agegroup_counts[, rate_computable := Freq > 0]
+    agegroup_counts[, rate_computable := Freq > 0]
     
     # save counts
     saveRDS(agegroup_counts, file.path(paths$D5_dir, "1.1_incidence", "stratified", paste0(gsub("_incidence_data\\.rds$", "_incidence_agegroup_counts.rds", files_incidence_episodes[episode]))))
@@ -140,9 +141,9 @@ for(episode in seq_along(files_incidence_episodes)){
   # incident episodes
   dt_temp <- copy(dt)
   
-  dt_temp <- dt_temp[, start_window := episode.start - lookback_period][, end_window := episode.start]
+  dt_temp[, start_window := episode.start - lookback_period][, end_window := episode.start]
   # indication data
-  dt_indication <- dt_indication[, start_event := event_date][, end_event := event_date]
+  dt_indication[, start_event := event_date][, end_event := event_date]
   
   # set keys 
   setkey(dt_temp, person_id, start_window, end_window)
@@ -161,7 +162,7 @@ for(episode in seq_along(files_incidence_episodes)){
                                                 "sex_at_instance_creation", "birth_date", "start_follow_up", "end_follow_up", "entry_date", "exit_date")]
   
   # calculate difference in days between episode start and event date of indication 
-  indications <- indications[, diff_days := as.numeric(difftime(episode.start, event_date, units = "days"))]
+  indications[, diff_days := as.numeric(difftime(episode.start, event_date, units = "days"))]
   
   # create column indication: 
   # if more than one rx is present, and epilepsy is among them, then priority is epilepsy
@@ -189,7 +190,7 @@ for(episode in seq_along(files_incidence_episodes)){
   ]
   
   # extract year from group by date column - episode.start
-  indications <- indications[, year := year(episode.start)]
+  indications[, year := year(episode.start)]
   
   # Keep one row per person_id - episode.start
   indications <- unique(indications, by = c("person_id", "episode.start"))
@@ -201,19 +202,19 @@ for(episode in seq_along(files_incidence_episodes)){
   indication_counts <- merge(all_combinations_indications, indication_counts, by = c("year", "indication"), all.x = TRUE)
   
   # if is.na(N), replace it with 0
-  indication_counts <- indication_counts[is.na(N), N := 0]
+  indication_counts[is.na(N), N := 0]
   
   # calculate denominator per year 
-  indication_counts <- indication_counts[, Freq := sum(N), by = year]
+  indication_counts[, Freq := sum(N), by = year]
   
   # if is.na(Freq), replace it with 0
-  indication_counts <- indication_counts[is.na(Freq), Freq := 0]
+  indication_counts[is.na(Freq), Freq := 0]
   
   # calculate rate, if N = 0 and Freq = 0 then change the rate to 0 
-  indication_counts <- indication_counts[, rate := round(100 * N / Freq, 3)][N == 0 & Freq == 0, rate := 0]
+  indication_counts[, rate := round(100 * N / Freq, 3)][N == 0 & Freq == 0, rate := 0]
   
   # create a column marking if rate is computable aka TRUE. It will be false if denominator is 0
-  indication_counts <- indication_counts[, rate_computable := Freq > 0]
+  indication_counts[, rate_computable := Freq > 0]
   
   # save counts
   saveRDS(indication_counts, file.path(paths$D5_dir, "1.1_incidence", "stratified", paste0(gsub("_incidence_data\\.rds$", "_incidence_indication_counts.rds", files_incidence_episodes[episode]))))
@@ -223,11 +224,11 @@ for(episode in seq_along(files_incidence_episodes)){
     # prepare data for foverlaps
     # incident episodes
     dt_temp <- copy(dt)
-    dt_temp <- dt_temp[, start_window := episode.start - lookback_period][, end_window := episode.start-1]
+    dt_temp[, start_window := episode.start - lookback_period][, end_window := episode.start-1]
     
     # indication data
-    dt_comorbidity_dx   <- dt_comorbidity_dx[, start_event := event_date][, end_event := event_date]
-    dt_comorbidity_meds <- dt_comorbidity_meds[, start_event := rx_date][, end_event := rx_date]
+    dt_comorbidity_dx[, start_event := event_date][, end_event := event_date]
+    dt_comorbidity_meds[, start_event := rx_date][, end_event := rx_date]
     
     
     # set keys 

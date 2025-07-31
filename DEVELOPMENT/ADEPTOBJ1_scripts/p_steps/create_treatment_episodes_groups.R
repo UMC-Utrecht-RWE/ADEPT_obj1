@@ -6,6 +6,9 @@ print("=========================================================================
 print("========================= CREATING TREATMENT EPISODES GROUPS =========================")
 print("======================================================================================")
 
+# Vector of patterns to exclude
+exclude_patterns <- c("DP_ANTIEPINEW", "DP_ANTIEPIOLD", "DP_GABAPENTINOIDS", "DP_BENZOANTIEPILEPTIC")
+
 # List all files in exposure folder
 files_exposures <- list.files(file.path(paths$D3_dir, "exposure"))
 
@@ -13,10 +16,7 @@ files_exposures <- list.files(file.path(paths$D3_dir, "exposure"))
 files_exposures <- files_exposures[grepl(paste0("^", pop_prefix, "_"), files_exposures)]
 
 # If pop_prefix is PC, then drop any that are PC_HOSP
-if(pop_prefix=="PC"){files_exposures <- files_exposures[!grepl("PC_HOSP", files_exposures)]}
-
-# Vector of patterns to exclude
-exclude_patterns <- c("DP_ANTIEPINEW", "DP_ANTIEPIOLD", "DP_GABAPENTINOIDS", "DP_BENZOANTIEPILEPTIC")
+if(pop_prefix=="PC") files_exposures <- files_exposures[!grepl("PC_HOSP", files_exposures)]
 
 # Create a combined regex pattern
 pattern <- paste(exclude_patterns, collapse = "|")

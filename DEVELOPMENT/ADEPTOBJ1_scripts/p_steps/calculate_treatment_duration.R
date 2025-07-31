@@ -17,7 +17,7 @@ files_episodes <- list.files(file.path(paths$D3_dir, "tx_episodes"), pattern = "
 files_episodes <- files_episodes[grepl(paste0("^", pop_prefix, "_"), files_episodes)]
 
 # If pop_prefix is PC, then drop any that are PC_HOSP
-if(pop_prefix == "PC") {files_episodes <- files_episodes[!grepl("PC_HOSP", files_episodes)]}
+if(pop_prefix == "PC") files_episodes <- files_episodes[!grepl("PC_HOSP", files_episodes)]
 
 # Prepare list to collect per-drug summaries
 all_drug_stats <- list()
@@ -42,10 +42,10 @@ for (episode in seq_along(files_episodes)) {
   dt[, episode.end := as.IDate(episode.end)]
   
   # Filter and trim to follow-up period
-  dt <- dt[!(episode.end < start_follow_up | episode.start > end_follow_up)]
+  dt <- dt[!(episode.end < start_follow_up | episode.start > end_follow_up),]
   dt[episode.start < start_follow_up, episode.start := start_follow_up]
   dt[episode.end > end_follow_up, episode.end := end_follow_up]
-  dt <- dt[episode.end >= episode.start]  # drop invalid records
+  dt <- dt[episode.end >= episode.start,]  # drop invalid records
 
   if (nrow(dt) > 0) {
     

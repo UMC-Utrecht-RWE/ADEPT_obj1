@@ -18,7 +18,7 @@ files_episodes <- list.files(file.path(paths$D3_dir, "tx_episodes"), pattern = "
 files_episodes <- files_episodes[grepl(paste0("^", pop_prefix, "_"), files_episodes)]
 
 # If pop_prefix is PC, then drop any that are PC_HOSP
-if(pop_prefix=="PC"){files_episodes <- files_episodes[!grepl("PC_HOSP", files_episodes)]}
+if(pop_prefix=="PC") files_episodes <- files_episodes[!grepl("PC_HOSP", files_episodes)]
 
 # Load prevalence files
 files_prevalence_counts <- list.files(file.path(paths$D5_dir, "1.1_prevalence"), pattern = "\\.rds$")
@@ -27,13 +27,15 @@ files_prevalence_counts <- list.files(file.path(paths$D5_dir, "1.1_prevalence"),
 files_prevalence_counts <- files_prevalence_counts[grepl(paste0("^", pop_prefix, "_"), files_prevalence_counts)]
 
 # If pop_prefix is PC, then drop any that are PC_HOSP
-if(pop_prefix=="PC"){files_prevalence_counts <- files_prevalence_counts[!grepl("PC_HOSP", files_prevalence_counts)]}
+if(pop_prefix=="PC") files_prevalence_counts <- files_prevalence_counts[!grepl("PC_HOSP", files_prevalence_counts)]
 
 # Loop through each treatment episode file
 for (episode in seq_along(files_episodes)) {
   
   episode_filename <- files_episodes[episode]
+  
   if (is.na(episode_filename)) stop("Missing episode filename")
+  
   episode_name <- gsub("_treatment_episode\\.rds$", "", episode_filename)
 
   # Read the treatment episode file
@@ -93,8 +95,8 @@ for (episode in seq_along(files_episodes)) {
       discontinued_all[, rate := round(100 * N / n_total, 3)][N == 0 & n_total == 0, rate := 0]
       
       # Set warnings if Numerator > than Denominator or if Denominator is 0 and Numerator is >0
-      if (nrow(discontinued_all[N > n_total]) > 0) {warning(red("Warning: Some numerator values exceed denominator."))}
-      if (nrow(discontinued_all[n_total == 0 & N != 0]) > 0) {warning(red("Warning: Denominator zero with non-zero numerator."))}
+      if (nrow(discontinued_all[N > n_total]) > 0) warning(red("Warning: Some numerator values exceed denominator."))
+      if (nrow(discontinued_all[n_total == 0 & N != 0]) > 0) warning(red("Warning: Denominator zero with non-zero numerator."))
       
       # Save data where odd values 
       if(nrow(discontinued_all[N > n_total])>0) fwrite(discontinued_all[N > n_total], file.path(paths$D5_dir, "1.2_discontinued", paste0(episode_name, "_num_gt_denominator.csv")))

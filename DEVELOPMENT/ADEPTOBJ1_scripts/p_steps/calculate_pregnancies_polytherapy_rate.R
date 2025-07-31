@@ -5,151 +5,150 @@
 # Denominator: Total number of pre-pregnancy users of an ASM in a calendar year in the data source 
 # Stratification by: Overall, individual drug substance, drug sub-groups, indication, calendar year, data source
 
-# Pending: Individual drug substance, calendar year, data source
-
 # Conditions: 
 ### Pre-pregnancy users
 ### 
 ###############################################################################################################################################################################
-print("===============================================================================================")
-print("========================= CALCULATING POLYTHERAPY RATE DURING PREGNANCY =========================")
-print("===============================================================================================")
+print("==================================================================================================")
+print("========================= CALCULATING POLYTHERAPY RATES DURING PREGNANCY =========================")
+print("==================================================================================================")
 
-# Read in Pre-pregnancy Data
-# List all pre pregnancy data matching population prefix
-files_prepregnancy <- list.files(file.path(paths$D4_dir, "1.3_pre-pregnancy_use_rate"), pattern = "_pre_pregnancy_data\\.rds$")
+# Create regex pattern to match any of the excluded subgroup names
+pattern_exclude <- paste(c("DP_ANTIEPINEW", "DP_ANTIEPIOLD", "DP_BENZOANTIEPILEPTIC", "DP_GABAPENTINOIDS"), collapse = "|")
 
-# Keep only files that match population prefix AND contain "_F_" (female patients)
-files_prepregnancy <- files_prepregnancy[grepl(paste0("^", pop_prefix, "_"), files_prepregnancy)]
+#=== List files ===
+# Pre-pregnancy data and counts 
+files_prepregnancy <- list.files(file.path(paths$D4_dir, "1.3_pre-pregnancy_use"))
+files_counts       <- list.files(file.path(paths$D5_dir, "1.3_pre-pregnancy_use"))
 
-# Drop PC_HOSP files if pop_prefix is PC
-if(pop_prefix == "PC") files_prepregnancy <- files_prepregnancy[!grepl("PC_HOSP", files_prepregnancy)]
-
-# Read in poly Episodes
-# poly Episodes
-files_polytherapy_episodes <- list.files(file.path(paths$D4_dir, "1.2_polytherapy"), pattern = "\\.rds$")
-
-# Filter exposures for current pop_prefix only
-files_polytherapy_episodes <- files_polytherapy_episodes[grepl(paste0("^", pop_prefix, "_"), files_polytherapy_episodes)]
-
-# If pop_prefix is PC, then drop any that are PC_HOSP
-if(pop_prefix=="PC") files_polytherapy_episodes <- files_polytherapy_episodes[!grepl("PC_HOSP", files_polytherapy_episodes)]
-
-# Read in Pre-pregnancy Counts 
-# List count files files matching population prefix
-files_counts <- list.files(file.path(paths$D5_dir, "1.3_pre-pregnancy_use_rate"), pattern = "_pre_pregnancy_counts\\.rds$")
-
-# Keep only files that match population prefix AND contain "_F_" (female patients)
-files_counts <- files_counts[grepl(paste0("^", pop_prefix, "_"), files_counts)]
-
-# Drop PC_HOSP files if pop_prefix is PC
+# filter for BIFAP subpops
+if(pop_prefix == "PC") files_prepregnancy  <- files_prepregnancy[!grepl("PC_HOSP", files_prepregnancy)]
 if(pop_prefix == "PC") files_counts <- files_counts[!grepl("PC_HOSP", files_counts)]
 
-# === Create maps ===
-# Extract treatment name key
-get_treatment_key <- function(x, suffix) gsub(suffix, "", x)
+# Apply exclusions
+files_prepregnancy <- files_prepregnancy[!grepl(pattern_exclude, files_prepregnancy)]
+files_counts       <- files_counts[!grepl(pattern_exclude, files_counts)]
 
-treatment_keys <- get_treatment_key(files_prepregnancy, "_pre_pregnancy_data.rds")
+# Polytherapy episodes 
+files_polytherapy_episodes <- list.files(file.path(paths$D4_dir, "1.2_polytherapy"), pattern = "\\.rds$")
+# filter for Female subpop only 
+files_polytherapy_episodes <- files_polytherapy_episodes[grepl("_F_", files_polytherapy_episodes)]
+# filter for BIFAP subpops
+if(pop_prefix=="PC") files_polytherapy_episodes <- files_polytherapy_episodes[!grepl("PC_HOSP", files_polytherapy_episodes)]
 
-# Match corresponding files by treatment key
-prepreg_map <- setNames(file.path(paths$D4_dir, "1.3_pre-pregnancy_use_rate", files_prepregnancy), treatment_keys)
-counts_map  <- setNames(file.path(paths$D5_dir, "1.3_pre-pregnancy_use_rate", files_counts), treatment_keys)
+# Read in all files 
+dt_prepreg <- rbindlist(lapply(file.path(paths$D4_dir, "1.3_pre-pregnancy_use", files_prepregnancy), readRDS), fill = TRUE)
+dt_counts  <- rbindlist(lapply(file.path(paths$D5_dir, "1.3_pre-pregnancy_use", files_counts),               readRDS), fill = TRUE)
+dt_poly    <- rbindlist(lapply(file.path(paths$D4_dir, "1.2_polytherapy",       files_polytherapy_episodes), readRDS), fill = TRUE)
 
-
-
-for (trt in seq_along(treatment_keys)) {
+if (nrow(dt_prepreg) > 0 && nrow(dt_counts) > 0 && nrow(dt_poly) > 0) {
+  # All three have rows, so proceed with your code
+  message("All datasets have data, proceeding...")
   
-  # get treatment name 
-  treatment <- treatment_keys[trt]
+  # drop unneeded columns
+  dt_prepreg <- dt_prepreg[, .(person_id, atc_group, episode.start, episode.end, pregnancy_start_date, pregnancy_end_date, highest_quality)]
+  dt_poly <- dt_poly[, .(person_id, atc_group, i.atc_group, overlap_start, overlap_end)]
+  # rename cols
+  setnames(dt_prepreg, "atc_group", "atc_group_prepreg")
+  setnames(dt_poly, c("atc_group", "i.atc_group"), c("atc_group_poly1", "atc_group_poly2"))
+  # remove duplicates
+  dt_prepreg <- unique(dt_prepreg)
+  dt_poly <- unique(dt_poly)
   
-  # If none of the file found, skip
-  if (!file.exists(prepreg_map[[trt]]) ||
-      !file.exists(poly_map[[trt]]) ||
-      !file.exists(counts_map[[trt]])) next
+  # merge prepregnancy data with polytherapy file
+  dt <- merge(dt_prepreg, dt_poly, by = "person_id", all = FALSE)
   
-  # Read in files
-  dt_pre <- readRDS(prepreg_map[[trt]])
-  dt_poly <- readRDS(poly_map[[trt]])
-  dt_cnt <- readRDS(counts_map[[trt]])
-  print(treatment)
-  print(nrow(dt_pre))
-  print(nrow(dt_poly))
-  # Merge on person_id
-  dt <- merge(dt_pre[,.(person_id, pregnancy_start_date, pregnancy_end_date)], dt_poly, by = "person_id", all = FALSE)
-  print(nrow(dt))
-  # Convert dates to IDate
-  date_cols <- c("pregnancy_start_date", "pregnancy_end_date", "rx_date")
-  dt[, (date_cols) := lapply(.SD, as.IDate), .SDcols = date_cols]
-  
-  ######################################################################
-  ######################################################################
-  ######################################################################
-  # TEST 
-  # Make sure dt is a data.table and person_id is character
-  dt[person_id == "ConCDM_SIM_200421_00025", 
-     `:=` (
-       rx_date = as.IDate("2009-06-04")
-     )]
-  
-  ######################################################################
-  ######################################################################
-  ######################################################################
-  
-  # Create subsets 
-  # Number of pre-pregnancy users of an ASM that does not run into the pregnancy period
-  dt <- dt[rx_date >= pregnancy_start_date & rx_date <= pregnancy_end_date,]
-
-  
-  if(nrow(dt)>0){
+  if (nrow(dt) > 0) {
     
-    message("polys in pregnancy is found for " , treatment)
+    # Calculate intersection between overlap period and pregnancy period
+    dt[, overlap_days_within_pregnancy := as.numeric(pmin(overlap_end, pregnancy_end_date) - pmax(overlap_start, pregnancy_start_date) + 1)]
     
-    # Assign calendar year of each pregnancy
-    dt[, preg_year := year(pregnancy_start_date)]
+    # If no overlap set overlap days to 0
+    dt[overlap_days_within_pregnancy < 0, overlap_days_within_pregnancy := 0]
     
-    # Remove duplicates: Keep only one person id per year
-    dt <- unique(dt, by = c("person_id", "year"))
+    # flag if at least 90 days overlap 
+    dt[, overlap_3months := overlap_days_within_pregnancy >= 90]
     
-    # Count number of polys per year
-    poly_counts <- dt[, .("N" = .N), by = preg_year]
+    dt_subset <- dt[overlap_3months==TRUE,]
     
-    # Prepare denominator
-    dt_cnt[,c("n_total", "rate", "rate_computable") := NULL]
-    setnames(dt_cnt, "n_treated", "n_total")
-    
-    # Merge poly with pre-pregnancies
-    poly_all <- merge(poly_counts, dt_cnt, by = "preg_year", all.y = TRUE)
-    
-    # Set N = 0 for years with no treatments
-    poly_all[is.na(N), N := 0]
-    
-    # Calculate poly as a rate (*100)
-    poly_all[, rate := round(100 * N / n_total, 3)][N == 0 & n_total == 0, rate := 0]
-    
-    # Set warnings if Numerator > than Denominator or if Denominator is 0 and Numerator is >0
-    if (nrow(poly_all[N > n_total]) > 0) {warning(red("Warning: Some numerator values exceed denominator."))}
-    if (nrow(poly_all[n_total == 0 & N != 0]) > 0) {warning(red("Warning: Denominator zero with non-zero numerator."))}
-    
-    # Save data where odd values 
-    if(nrow(poly_all[N > n_total])>0) fwrite(poly_all[N > n_total], file.path(paths$D5_dir, "1.4_poly_use_rate", paste0(current_prefix, "_num_gt_denominator.csv")))
-    if(nrow(poly_all[n_total == 0 & N != 0])>0) fwrite(poly_all[n_total == 0 & N != 0], file.path(paths$D5_dir, "1.4_poly_use_rate", paste0(current_prefix, "_denominator_zero_numerator_nonzero.csv")))
-    
-    # Create column marking if rate is computable 
-    poly_all[, rate_computable := n_total > 0]
-    
-    # rename columns
-    setnames(poly_all, "N", "n_treated")
-    
-    # Save dataset 
-    saveRDS(dt_before, file.path(paths$D4_dir, "1.4_poly_use_rate", paste0(unique_prefixes[pfx], "_poly_in_pregnancy_data.rds")))
-    
-    # Save results 
-    saveRDS(poly_all, file.path(paths$D5_dir, "1.4_poly_use_rate", paste0(unique_prefixes[pfx], "_poly_in_pregnancy_counts.rds")))
+    if (nrow(dt_subset) > 0) {
+      
+      message("Prepregnancy users with overlap of 90 days or more during pregnancy period found")
+      
+      # assign year to count in
+      dt_subset[, preg_year := year(pregnancy_start_date)]
+      
+      # keep one person per year
+      dt_subset <- unique(dt_subset, by = c("person_id", "preg_year"))
+      
+      # count by pregnancy
+      poly_counts <- dt_subset[, .(N = .N), by = preg_year]
+      
+      # prepare denominator
+      dt_counts_copy <- copy(dt_counts)
+      dt_counts_copy[, c("n_total", "rate", "rate_computable") := NULL]
+      setnames(dt_counts_copy, "n_treated", "n_total")
+      # add all pre-pregnancy users across all exposures 
+      dt_counts_all <- dt_counts_copy[, .(n_total = sum(n_total)), by = preg_year]
+      
+      # merge numerator and denominator
+      poly_all <- merge(poly_counts, dt_counts_all, by = "preg_year", all.y = TRUE)
+      poly_all[is.na(N), N := 0]
+      
+      # Calculate switcher as a rate (*1000)
+      poly_all[, rate := round(1000 * N / n_total, 3)]
+      poly_all[N == 0 & n_total == 0, rate := 0]
+      
+      # warnings
+      if (nrow(poly_all[N > n_total]) > 0) warning(red("Warning: Numerator > Denominator"))
+      if (nrow(poly_all[n_total == 0 & N != 0]) > 0) warning(red("Warning: Denominator zero with non-zero numerator"))
+      
+      # save odd cases
+      if (nrow(poly_all[N > n_total]) > 0) fwrite(poly_all[N > n_total], file.path(paths$D5_dir, "1.4_pregnancy_polytherapy", paste0(treatment, "_num_gt_denominator.csv")))
+      if (nrow(poly_all[n_total == 0 & N != 0]) > 0) fwrite(poly_all[n_total == 0 & N != 0], file.path(paths$D5_dir, "1.4_pregnancy_polytherapy", paste0(treatment, "_denominator_zero_numerator_nonzero.csv")))
+      
+      # Create column marking if rate is computable
+      poly_all[, rate_computable := n_total > 0]
+      
+      # rename columns
+      setnames(poly_all, "N", "n_treated")
+      
+      # save output
+      saveRDS(dt_subset, file.path(paths$D4_dir, "1.4_pregnancy_polytherapy", paste0(pop_prefix, "__polytherapy_in_pregnancy_data.rds")))
+      saveRDS(poly_all, file.path(paths$D5_dir, "1.4_pregnancy_polytherapy", paste0(pop_prefix, "_polytherapy_in_pregnancy_counts.rds")))
+      
+    } else {
+      
+      message(red("No prepregnancy users have an overlap of 90 days or more during pregnancy period"))
+      
+    }
     
   } else {
     
-    message(red("No polys before pregnancy for" , treatment))
+    message(red("No polytherapy records found"))
+    
   }
   
+} else {
+  # One or more are empty
+  message(red("No polytherapy episodes found"))
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

@@ -1,9 +1,10 @@
 ###############################################################################################################################################################################
-# <<< Sub-objective 1.3: Initiation rate during pregnancy >>> 
-# Measure: Annual initiation rate of ASM during pregnancy
-# Numerator: Number of pregnancies in a calendar year with ≥1 treatment episode of an ASM during any trimester, but no treatment episode in the 12 months prior to pregnancy start
+# <<< Sub-objective 1.3: Continuous use rate >>> 
+# Measure: Annual continuous rate of ASM use during pregnancy
+# Numerator: The number of pre-pregnancy users of an ASM within a calendar year that also runs into the first, second and third trimester of pregnancy 
 # Denominator: Total number of pregnancies in that calendar year in the data source
-# Stratification by: Overall, individual drug substance, drug sub-groups, age groups, indication, calendar year, data source
+# Stratification by: Individual drug substance, drug sub-groups, indication, calendar year, data source
+
 ###############################################################################################################################################################################
 
 print("=================================================================================================")
@@ -56,10 +57,10 @@ for(episode in seq_along(files_cont_use_episodes)){
   
   # incident episodes
   dt_temp <- copy(dt)
+  dt_temp[, start_window := episode.start - lookback_period][, end_window := episode.start]
   
-  dt_temp <- dt_temp[, start_window := episode.start - lookback_period][, end_window := episode.start]
   # indication data
-  dt_indication <- dt_indication[, start_event := event_date][, end_event := event_date]
+  dt_indication[, start_event := event_date][, end_event := event_date]
   
   # set keys 
   setkey(dt_temp, person_id, start_window, end_window)
@@ -78,7 +79,7 @@ for(episode in seq_along(files_cont_use_episodes)){
                                                 "sex_at_instance_creation", "birth_date", "start_follow_up", "end_follow_up", "entry_date", "exit_date")]
   
   # calculate difference in days between episode start and event date of indication 
-  indications <- indications[, diff_days := as.numeric(difftime(episode.start, event_date, units = "days"))]
+  indications[, diff_days := as.numeric(difftime(episode.start, event_date, units = "days"))]
   
   # create column indication: 
   # if more than one rx is present, and epilepsy is among them, then priority is epilepsy
@@ -106,7 +107,7 @@ for(episode in seq_along(files_cont_use_episodes)){
   ]
   
   # extract year from group by date column - episode.start
-  indications <- indications[, year := year(episode.start)]
+  indications[, year := year(episode.start)]
   
   # Keep one row per person_id - episode.start
   indications <- unique(indications, by = c("person_id", "episode.start"))
@@ -118,22 +119,22 @@ for(episode in seq_along(files_cont_use_episodes)){
   indication_counts <- merge(all_combinations_indications, indication_counts, by = c("year", "indication"), all.x = TRUE)
   
   # if is.na(N), replace it with 0
-  indication_counts <- indication_counts[is.na(N), N := 0]
+  indication_counts[is.na(N), N := 0]
   
   # calculate denominator per year 
-  indication_counts <- indication_counts[, Freq := sum(N), by = year]
+  indication_counts[, Freq := sum(N), by = year]
   
   # if is.na(Freq), replace it with 0
-  indication_counts <- indication_counts[is.na(Freq), Freq := 0]
+  indication_counts[is.na(Freq), Freq := 0]
   
   # calculate rate, if N = 0 and Freq = 0 then change the rate to 0 
-  indication_counts <- indication_counts[, rate := round(100 * N / Freq, 3)][N == 0 & Freq == 0, rate := 0]
+  indication_counts[, rate := round(100 * N / Freq, 3)][N == 0 & Freq == 0, rate := 0]
   
   # create a column marking if rate is computable aka TRUE. It will be false if denominator is 0
-  indication_counts <- indication_counts[, rate_computable := Freq > 0]
+  indication_counts[, rate_computable := Freq > 0]
   
   # save counts
-  saveRDS(indication_counts, file.path(paths$D5_dir, "1.3_pregnancy_continuous", "stratified", paste0(sub("_initiation_rates.*$", "", files_preg_init_episodes[episode]), "_initiation_rates_during_pregnancy_indication_counts.rds")))
+  saveRDS(indication_counts, file.path(paths$D5_dir, "1.3_pregnancy_continuous", "stratified", paste0(sub("_continuous_rates.*$", "", files_cont_use_episodes[episode]), "_continuous_use_rates_in_pregnancy_indication_counts.rds")))
 }
 
 

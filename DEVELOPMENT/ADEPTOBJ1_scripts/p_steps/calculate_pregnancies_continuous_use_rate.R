@@ -3,9 +3,8 @@
 # Measure: Annual continuous rate of ASM use during pregnancy
 # Numerator: The number of pre-pregnancy users of an ASM within a calendar year that also runs into the first, second and third trimester of pregnancy 
 # Denominator: Total number of pregnancies in that calendar year in the data source
-# Stratification by: Overall, individual drug substance, drug sub-groups, indication, calendar year, data source
+# Stratification by: Individual drug substance, drug sub-groups, indication, calendar year, data source
 
-# Pending: Stratification by Overall, indication
 ###############################################################################################################################################################################
 
 print("===============================================================================================")
@@ -38,21 +37,6 @@ for (episode in seq_along(files_episodes)) {
   
   # Remove true duplicates
   dt <- unique(dt)
-  
-  ######################################################################
-  ######################################################################
-  ######################################################################
-  # TEST 
-  # Make sure dt is a data.table and person_id is character
-  dt[person_id == "ConCDM_SIM_200421_00289", 
-     `:=` (
-       episode.start = as.IDate("2002-06-10"),
-       episode.end = as.IDate("2003-05-08")
-     )]
-  
-  ######################################################################
-  ######################################################################
-  ######################################################################
   
   # Set key for joining
   setkey(dt, person_id)
@@ -89,7 +73,7 @@ for (episode in seq_along(files_episodes)) {
     continuous_rate_all[is.na(N), N := 0][is.na(Freq), Freq := 0]
     
     # Calculate rates
-    continuous_rate_all[, rate := round(100 * N / Freq, 3)][N == 0 & Freq == 0, rate := 0]
+    continuous_rate_all[, rate := round(1000 * N / Freq, 3)][N == 0 & Freq == 0, rate := 0]
     
     # Create column marking if rate is computable 
     continuous_rate_all[, rate_computable := Freq > 0]
@@ -106,10 +90,10 @@ for (episode in seq_along(files_episodes)) {
     setnames(continuous_rate_all, c("N", "Freq"), c("n_treated", "n_total"))
     
     # Save files 
-    saveRDS(dt_all_trimester_overlap, file = file.path(paths$D4_dir, "1.3_pregnancy_continuous", paste0(treatment_name, "_continuous_use_rate_data.rds")))
-    saveRDS(continuous_rate_all, file = file.path(paths$D5_dir, "1.3_pregnancy_continuous", paste0(treatment_name, "_continuous_use_rate_counts.rds")))
+    saveRDS(dt_all_trimester_overlap, file = file.path(paths$D4_dir, "1.3_pregnancy_continuous", paste0(treatment_name, "_continuous_use_rate_in_pregnancy_data.rds")))
+    saveRDS(continuous_rate_all, file = file.path(paths$D5_dir, "1.3_pregnancy_continuous", paste0(treatment_name, "_continuous_use_rate_in_pregnancy_counts.rds")))
     
   } else {
-    message(red(paste0("There was no continuous use of ", treatment_name, " in the t1 trimester")))
+    message(red(paste0("There was no continuous use of ", treatment_name)))
   }
 }

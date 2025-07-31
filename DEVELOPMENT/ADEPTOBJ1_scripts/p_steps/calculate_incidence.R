@@ -71,8 +71,8 @@ for (episode in seq_along(files_episodes)) {
     incidence_all[, rate := round(1000 * N / Freq, 3)][N == 0 & Freq == 0, rate := 0]
     
     # Set warnings if Numerator > than Denominator or if Denominator is 0 and Numerator is >0
-    if (nrow(incidence_all[N > Freq]) > 0) {warning(red("Warning: Some numerator values exceed denominator."))}
-    if (nrow(incidence_all[Freq == 0 & N != 0]) > 0) {warning(red("Warning: Denominator zero with non-zero numerator."))}
+    if (nrow(incidence_all[N > Freq]) > 0) warning(red("Warning: Some numerator values exceed denominator."))
+    if (nrow(incidence_all[Freq == 0 & N != 0]) > 0) warning(red("Warning: Denominator zero with non-zero numerator."))
     
     # Save data with odd values 
     if(nrow(incidence_all[N > Freq])>0) fwrite(incidence_all[N > Freq], file.path(paths$D5_dir, "1.1_incidence", paste0(gsub("_treatment_episode\\.rds$", "", files_episodes[episode]), "_num_gt_denominator.csv")))

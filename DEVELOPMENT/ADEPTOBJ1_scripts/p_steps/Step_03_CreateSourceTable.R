@@ -9,7 +9,7 @@
 # This scheme table will be used in a loop to process each subpopulation separately.
 if(SUBP) {
   SCHEME_03 <- copy(subpopulation_meanings)
-  SCHEME_03 <- SCHEME_03[, ':=' (file_in = paste0(subpopulations, "_OBS_SPELLS.rds"), file_out = paste0(subpopulations, "_source_population.rds"))]
+  SCHEME_03[, ':=' (file_in = paste0(subpopulations, "_OBS_SPELLS.rds"), file_out = paste0(subpopulations, "_source_population.rds"))]
 }
 
 
@@ -30,7 +30,7 @@ for(i in 1:nrow(SCHEME_03)){
   
   # Read observation spells data for the current subpopulation
   SPELLS <- readRDS(file.path(paths$D3_dir, "spells", SCHEME_03[["file_in"]][i]))
-
+  
   # Check for duplicated person_id in SPELLS; stop if found
   if(any(duplicated(SPELLS[["person_id"]]))) stop("Duplicates in person or observation_period table") 
   
@@ -47,17 +47,17 @@ for(i in 1:nrow(SCHEME_03)){
   # Print Message
   print(paste0("If op_start_date is before birth_date replace op_start_date with birth_date ", SCHEME_03[["subpopulations"]][i]))
   SOURCE_POPULATION[op_start_date < birth_date, op_start_date := birth_date]
-
+  
   
   # Print message
   print(paste0("Calculate age at op_start_date and op_end_date and dates of which age_min and age_max are reached  ",SCHEME_03[["subpopulations"]][i]))
   
   # Calculate age at op_start_date and op_end_date and dates for min and max age limits
-  SOURCE_POPULATION <- SOURCE_POPULATION[, ':=' 
-                                         ( age_op_start_date = floor(time_length(interval(birth_date, op_start_date),"year")),
-                                           age_op_end_date   = floor(time_length(interval(birth_date, op_end_date),"year")),
-                                           date_min          = as.IDate(add_with_rollback(birth_date, period(age_min, units = "year"), roll_to_first = T, preserve_hms = T))
-                                         )
+  SOURCE_POPULATION[, ':=' 
+                    ( age_op_start_date = floor(time_length(interval(birth_date, op_start_date),"year")),
+                      age_op_end_date   = floor(time_length(interval(birth_date, op_end_date),"year")),
+                      date_min          = as.IDate(add_with_rollback(birth_date, period(age_min, units = "year"), roll_to_first = T, preserve_hms = T))
+                    )
   ]  
   
   # Calculate age_max in women
@@ -72,7 +72,7 @@ for(i in 1:nrow(SCHEME_03)){
   ## date person turned min age: 12 (date_min)
   ## date person entered data source: obs_start_date
   ## start of study period: 20000101
-  SOURCE_POPULATION <- SOURCE_POPULATION[, entry_date:= pmax(date_min, op_start_date, start_study_date, na.rm = TRUE)]
+  SOURCE_POPULATION[, entry_date:= pmax(date_min, op_start_date, start_study_date, na.rm = TRUE)]
   
   # Adjust op_end date to earliest of these values:
   ## date person turned max age - 56 (date_max) - females only
@@ -81,13 +81,13 @@ for(i in 1:nrow(SCHEME_03)){
   ## last data available from data source: recommended_end_date
   ## last data extraction from data source: date_creation
   ## end of study period - current date
-
- # Adjust date_max to death_date if person has died before date_max
-  SOURCE_POPULATION <- SOURCE_POPULATION[, exit_date:= pmin(date_max, op_end_date, death_date, recommended_end_date, date_creation, end_study_date, na.rm = TRUE)]
- 
+  
+  # Adjust date_max to death_date if person has died before date_max
+  SOURCE_POPULATION[, exit_date:= pmin(date_max, op_end_date, death_date, recommended_end_date, date_creation, end_study_date, na.rm = TRUE)]
+  
   
   # Add a column indicating the current subpopulation
-  SOURCE_POPULATION <- SOURCE_POPULATION[, population := SCHEME_03[["subpopulations"]][i]]
+  SOURCE_POPULATION[, population := SCHEME_03[["subpopulations"]][i]]
   
   # Save file
   saveRDS(SOURCE_POPULATION, file = file.path(paths$D3_dir, "source_population", SCHEME_03[["file_out"]][i])
@@ -96,4 +96,4 @@ for(i in 1:nrow(SCHEME_03)){
 }
 
 # save file 
-saveRDS(SCHEME_03, file = file.path(paths$D3_dir, "source_population", "scheme_03.rds"))
+saveRDS(SCHEME_03, file = file.path(paths$D5_dir,"flowcharts" ,"scheme_03.rds"))

@@ -79,14 +79,14 @@ for (episode in seq_along(files_episodes)) {
     initiation_rate_all[is.na(N), N := 0][is.na(Freq), Freq := 0]
     
     # Calculate rates
-    initiation_rate_all[, rate := round(100 * N / Freq, 3)][N == 0 & Freq == 0, rate := 0]
+    initiation_rate_all[, rate := round(1000 * N / Freq, 3)][N == 0 & Freq == 0, rate := 0]
     
     # Create column marking if rate is computable 
     initiation_rate_all[, rate_computable := Freq > 0]
     
     # Set warnings if Numerator > than Denominator or if Denominator is 0 and Numerator is >0
-    if (nrow(initiation_rate_all[N > Freq]) > 0) {warning(red("Warning: Some numerator values exceed denominator."))}
-    if (nrow(initiation_rate_all[Freq == 0 & N != 0]) > 0) {warning(red("Warning: Denominator zero with non-zero numerator."))}
+    if (nrow(initiation_rate_all[N > Freq]) > 0) warning(red("Warning: Some numerator values exceed denominator."))
+    if (nrow(initiation_rate_all[Freq == 0 & N != 0]) > 0) warning(red("Warning: Denominator zero with non-zero numerator."))
     
     # Save data where odd values 
     if(nrow(initiation_rate_all[N > Freq])>0) fwrite(initiation_rate_all[N > Freq], file.path(paths$D5_dir, "1.3_initiation_rate_during_pregnancy", treatment_name, "_num_gt_denominator.csv"))
@@ -96,8 +96,8 @@ for (episode in seq_along(files_episodes)) {
     setnames(initiation_rate_all, c("N", "Freq"), c("n_treated", "n_total"))
     
     # Save files 
-    saveRDS(dt_all, file = file.path(paths$D4_dir, "1.3_pregnancy_initiation", paste0(treatment_name, "_initiation_rates_during_pregnancy_data.rds")))
-    saveRDS(initiation_rate_all, file = file.path(paths$D5_dir, "1.3_pregnancy_initiation", paste0(treatment_name, "_initiation_rates_during_pregnancy_counts.rds")))
+    saveRDS(dt_all, file = file.path(paths$D4_dir, "1.3_pregnancy_initiation", paste0(treatment_name, "_initiation_rates_in_pregnancy_data.rds")))
+    saveRDS(initiation_rate_all, file = file.path(paths$D5_dir, "1.3_pregnancy_initiation", paste0(treatment_name, "_initiation_rates_in_pregnancy_counts.rds")))
     
   } else {
     message(red(paste0("There was no ASM initiation of ", treatment_name)))

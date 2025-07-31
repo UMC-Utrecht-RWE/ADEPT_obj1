@@ -5,7 +5,6 @@
 # Denominator: Total number of unique pregnancies in that calendar year in the data source
 # Stratification by: Overall, individual drug substance, drug sub-groups, calendar year, data source
 
-# Pending: Stratification by Overall?
 ###############################################################################################################################################################################
 
 print("=====================================================================================")
@@ -36,7 +35,7 @@ pregnancies[, pregnancy_end_date   := as.IDate(pregnancy_end_date)]
 pregnancies <- merge(pregnancies, study_population[, .(person_id, start_follow_up, end_follow_up)], by = "person_id", all.x = TRUE)
 
 # Drop the start and end follow up columns as these will be available again when merged with treatment episodes
-pregnancies <- pregnancies[,start_follow_up := NULL][, end_follow_up := NULL]
+pregnancies[,start_follow_up := NULL][, end_follow_up := NULL]
 
 # Add pre-pregnancy windows
 pregnancies[, window_12_6_start := pregnancy_start_date - 365]
@@ -103,7 +102,7 @@ for (episode in seq_along(files_episodes)) {
     # Print Message
     message(paste0("There is pre-pregnancy use of ", treatment_name, " in the 12-0 month window"))
     
-    # Count the number of pregnancies with ASM use in the 6-0 month window, grouped by pregnancy year
+    # Count the number of pregnancies with ASM use in the 6-0 month and 12-6 month window, grouped by pregnancy year
     pre_pregnancy_counts <- pregnancies[pregnancy_id %in% preg_ids_12_0, .N, by = preg_year]
     
     # Merge with template to get all years 
@@ -116,7 +115,7 @@ for (episode in seq_along(files_episodes)) {
     pre_pregnancy_all[is.na(N), N := 0][is.na(Freq), Freq := 0]
     
     # Calculate rates
-    pre_pregnancy_all[, rate := round(100 * N / Freq, 3)][N == 0 & Freq == 0, rate := 0]
+    pre_pregnancy_all[, rate := round(1000 * N / Freq, 3)][N == 0 & Freq == 0, rate := 0]
     
     # Create column marking if rate is computable 
     pre_pregnancy_all[, rate_computable := Freq > 0]

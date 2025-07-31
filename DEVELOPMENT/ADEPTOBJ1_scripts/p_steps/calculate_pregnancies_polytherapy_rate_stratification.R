@@ -7,29 +7,27 @@
 
 ###############################################################################################################################################################################
 
-print("=========================================================================================")
-print("========================= STRATIFYING POLYTHERAPY BY INDICATION =========================")
-print("=========================================================================================")
+
+print("================================================================================================================")
+print("========================= STRATIFYING POLYTHERAPY IN PRE-PREGNANCY USERS BY INDICATION =========================")
+print("================================================================================================================")
 
 # <<< POLYTHERAPY FILES >>>
 # get list of polytherapy files 
-files_polytherapy_episodes <- list.files(file.path(paths$D4_dir, "1.2_polytherapy"), pattern = "\\.rds$")
+files_polytherapy_episodes <- list.files(file.path(paths$D4_dir, "1.4_pregnancy_polytherapy"), pattern = "\\.rds$")
 # filter for pop_prefix
 files_polytherapy_episodes <- files_polytherapy_episodes[grepl(paste0("^", pop_prefix, "_"), files_polytherapy_episodes)]
 # if pop_prefix is PC, then drop any that are PC_HOSP
 if(pop_prefix=="PC") files_polytherapy_episodes <- files_polytherapy_episodes[!grepl("PC_HOSP", files_polytherapy_episodes)]
-# read in file 
-dt <- rbindlist(lapply(file.path(paths$D4_dir, "1.2_polytherapy", files_polytherapy_episodes), readRDS), use.names = TRUE, fill = TRUE)
-# Remove duplicates 
-dt <- unique(dt)
+# read in file
+dt <- rbindlist(lapply(file.path(paths$D4_dir, "1.4_pregnancy_polytherapy", files_polytherapy_episodes), readRDS), use.names = TRUE, fill = TRUE)
 
 if(nrow(dt)>0){
-
 # <<< INDICATION FILES >>>
 # list all files in the indication folder
 files_indication <- list.files(file.path(paths$D3_dir, "indication"), pattern = "\\.rds$", full.names = TRUE)
-# filter for pop_prefix
-files_indication <- files_indication[grepl(paste0("^", pop_prefix, "_"), basename(files_indication))]
+# filter for Female subpop only 
+files_indication <- files_indication[grepl("_F_", files_indication)]
 # if pop_prefix is PC, then drop any that are PC_HOSP
 if (pop_prefix == "PC") files_indication <- files_indication[!grepl("PC_HOSP", basename(files_indication))]
 # load and bind all indications into one dataset
@@ -37,9 +35,8 @@ dt_indication <- rbindlist(lapply(files_indication, readRDS), use.names = TRUE, 
 # remove any true duplicates
 dt_indication <- unique(dt_indication)
 
-
 # create a folder for stratified counts
-dir.create(file.path(paths$D5_dir, "1.2_polytherapy", "stratified"), showWarnings = FALSE, recursive = TRUE)
+dir.create(file.path(paths$D5_dir, "1.4_pregnancy_polytherapy", "stratified"), showWarnings = FALSE, recursive = TRUE)
 
 # set stratification levels 
 # indications
@@ -50,13 +47,10 @@ indication_levels <- c("M_RESTLESSLEG_COV", "Ment_ANXIETY_COV", "Ment_BIPOLAR_AE
 all_years  <- seq(year(start_study_date), year(end_study_date))
 all_combinations_indications <- CJ(year = all_years, indication = indication_levels, unique = TRUE)
 
-
 #<<< PREPARE DATA FOR FOVERLAPS >>>  
 dt_temp <- copy(dt)
-dt_temp <- dt_temp[, .(person_id, atc_group, episode.start, episode.end, i.atc_group, i.episode.start, i.episode.end, overlap_start, overlap_end, overlap_days, start_follow_up, end_follow_up)] 
-setnames(dt_temp,c("atc_group", "episode.start", "episode.end", "i.atc_group", "i.episode.start", "i.episode.end"), c("atc_group1", "episode.start1", "episode.end1", "atc_group2", "episode.start2", "episode.end2"))          
+# set start and end windows 
 dt_temp[, start_window := overlap_start - lookback_period][, end_window := overlap_start]
-
 # Drop unnecessary columns
 dt_indication <- dt_indication[, .(person_id, event_date, event_definition)] 
 # indication data
@@ -130,10 +124,10 @@ indication_counts[, rate := round(100 * N / Freq, 3)][N == 0 & Freq == 0, rate :
 indication_counts[, rate_computable := Freq > 0]
 
 # save counts
-saveRDS(indication_counts, file.path(paths$D5_dir, "1.2_polytherapy", "stratified", paste0(pop_prefix, "_polytherapy_indication_counts.rds")))
-} else {
-  message(red("There are no polytherapy files to stratify by indication"))
-}
+saveRDS(indication_counts, file.path(paths$D5_dir, "1.4_pregnancy_polytherapy", "stratified", paste0(pop_prefix, "_polytherapy_in_pregnancy_indication_counts.rds")))
+} else { 
+  message(red("No polytherapy episodes found"))
+  }
 
 
 

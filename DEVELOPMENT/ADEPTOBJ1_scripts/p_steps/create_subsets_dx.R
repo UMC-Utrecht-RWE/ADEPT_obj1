@@ -60,10 +60,10 @@ if(length(event_files)>0){
     # Exclusion of meanings ### for BIFAP
     # PC: Meanings to be limited/restricted to: "primary_care_events_BIFAP" (or "procedure_primary_care", where applicable); 
     # excludes "primary_care_conditionants_BIFAP", "primary_care_antecedents_BIFAP", "hospitalisation_primary" and "hospitalisation_secundary"
-    if(pop_prefix == "PC_F" | pop_prefix == "PC_M") dt<-dt[meaning=="primary_care_events_BIFAP",]
+    if(pop_prefix == "PC_F" | pop_prefix == "PC_M") dt <- dt[meaning=="primary_care_events_BIFAP",]
     # PC_HOSP: Meanings to be limited/restricted to:  "primary_care_events_BIFAP" and "hospitalisation_primary" (or "procedure_primary_care" and  "procedure_during_hospitalisation" where applicable); 
     # excludes "primary_care_conditionants_BIFAP", "primary_care_antecedents_BIFAP" and "hospitalisation_secundary".
-    if(pop_prefix == "PC_HOSP_F" | pop_prefix == "PC_HOSP_M") dt<-dt[meaning=="primary_care_events_BIFAP" | meaning=="hospitalisation_primary",]
+    if(pop_prefix == "PC_HOSP_F" | pop_prefix == "PC_HOSP_M") dt <- dt[meaning=="primary_care_events_BIFAP" | meaning=="hospitalisation_primary",]
     
     # Remove any true duplicates 
     dt <- unique(dt)

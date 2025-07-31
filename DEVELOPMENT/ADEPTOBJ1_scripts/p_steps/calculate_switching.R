@@ -205,6 +205,7 @@ for (pfx in seq_along(unique_prefixes)) {
   # Keep only if rx_date falls between start and end follow up
   switchers <- switchers[rx_date >= start_follow_up & rx_date <= end_follow_up, ]
   
+  # make copy to save
   switchers_data <- copy(switchers)
   
   # keep one switch per episode
@@ -243,8 +244,8 @@ for (pfx in seq_along(unique_prefixes)) {
       switcher_all[, rate := round(100 * N / n_total, 3)][N == 0 & n_total == 0, rate := 0]
       
       # Set warnings if Numerator > than Denominator or if Denominator is 0 and Numerator is >0
-      if (nrow(switcher_all[N > n_total]) > 0) {warning(red("Warning: Some numerator values exceed denominator."))}
-      if (nrow(switcher_all[n_total == 0 & N != 0]) > 0) {warning(red("Warning: Denominator zero with non-zero numerator."))}
+      if (nrow(switcher_all[N > n_total]) > 0) warning(red("Warning: Some numerator values exceed denominator."))
+      if (nrow(switcher_all[n_total == 0 & N != 0]) > 0) warning(red("Warning: Denominator zero with non-zero numerator."))
       
       # Save data where odd values 
       if(nrow(switcher_all[N > n_total])>0) fwrite(switcher_all[N > n_total], file.path(paths$D5_dir, "1.2_switching", paste0(current_prefix, "_num_gt_denominator.csv")))

@@ -10,7 +10,7 @@
 
 if(SUBP){
   SCHEME_04 <- copy(subpopulation_meanings)
-  SCHEME_04 <- SCHEME_04[, ':=' (file_in = paste0(subpopulations,"_source_population.rds"), file_out = paste0(subpopulations,"_study_population.rds"))]
+  SCHEME_04[, ':=' (file_in = paste0(subpopulations,"_source_population.rds"), file_out = paste0(subpopulations,"_study_population.rds"))]
 }
 
 # If SUBP == FALSE create a simplified scheme with only one row corresponding to the entire population ("ALL"):
@@ -56,9 +56,9 @@ for(i in 1:nrow(SCHEME_04)){
     # Count rows after applying criterion
     after <- nrow(SOURCE)
     # Calculate how many rows were excluded 
-    attrition<-before-after
+    attrition <- before-after
     # Get the name of the criterion 
-    crit_name<-names(SelectionCriteria)[j]
+    crit_name <- names(SelectionCriteria)[j]
     
     # Record attrition details for the current criterion in the flowchart
     flow_chart_source_to_study$selection_criteria[j] <- crit_name
@@ -99,13 +99,13 @@ for(i in 1:nrow(SCHEME_04)){
   print(paste0("Calculate age at start and end follow up ",SCHEME_04[["subpopulations"]][i]))
   
   # create columns for age at start_follow_up and age_end_follow_up
-  study_population <- study_population[, ':=' 
-                                       ( age_start_follow_up = floor(time_length(interval(birth_date, start_follow_up), "year")),
-                                         age_end_follow_up   = floor(time_length(interval(birth_date, end_follow_up  ), "year")) 
-                                       )
+  study_population[, ':=' 
+                   ( age_start_follow_up = floor(time_length(interval(birth_date, start_follow_up), "year")),
+                     age_end_follow_up   = floor(time_length(interval(birth_date, end_follow_up  ), "year")) 
+                   )
   ]
   
-  study_population <- study_population[, Population := SCHEME_04[["subpopulations"]][i]]
+  study_population[, Population := SCHEME_04[["subpopulations"]][i]]
   SCHEME_04[i,"nrows"] <- nrow(study_population)
   SCHEME_04[i,"ncols"] <- ncol(study_population)
   
@@ -117,4 +117,4 @@ flow_chart_source_to_study_combined <- rbindlist(flow_chart_source_to_study_list
 saveRDS(flow_chart_source_to_study_combined, file = file.path(paths$D5_dir, "flowcharts", "flowchart_source_to_study.rds"))
 
 saveRDS(flow_chart_check_lookback, file = file.path(paths$D5_dir, "flowcharts", "flow_chart_check_lookback.rds"))
-saveRDS(SCHEME_04, file = file.path(paths$D5_dir, "flowcharts", "scheme_04.rds"))
+saveRDS(SCHEME_04, file = file.path(paths$D5_dir, "flowcharts","scheme_04.rds"))

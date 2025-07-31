@@ -12,234 +12,164 @@
 # Numerator3: The number of pre-pregnancy users of an ASM within a calendar year that continued to 2nd trimester only. 
 # Denominator3: Total number of pre-pregnancy users of an ASM in a calendar year in the data source 
 
-# Stratification by: Overall, individual drug substance, drug subgroups, calendar year, data source
+# Stratification by: Individual drug substance, drug subgroups, calendar year, data source
 
+# Conditions: 
+### Pre-pregnancy users
 ###############################################################################################################################################################################
 print("======================================================================================================")
 print("========================= CALCULATING DISCONTINUATION RATES DURING PREGNANCY =========================")
 print("======================================================================================================")
 
-# Read in Pre-pregnancy Data
-# List all pre pregnancy data matching population prefix
-files_prepregnancy <- list.files(file.path(paths$D4_dir, "1.3_pre-pregnancy_use"), pattern = "_pre_pregnancy_data\\.rds$")
+#=== List files ===
+# Pre-pregnancy data and counts 
+files_prepregnancy <- list.files(file.path(paths$D4_dir, "1.3_pre-pregnancy_use"))
+files_counts       <- list.files(file.path(paths$D5_dir, "1.3_pre-pregnancy_use"))
 
-# Drop PC_HOSP files if pop_prefix is PC
-if(pop_prefix == "PC") files_prepregnancy <- files_prepregnancy[!grepl("PC_HOSP", files_prepregnancy)]
-
-# Read in Discontinued Episodes
-# Discontinued Episodes
-files_discontinued_episodes <- list.files(file.path(paths$D4_dir, "1.2_discontinued"), pattern = "\\.rds$")
-
-# Filter exposures for Females only
-files_discontinued_episodes <- files_discontinued_episodes[grepl("_F_", files_discontinued_episodes)]
-
-# If pop_prefix is PC, then drop any that are PC_HOSP
-if(pop_prefix=="PC") files_discontinued_episodes <- files_discontinued_episodes[!grepl("PC_HOSP", files_discontinued_episodes)]
-
-# Read in Pre-pregnancy Counts 
-# List count files files matching population prefix
-files_counts <- list.files(file.path(paths$D5_dir, "1.3_pre-pregnancy_use"), pattern = "_pre_pregnancy_counts\\.rds$")
-
-# Drop PC_HOSP files if pop_prefix is PC
+# filter for BIFAP subpops
+if(pop_prefix == "PC") files_prepregnancy  <- files_prepregnancy[!grepl("PC_HOSP", files_prepregnancy)]
 if(pop_prefix == "PC") files_counts <- files_counts[!grepl("PC_HOSP", files_counts)]
 
-# === Create maps ===
-# Extract treatment name key
-get_treatment_key <- function(x, suffix) gsub(suffix, "", x)
+# Discontinued episodes 
+files_discontinued_episodes <- list.files(file.path(paths$D4_dir, "1.2_discontinued"), pattern = "\\.rds$")
+# filter for Female subpop only 
+files_discontinued_episodes <- files_discontinued_episodes[grepl("_F_", files_discontinued_episodes)]
+# filter for BIFAP subpops
+if(pop_prefix=="PC") files_discontinued_episodes <- files_discontinued_episodes[!grepl("PC_HOSP", files_discontinued_episodes)]
 
+# === Create maps ===
+# extract treatment name key
+get_treatment_key <- function(x, suffix) gsub(suffix, "", x)
 treatment_keys <- get_treatment_key(files_prepregnancy, "_pre_pregnancy_data.rds")
 
-# Match corresponding files by treatment key
+# match corresponding files by treatment key
 prepreg_map <- setNames(file.path(paths$D4_dir, "1.3_pre-pregnancy_use", files_prepregnancy), treatment_keys)
-discont_map <- setNames(file.path(paths$D4_dir, "1.2_discontinued", files_discontinued_episodes), treatment_keys)
 counts_map  <- setNames(file.path(paths$D5_dir, "1.3_pre-pregnancy_use", files_counts), treatment_keys)
+discont_map <- setNames(file.path(paths$D4_dir, "1.2_discontinued", files_discontinued_episodes), treatment_keys)
 
 for (trt in seq_along(treatment_keys)) {
-
+  
   # get treatment name 
   treatment <- treatment_keys[trt]
   
   # If none of the file found, skip
   if (!file.exists(prepreg_map[[trt]]) ||
-      !file.exists(discont_map[[trt]]) ||
-      !file.exists(counts_map[[trt]])) next
+      !file.exists(counts_map[[trt]]) ||
+      !file.exists(discont_map[[trt]])) next
+  
+  # read in the files
+  dt_prepreg <- readRDS(prepreg_map[[trt]])
+  dt_counts  <- readRDS(counts_map[[trt]])
+  dt_discont <- readRDS(discont_map[[trt]])
+  
+  # merge prepregnancy data with discontinuation file
+  dt <- merge(dt_prepreg[,.(person_id, pregnancy_start_date, pregnancy_end_date)], dt_discont, by = "person_id", all = FALSE)
+  
+  if(nrow(dt)>0){
+    # print message
+    message(blue("Discontinued records found in pre-pregnancy users for", treatment))
+    
+    # convert dates to IDate
+    date_cols <- c("pregnancy_start_date", "pregnancy_end_date", "episode.start", "episode.end")
+    dt[, (date_cols) := lapply(.SD, as.IDate), .SDcols = date_cols]
+    
+    # add trimester windows
+    dt[, t1_start := pregnancy_start_date][, t1_end := pregnancy_start_date + 90]
+    dt[, t2_start := pregnancy_start_date + 91][, t2_end := pregnancy_start_date + 180]
+    dt[, t3_start := pregnancy_start_date + 181][, t3_end := pregnancy_end_date]
+    
+    # create subsets 
+    # pre-pregnancy users whose ASM use does not run into the pregnancy period
+    dt_before <- dt[episode.end < pregnancy_start_date,]
+    # discontinuation during 2nd trimester
+    dt_t2 <- dt[episode.end >= t2_start & episode.end < t2_end,]
+    # discontinuation during 3rd trimester
+    dt_t3 <- dt[episode.end >= t3_start & episode.end < t3_end,]
+    
+    # create list of subsets
+    discont_list <- list(before = dt_before, t2 = dt_t2, t3 = dt_t3)
+    
+    for (dt in seq_along(discont_list)) {
+  
+      # load subset 
+      dt_subset <- discont_list[[dt]]
+      
+      # check if any rows 
+      if (nrow(dt_subset) == 0) {
+        message("Skipping ", treatment, " - ", names(discont_list)[dt], ": no discontinuers found in this period")
+        next
+      }
+      
+      # print message
+      message(sprintf("Processing %s - %s", treatment, names(discont_list)[dt]))
+      
+      # assign year to count in 
+      dt_subset[, preg_year := year(pregnancy_start_date)]
+      
+      # keep one person per year
+      dt_subset <- unique(dt_subset, by = c("person_id", "preg_year"))
+      
+      # count by pregnancy
+      discontinuer_counts <- dt_subset[, .(N = .N), by = preg_year]
+      
+      # prepare denominator
+      dt_counts_copy <- copy(dt_counts)
+      dt_counts_copy[, c("n_total", "rate", "rate_computable") := NULL]
+      setnames(dt_counts_copy, "n_treated", "n_total")
+      
+      # merge numerator and denominator
+      discontinued_all <- merge(discontinuer_counts, dt_counts_copy, by = "preg_year", all.y = TRUE)
+      discontinued_all[is.na(N), N := 0]
+      
+      # calculate rate
+      discontinued_all[, rate := round(1000 * N / n_total, 3)]
+      discontinued_all[N == 0 & n_total == 0, rate := 0]
+      
+      # warnings
+      if (nrow(discontinued_all[N > n_total]) > 0) warning(red("Warning: Numerator > Denominator"))
+      if (nrow(discontinued_all[n_total == 0 & N != 0]) > 0) warning(red("Warning: Denominator zero with non-zero numerator"))
+      
+      # save odd cases
+      if (nrow(discontinued_all[N > n_total]) > 0) fwrite(discontinued_all[N > n_total], file.path(paths$D5_dir, "1.4_pregnancy_discontinuation", paste0(treatment, "_", names(discont_list)[dt], "_num_gt_denominator.csv")))
+      if (nrow(discontinued_all[n_total == 0 & N != 0]) > 0) fwrite(discontinued_all[n_total == 0 & N != 0], file.path(paths$D5_dir, "1.4_pregnancy_discontinuation", paste0(treatment, "_", names(discont_list)[dt], "_denominator_zero_numerator_nonzero.csv")))
+      
+      # add rate computable column
+      discontinued_all[, rate_computable := n_total > 0]
+      # rename columns 
+      setnames(discontinued_all, "N", "n_treated")
+      
+      # save output
+      saveRDS(dt_subset, file.path(paths$D4_dir, "1.4_pregnancy_discontinuation", paste0(treatment, "_", names(discont_list)[dt], "_discontinuation_in_pregnancies_data.rds")))
+      saveRDS(discontinued_all, file.path(paths$D5_dir, "1.4_pregnancy_discontinuation", paste0(treatment, "_", names(discont_list)[dt], "_discontinuation_in_pregnancies_counts.rds")))
+      
+    }
+  } else {
+    
+    message(red("No discontinued records found in pre-pregnancy users for", treatment))
 
-  # Read in files
-  dt_pre <- readRDS(prepreg_map[[trt]])
-  dt_dis <- readRDS(discont_map[[trt]])
-  dt_cnt <- readRDS(counts_map[[trt]])
-  
-  # Merge on person_id
-  dt <- merge(dt_pre[,.(person_id, pregnancy_start_date, pregnancy_end_date)], dt_dis, by = "person_id", all = FALSE)
-  
-  # Convert dates to IDate
-  date_cols <- c("pregnancy_start_date", "pregnancy_end_date", "episode.start", "episode.end")
-  dt[, (date_cols) := lapply(.SD, as.IDate), .SDcols = date_cols]
-  
-  # Add trimester windows
-  dt[, t1_start := pregnancy_start_date][, t1_end := pregnancy_start_date + 90]
-  dt[, t2_start := pregnancy_start_date + 91][, t2_end := pregnancy_start_date + 180]
-  dt[, t3_start := pregnancy_start_date + 181][, t3_end := pregnancy_end_date]
-  
-  # Create subsets 
-  # Number of pre-pregnancy users of an ASM that does not run into the pregnancy period
-  dt_before <- dt[episode.end < pregnancy_start_date,]
-  # Number of pre-pregnancy users of an ASM that continued to 1st trimester only
-  dt_t1 <- dt[episode.end < t2_start & episode.end >= pregnancy_start_date,]
-  # Number of pre-pregnancy users of an ASM that continued to 2nd trimester only. 
-  dt_t2 <- dt[episode.end < t3_start & episode.end >= t2_start,]
-  
-  if(nrow(dt_before)>0){
-    
-    message("Discontinuers before pregnancy found for " , treatment)
-    
-    # Assign calendar year of each pregnancy
-    dt_before[, preg_year := year(pregnancy_start_date)]
-    
-    # Remove duplicates: Keep only one person id per year
-    dt_before <- unique(dt_before, by = c("person_id", "preg_year"))
-    
-    # Count number of discontinuers per year
-    discontinuer_counts <- dt_before[, .("N" = .N), by = preg_year]
-    
-    # Prepare denominator
-    dt_cnt[,c("n_total", "rate", "rate_computable") := NULL]
-    setnames(dt_cnt, "n_treated", "n_total")
-    
-    # Merge discontinued with pre-pregnancies
-    discontinued_all <- merge(discontinuer_counts, dt_cnt, by = "preg_year", all.y = TRUE)
-    
-    # Set N = 0 for years with no treatments
-    discontinued_all[is.na(N), N := 0]
-    
-    # Calculate discontinued as a rate (*100)
-    discontinued_all[, rate := round(100 * N / n_total, 3)][N == 0 & n_total == 0, rate := 0]
-    
-    # Set warnings if Numerator > than Denominator or if Denominator is 0 and Numerator is >0
-    if (nrow(discontinued_all[N > n_total]) > 0) warning(red("Warning: Some numerator values exceed denominator."))
-    if (nrow(discontinued_all[n_total == 0 & N != 0]) > 0) warning(red("Warning: Denominator zero with non-zero numerator."))
-    
-    # Save data where odd values 
-    if(nrow(discontinued_all[N > n_total])>0) fwrite(discontinued_all[N > n_total], file.path(paths$D5_dir, "1.4_pregnancy_discontinuation", paste0(treatment, "_num_gt_denominator.csv")))
-    if(nrow(discontinued_all[n_total == 0 & N != 0])>0) fwrite(discontinued_all[n_total == 0 & N != 0], file.path(paths$D5_dir, "1.4_pregnancy_discontinuation", paste0(treatment, "_denominator_zero_numerator_nonzero.csv")))
-    
-    # Create column marking if rate is computable 
-    discontinued_all[, rate_computable := n_total > 0]
-    
-    # rename columns
-    setnames(discontinued_all, "N", "n_treated")
-    
-    # Save dataset 
-    saveRDS(dt_before, file.path(paths$D4_dir, "1.4_pregnancy_discontinuation", paste0(treatment, "_discontinued_before_pregnancy_data.rds")))
-    
-    # Save results 
-    saveRDS(discontinued_all, file.path(paths$D5_dir, "1.4_pregnancy_discontinuation", paste0(treatment, "_discontinued_before_pregnancy_counts.rds")))
-    
-  } else {
-    
-    message(red("No discontinuers before pregnancy for" , treatment))
-  }
-  
-  if(nrow(dt_t1)>0){
-    
-    message("Discontinuers in t1 found for " , treatment)
-    
-    # Assign calendar year of each pregnancy
-    dt_t1[, preg_year := year(pregnancy_start_date)]
-    
-    # Remove duplicates: Keep only one person id per year
-    dt_t1 <- unique(dt_t1, by = c("person_id", "preg_year"))
-    
-    # Count number of discontinuers per year
-    discontinuer_counts <- dt_t1[, .("N" = .N), by = preg_year]
-    
-    # Prepare denominator
-    dt_cnt[,c("n_total", "rate", "rate_computable") := NULL]
-    setnames(dt_cnt, "n_treated", "n_total")
-    
-    # Merge discontinued with pre-pregnancies
-    discontinued_all <- merge(discontinuer_counts, dt_cnt, by = "preg_year", all.y = TRUE)
-    
-    # Set N = 0 for years with no treatments
-    discontinued_all[is.na(N), N := 0]
-    
-    # Calculate discontinued as a rate (*100)
-    discontinued_all[, rate := round(100 * N / n_total, 3)][N == 0 & n_total == 0, rate := 0]
-    
-    # Set warnings if Numerator > than Denominator or if Denominator is 0 and Numerator is >0
-    if (nrow(discontinued_all[N > n_total]) > 0) warning(red("Warning: Some numerator values exceed denominator."))
-    if (nrow(discontinued_all[n_total == 0 & N != 0]) > 0) warning(red("Warning: Denominator zero with non-zero numerator."))
-    
-    # Save data where odd values 
-    if(nrow(discontinued_all[N > n_total])>0) fwrite(discontinued_all[N > n_total], file.path(paths$D5_dir, "1.4_pregnancy_discontinuation", paste0(treatment, "_num_gt_denominator.csv")))
-    if(nrow(discontinued_all[n_total == 0 & N != 0])>0) fwrite(discontinued_all[n_total == 0 & N != 0], file.path(paths$D5_dir, "1.4_pregnancy_discontinuation", paste0(treatment, "_denominator_zero_numerator_nonzero.csv")))
-    
-    # Create column marking if rate is computable 
-    discontinued_all[, rate_computable := n_total > 0]
-    
-    # rename columns
-    setnames(discontinued_all, "N", "n_treated")
-    
-    # Save dataset 
-    saveRDS(dt_t1, file.path(paths$D4_dir, "1.4_pregnancy_discontinuation", paste0(treatment, "_discontinued_during_t1_data.rds")))
-    
-    # Save results 
-    saveRDS(discontinued_all, file.path(paths$D5_dir, "1.4_pregnancy_discontinuation", paste0(treatment, "_discontinued_during_t1_counts.rds")))
-    
-  } else {
-    
-    message(red("No discontinuers in t1 for ", treatment))
-  }
-  
-  if(nrow(dt_t2)>0){
-    
-    message("Discontinuers in t2 found for" , treatment)
-    
-    # Assign calendar year of each pregnancy
-    dt_t2[, preg_year := year(pregnancy_start_date)]
-    
-    # Remove duplicates: Keep only one person id per year
-    dt_t2 <- unique(dt_t2, by = c("person_id", "preg_year"))
-    
-    # Count number of discontinuers per year
-    discontinuer_counts <- dt_t2[, .("N" = .N), by = preg_year]
-    
-    # Prepare denominator
-    dt_cnt[,c("n_total", "rate", "rate_computable") := NULL]
-    setnames(dt_cnt, "n_treated", "n_total")
-    
-    # Merge discontinued with pre-pregnancies
-    discontinued_all <- merge(discontinuer_counts, dt_cnt, by = "preg_year", all.y = TRUE)
-    
-    # Set N = 0 for years with no treatments
-    discontinued_all[is.na(N), N := 0]
-    
-    # Calculate discontinued as a rate (*100)
-    discontinued_all[, rate := round(100 * N / n_total, 3)][N == 0 & n_total == 0, rate := 0]
-    
-    # Set warnings if Numerator > than Denominator or if Denominator is 0 and Numerator is >0
-    if (nrow(discontinued_all[N > n_total]) > 0) warning(red("Warning: Some numerator values exceed denominator."))
-    if (nrow(discontinued_all[n_total == 0 & N != 0]) > 0) warning(red("Warning: Denominator zero with non-zero numerator."))
-    
-    # Save data where odd values 
-    if(nrow(discontinued_all[N > n_total])>0) fwrite(discontinued_all[N > n_total], file.path(paths$D5_dir, "1.4_pregnancy_discontinuation", paste0(treatment, "_num_gt_denominator.csv")))
-    if(nrow(discontinued_all[n_total == 0 & N != 0])>0) fwrite(discontinued_all[n_total == 0 & N != 0], file.path(paths$D5_dir, "1.4_pregnancy_discontinuation", paste0(treatment, "_denominator_zero_numerator_nonzero.csv")))
-    
-    # Create column marking if rate is computable 
-    discontinued_all[, rate_computable := n_total > 0]
-    
-    # rename columns
-    setnames(discontinued_all, "N", "n_treated")
-    
-    # Save dataset 
-    saveRDS(dt_t2, file.path(paths$D4_dir, "1.4_pregnancy_discontinuation", paste0(treatment, "_discontinued_during_t2_data.rds")))
-    
-    # Save results 
-    saveRDS(discontinued_all, file.path(paths$D5_dir, "1.4_pregnancy_discontinuation", paste0(treatment, "_discontinued_during_t2_counts.rds")))
-    
-  } else {
-    
-    message(red("No discontinuers in t2 for", treatment))
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

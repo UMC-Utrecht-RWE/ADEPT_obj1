@@ -56,8 +56,8 @@ for (altmed in seq_along(files_altmeds)) {
   altmed_all[, rate := round(1000 * N / Freq, 3)][N == 0 & Freq == 0, rate := 0]
   
   # Set warnings if Numerator > than Denominator or if Denominator is 0 and Numerator is >0
-  if (nrow(altmed_all[N > Freq]) > 0) {warning(red("Warning: Some numerator values exceed denominator."))}
-  if (nrow(altmed_all[Freq == 0 & N != 0]) > 0) {warning(red("Warning: Denominator zero with non-zero numerator."))}
+  if (nrow(altmed_all[N > Freq]) > 0) warning(red("Warning: Some numerator values exceed denominator."))
+  if (nrow(altmed_all[Freq == 0 & N != 0]) > 0) warning(red("Warning: Denominator zero with non-zero numerator."))
   
   # Save data with odd values 
   if(nrow(altmed_all[N > Freq]) > 0) fwrite(altmed_all[N > Freq], file.path(paths$D5_dir, "1.2_altmeds", paste0(pop_prefix, "_", altmed_name, "_num_gt_denominator.csv")))

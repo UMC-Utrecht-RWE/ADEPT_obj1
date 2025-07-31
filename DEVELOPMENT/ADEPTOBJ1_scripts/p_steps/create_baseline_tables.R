@@ -13,9 +13,6 @@ files_episodes <- files_episodes[grepl(paste0("^", pop_prefix, "_"), files_episo
 # If pop_prefix is PC, then drop any that are PC_HOSP
 if(pop_prefix=="PC") files_episodes <- files_episodes[!grepl("PC_HOSP", files_episodes)]
 
-# Exclude subgroups
-files_episodes <- files_episodes[!(gsub(paste0("^", pop_prefix, "_|_treatment_episode\\.rds$"), "", files_episodes) %in% exclude)]
-
 for (episode in seq_along(files_episodes)) {
   
   # Read the treatment episode file
@@ -56,8 +53,8 @@ for (episode in seq_along(files_episodes)) {
   max_endfu_date <- max(dt$end_follow_up)
   
   # Mean Age
-  age_at_start_fu_mean <-mean(dt$age_at_start_follow_up)
-  age_at_start_fu_SD   <-sd(dt$age_at_start_follow_up)
+  age_at_start_fu_mean <- mean(dt$age_at_start_follow_up)
+  age_at_start_fu_SD   <- sd(dt$age_at_start_follow_up)
   
   # Counts Per Age_Group 
   age_group_12_18.99_count <- sum(dt$age_group == "12-18.99")
