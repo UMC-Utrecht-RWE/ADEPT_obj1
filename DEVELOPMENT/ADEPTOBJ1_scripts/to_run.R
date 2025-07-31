@@ -34,11 +34,11 @@ start_study_date <- "1999-01-01"
 #<<< ===========================================================================================================>>>
 # Set directory where CDM tables are
 # CDM_dir  <- "F:/ADEPT/Updated_CDM"
-CDM_dir <- "Path/To/Your/CDM/Folders/here"
+CDM_dir <- "C:/Users/mgamb/Documents/GitHub/ADEPT_obj1/DEVELOPMENT/CDM_INSTANCES_mixed"
 
 #<<< ===========================================================================================================>>>
 # Set directory where D3_pregnancy_final.RData file is (created by Pregnancy Algorithm)
-preg_dir <- "Path/To/Your/Pregnancy/D3_pregnancy_final.RData/File/Here"
+preg_dir <- "C:/Users/mgamb/Documents/GitHub/ADEPT_obj1/DEVELOPMENT"
 
 #<<< ===========================================================================================================>>>
 

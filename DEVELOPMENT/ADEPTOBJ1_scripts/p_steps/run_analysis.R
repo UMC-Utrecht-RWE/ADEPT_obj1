@@ -64,9 +64,6 @@ for(pop in seq_along(populations)){
     
     # Create Treatment Episodes
     source(file.path(thisdir, "p_steps", "create_treatment_episodes.R"), local = TRUE)
-
-    # Create Treatment Episodes
-    source(file.path(thisdir, "p_steps", "create_treatment_episodes_groups.R"), local = TRUE)
     
     # Calculate incidence
     source(file.path(thisdir, "p_steps", "calculate_incidence.R"), local = TRUE)
