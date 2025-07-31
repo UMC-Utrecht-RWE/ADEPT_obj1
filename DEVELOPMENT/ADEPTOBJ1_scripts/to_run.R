@@ -34,20 +34,20 @@ start_study_date <- "1999-01-01"
 #<<< ===========================================================================================================>>>
 # Set directory where CDM tables are
 # CDM_dir  <- "F:/ADEPT/Updated_CDM"
-CDM_dir <- "C:/Users/mgamb/Documents/GitHub/ADEPT_obj1/DEVELOPMENT/CDM_INSTANCES_mixed"
+CDM_dir <- "Path/To/Your/CDM/Folders/here"
 
 #<<< ===========================================================================================================>>>
-# Set directory where D3_pregnancy_final file is
-preg_dir <- "C:/Users/mgamb/Documents/GitHub/ADEPT_obj1/DEVELOPMENT"
+# Set directory where D3_pregnancy_final.RData file is (created by Pregnancy Algorithm)
+preg_dir <- "Path/To/Your/Pregnancy/D3_pregnancy_final.RData/File/Here"
 
 #<<< ===========================================================================================================>>>
-# === SET FLAGS ===
 
-# Set DEAP flags
+# Run to set DEAP flags
 source(file.path(thisdir, "p_steps", "set_flags.R"), local = TRUE)
 
 # === ANALYSIS SCRIPTS ===
+# Objectives 1.1 and 1.2
 source(file.path(thisdir, "p_steps", "run_analysis.R"), local = TRUE)
 
-# Pregnancy Counts
+# Objectives 1.3 and 1.4
 source(file.path(thisdir, "p_steps", "run_analysis_pregnancies.R"), local = TRUE)
