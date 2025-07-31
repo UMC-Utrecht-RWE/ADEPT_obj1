@@ -1,36 +1,29 @@
 ###################################################
 # Set Study Parameters
-#################################################
+###################################################
 
-# <<< Define study_start_date - different per DEAP >>> #
+# start_study_date is defined in to_run.R
+start_study_date <- as.IDate(start_study_date)
 
-# Read in all Observation Periods (if more than one)
-OBSERVATION_PERIODS <- as.data.table(rbindlist(lapply(list.files(CDM_dir, pattern = "^OBSERVATION_PERIODS", full.names = TRUE), fread), use.names = TRUE, fill = TRUE))
-
-# Get earliest observation start date in data
-earliest_in_data <- OBSERVATION_PERIODS[, min(as.IDate(as.character(op_start_date), format = "%Y%m%d"), na.rm = TRUE)]
-
-# set default start date
-default_start <- as.IDate("1999-01-01")
-
-# Start_study date is the max of earliest in data and default start date
-start_study_date <- max(earliest_in_data, default_start, na.rm = TRUE)
-
-# <<< Define study_end_date - different per DEAP >>> #
-
-# Read CDM source file to get recommended end date 
+# study_end_date
+# Read CDM source file to get recommended end date, and assign to end_study_date
 CDM_SOURCE <- fread(file.path(CDM_dir, list.files(CDM_dir, pattern = "^CDM_SOURCE")))
-
 # Assign end_study_date
 end_study_date <- as.IDate(as.character(CDM_SOURCE[, recommended_end_date]), "%Y%m%d")
 
-# <<< Other Parameters >>> #
+# Age_min is the minimum age allowed - both males and females 
+age_min <- 12 
 
-# Other parameters
-age_min          <- 12 # both males and females
-age_max          <- 55 # females only
+# Age_max is the maximum age allowed - only for females 
+age_max <- 54 
+
+# look back period - default is 365
 lookback_period  <- 365L
-
+# Finish registries, look back is 3 months prior
+if(deap_flags$is_FIN_REG) lookback_period <- 90L
+  
+# Efemeris registries, look back is 2.5 months
+if(deap_flags$is_EFEMERIS) lookback_period <- 76L
 
 
 

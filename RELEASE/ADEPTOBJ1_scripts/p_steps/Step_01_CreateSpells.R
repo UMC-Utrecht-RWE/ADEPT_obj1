@@ -1,29 +1,18 @@
+#################################################################
+#Create Spells 
+################################################################
 # Generates the observation spells used in the study.
 # Observations with a gap of 7 days or less are concatenated,
 # and in the case of multiple spells, the most recent is taken, and the others are discarded, resulting in one spell per personID
 
 # Initialize empty list to store spells info for flowchart
-FlowChartCreateSpells <- list()
+flow_chart_create_spells <- list()
 
 # Print message
 print('Import and append observation periods files') 
 
 # Load Observation Spells 
 OBSERVATION_PERIODS <- as.data.table(rbindlist(lapply(list.files(CDM_dir, pattern = "^OBSERVATION_PERIODS", full.names = TRUE), fread), use.names = TRUE, fill = TRUE))
-
-# Check for missing Observation Dates
-
-missing_OP_dates <- OBSERVATION_PERIODS[, .(
-  total_rows          = .N,
-  missing_start_date  = sum(is.na(op_start_date)),
-  missing_end_date    = sum(is.na(op_end_date)),
-  missing_both        = sum(is.na(op_start_date) & is.na(op_end_date)),
-  missing_either      = sum(is.na(op_start_date) | is.na(op_end_date)),
-  complete_dates      = sum(!is.na(op_start_date) & !is.na(op_end_date))
-)]
-
-# Save file
-saveRDS(missing_OP_dates, file = file.path(paths$D5_dir, "flowcharts", "flowchart_missing_op_dates.rds"))
 
 # Label for initial step in flowchart
 step0 <- "original data" 
@@ -41,10 +30,11 @@ step1 <- 'Set start and end date to date format and if end date is empty fill wi
 print('Set start and end date to date format and if end date is empty fill with end study date') 
 
 # Convert start and end dates to Date format
-lapply(c("op_start_date", "op_end_date"), function(x) OBSERVATION_PERIODS <- OBSERVATION_PERIODS[, eval(x) := as.IDate(as.character(get(x)), "%Y%m%d")])
+OBSERVATION_PERIODS[, op_start_date := as.IDate(as.character(op_start_date), "%Y%m%d")]
+OBSERVATION_PERIODS[, op_end_date   := as.IDate(as.character(op_end_date), "%Y%m%d")]
 
 # Fill missing end dates with end of study date
-OBSERVATION_PERIODS <- OBSERVATION_PERIODS[is.na(op_end_date), op_end_date := end_study_date]
+OBSERVATION_PERIODS[is.na(op_end_date), op_end_date := end_study_date]
 
 # For flow chart
 step1_nrow <- nrow(OBSERVATION_PERIODS) # Count rows after date formatting
@@ -86,7 +76,6 @@ if (SUBP) {
     
     # Count unique person IDs in TEMP
     original_unique_ID <- length(unique(TEMP$person_id)) 
-    
     # If TEMP has rows
     if (nrow(TEMP) > 0) {
       
@@ -124,7 +113,6 @@ if (SUBP) {
           # Filter TEMP for these two sets
           TEMP <- TEMP[meaning_set %in% c(meaning_sets1, meaning_sets2), ]
           
-          # Store row count for this pair
           flowchart_overlap[[paste0("Rows in pair ", meaning_sets1, "|||", meaning_sets2, " for", subpopulation_meanings[["subpopulations"]][i])]]$count <- nrow(TEMP)
           
           TEMP1<-copy(TEMP)
@@ -190,7 +178,7 @@ if (SUBP) {
           if (nrow(TEMP) == 0) {
             # Exit loop
             k = length(meaning_sets)
-          
+            
             # Print message about no overlapping spells
             print(paste0(subpopulation_meanings[["subpopulations"]][i], " Has no overlapping spells so a file with 0 rows is returned"))
           }
@@ -201,7 +189,7 @@ if (SUBP) {
         
         # If subpop name does not contain underscore (PC)
       } else {
-      
+        
         # Create spells without overlap
         TEMP <- CreateSpells(
           dataset = TEMP,
@@ -224,7 +212,7 @@ if (SUBP) {
         # Convert to date format
         TEMP[, op_start_date := as.IDate(op_start_date)]
         TEMP[, op_end_date := as.IDate(op_end_date)]
-
+        
       }
       
       # If TEMP has no rows
@@ -238,26 +226,27 @@ if (SUBP) {
       
     }
     
+    
     # Save TEMP 
-     saveRDS(TEMP, file = file.path(paths$D3_dir, "spells", paste0(subpopulation_meanings[["subpopulations"]][i], "_OBS_SPELLS.rds")))
+    saveRDS(TEMP, file = file.path(paths$D3_dir, "spells", paste0(subpopulation_meanings[["subpopulations"]][i], "_OBS_SPELLS.rds")))
     
     # Count rows after processing
     after <- nrow(TEMP)
     
     # Store flowchart info for this subpopulation
-    FlowChartCreateSpells[[paste0("Spells_", subpopulation_meanings[["subpopulations"]][i])]]$step <- "01_CreateSpells"
-    FlowChartCreateSpells[[paste0("Spells_", subpopulation_meanings[["subpopulations"]][i])]]$original_unique_ID <- original_unique_ID
-    FlowChartCreateSpells[[paste0("Spells_", subpopulation_meanings[["subpopulations"]][i])]]$population <- subpopulation_meanings[["subpopulations"]][i]
-    FlowChartCreateSpells[[paste0("Spells_", subpopulation_meanings[["subpopulations"]][i])]]$before <- before
-    FlowChartCreateSpells[[paste0("Spells_", subpopulation_meanings[["subpopulations"]][i])]]$after <- after
-
+    flow_chart_create_spells[[paste0("Spells_", subpopulation_meanings[["subpopulations"]][i])]]$step <- "01_CreateSpells"
+    flow_chart_create_spells[[paste0("Spells_", subpopulation_meanings[["subpopulations"]][i])]]$original_unique_ID <- original_unique_ID
+    flow_chart_create_spells[[paste0("Spells_", subpopulation_meanings[["subpopulations"]][i])]]$population <- subpopulation_meanings[["subpopulations"]][i]
+    flow_chart_create_spells[[paste0("Spells_", subpopulation_meanings[["subpopulations"]][i])]]$before <- before
+    flow_chart_create_spells[[paste0("Spells_", subpopulation_meanings[["subpopulations"]][i])]]$after <- after
+    
     # Save flowchart list to file
-    saveRDS(FlowChartCreateSpells, file = file.path(paths$D5_dir, "flowcharts", "SUBPOP_flowchart_overlap.rds"))
+    saveRDS(flow_chart_create_spells, file = file.path(paths$D5_dir, "flowcharts", "SUBPOP_flowchart_overlap.rds"))
   }
   
   # If no subpopulations exist
 } else {
- 
+  
   # Print message
   print("Create spells and select latest for ALL")
   
@@ -293,6 +282,7 @@ if (SUBP) {
   # keep only the row with the maximum num_spell
   OBSERVATION_PERIODS1 <- OBSERVATION_PERIODS1[, temp := lapply(.SD, max), by = c("person_id"), .SDcols = "num_spell"][temp == num_spell, ][, temp := NULL]
   
+  
   # Rename date columns 
   setnames(OBSERVATION_PERIODS1, "entry_spell_category", "op_start_date")
   setnames(OBSERVATION_PERIODS1, "exit_spell_category", "op_end_date")
@@ -304,27 +294,43 @@ if (SUBP) {
   # Save Observation Periods
   saveRDS(OBSERVATION_PERIODS1, file = file.path(paths$D3_dir, "spells", "ALL_OBS_SPELLS.rds"))
   
-  
   # Print Message
   print("store FlowChart data on attrition")
   
-  # Define descriptive steps for the flowchart to explain each count
-  CreateSpellsStep <- c("original number of OBSERVATION PERIODS", "original number of unique personID",
-                        "number of OBSERVATION PERIODS after concatenating observations with gaps <= 7 days",
-                        "number of OBSERVATION PERIODS after selecting the most recent observation (one spell per unique ID)")
+  # *** HERE IS THE COMBINED FLOWCHART TABLE INCLUDING MISSING START/END DATES ***
   
-# Create flow chart
-  OBS_number <- c(before_CreateSpells, step0_unique, after_CreateSpells, select_most_recent)
+  combined_steps <- c(
+    "Original number of OBSERVATION PERIODS",
+    "Rows with missing start date",
+    "Rows with missing end date",
+    "Original number of unique person IDs",
+    "Number of OBSERVATION PERIODS after concatenating observations with gaps <= 7 days",
+    "Number of OBSERVATION PERIODS after selecting the most recent observation (one spell per unique ID)"
+  )
   
-  # Combine steps and numbers into a data frame for reporting
-  FlowChartCreateSpells <- as.data.frame(cbind(CreateSpellsStep, OBS_number))
+  combined_counts <- c(
+    nrow(OBSERVATION_PERIODS),
+    sum(is.na(OBSERVATION_PERIODS$op_start_date)),
+    sum(is.na(OBSERVATION_PERIODS$op_end_date)),
+    length(unique(OBSERVATION_PERIODS$person_id)),
+    after_CreateSpells,
+    select_most_recent
+  )
   
-  # Save the flowchart
-  saveRDS(FlowChartCreateSpells, file = file.path(paths$D5_dir, "flowcharts", "FlowChartCreateSpells.rds"))
+  flow_chart_create_spells_combined <- data.frame(
+    Step = combined_steps,
+    Count = combined_counts,
+    stringsAsFactors = FALSE
+  )
   
+  saveRDS(flow_chart_create_spells_combined, file = file.path(paths$D5_dir, "flowcharts", "flow_chart_create_spells.rds"))
+  
+  
+  # Save overlap info if exists
   # If an object called flowchart_overlap exists, Save it
   if (exists("flowchart_overlap")) {
     saveRDS(flowchart_overlap, file = file.path(paths$D5_dir, "flowcharts", "SUBPOP_flowchart_overlap.rds"))
   }
 }
+
 

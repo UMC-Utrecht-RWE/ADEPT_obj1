@@ -2,7 +2,7 @@
 rm(list = ls())
 
 # Check if 'rstudioapi' package is installed; if not, install it, then load package
-if (!require(rstudioapi)) { install.packages("rstudioapi") }
+if (!require(rstudioapi)) install.packages("rstudioapi")
 
 # Get the folder path of the currently open R script in RStudio and set it as the working directory
 thisdir <- dirname(rstudioapi::getSourceEditorContext()$path)
@@ -25,27 +25,29 @@ DEAP_data <- "CPRD"
 # DEAP_data <- "VID"
 
 ### <<< USER INPUT >>> ###
-# If Multiple Regions (BIFAP) set to TRUE and add path to folder with multiple regions
+#<<< ===========================================================================================================>>>
+# Set start study date - this is the date from which data is considered of good quality
+# Analysis counts will be done from start_study_date + lookback period.
+# In the default example, if start_study_date is 1999-01-01, then medicine counts will be done from 2000-01-01
+start_study_date <- "1999-01-01"
 
-# multiple_regions     <- TRUE
-# multiple_regions_dir <- "Path/To/Your/Regional/Folders/Here/For/BIFAP"
-
-
-# <<< IF NOT BIFAP!!! >>>
-
-# Leave Multiple Regions as FALSE and set path to folder with CDM instances
-multiple_regions <- FALSE
+#<<< ===========================================================================================================>>>
+# Set directory where CDM tables are
+# CDM_dir  <- "F:/ADEPT/Updated_CDM"
 CDM_dir <- "Path/To/Your/CDM/Folders/here"
 
+#<<< ===========================================================================================================>>>
+# Set directory where D3_pregnancy_final.RData file is (created by Pregnancy Algorithm)
+preg_dir <- "Path/To/Your/Pregnancy/D3_pregnancy_final.RData/File/Here"
 
-# === SET FLAGS === 
+#<<< ===========================================================================================================>>>
 
-# Set DEAP flags
+# Run to set DEAP flags
 source(file.path(thisdir, "p_steps", "set_flags.R"), local = TRUE)
 
-
-# === ANALYSIS SCRIPTS === 
+# === ANALYSIS SCRIPTS ===
+# Objectives 1.1 and 1.2
 source(file.path(thisdir, "p_steps", "run_analysis.R"), local = TRUE)
 
-
-
+# Objectives 1.3 and 1.4
+source(file.path(thisdir, "p_steps", "run_analysis_pregnancies.R"), local = TRUE)

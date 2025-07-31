@@ -1,15 +1,24 @@
+###############################################################################################################################################################################
+# <<< Sub-objective 1.1: Prevalence rate >>> 
+# Measure: Annual prevalence rate of ASM use
+# Numerator: Number of individuals with ≥1 treatment episode of an ASM within a calendar year 
+# Denominator: Total number of individuals in that calendar year in the data source
+# Stratification by: Individual drug substance, drug sub-groups, age groups, indication, calendar year, data source
+
+###############################################################################################################################################################################
+
 print("==========================================================================")
 print("========================= CALCULATING PREVALENCE =========================")
 print("==========================================================================")
 
 # List all episode files 
-files_episodes <- list.files(file.path(paths$D3_dir, "tx_episodes", "individual"), pattern = "\\.rds$")
+files_episodes <- list.files(file.path(paths$D3_dir, "tx_episodes"), pattern = "\\.rds$")
 
 # Filter exposures for current pop_prefix only
 files_episodes <- files_episodes[grepl(paste0("^", pop_prefix, "_"), files_episodes)]
 
 # If pop_prefix is PC, then drop any that are PC_HOSP
-if(pop_prefix=="PC"){files_episodes <- files_episodes[!grepl("PC_HOSP", files_episodes)]}
+if(pop_prefix=="PC") files_episodes <- files_episodes[!grepl("PC_HOSP", files_episodes)]
 
 # Load denominator file
 denominator <- readRDS(file.path(paths$D3_dir, "denominator", paste0(pop_prefix, "_denominator.rds")))
@@ -18,11 +27,14 @@ denominator <- readRDS(file.path(paths$D3_dir, "denominator", paste0(pop_prefix,
 for (episode in seq_along(files_episodes)) {
   
   # Read the treatment episode file
-  dt <- readRDS(file.path(paths$D3_dir, "tx_episodes", "individual", files_episodes[episode]))
+  dt <- readRDS(file.path(paths$D3_dir, "tx_episodes", files_episodes[episode]))
   
   # Print Message
   message("Processing: ", gsub("_treatment_episode\\.rds$", "", files_episodes[episode]))
   
+  # Remove duplicates
+  dt <- unique(dt, by = c("person_id", "episode.start", "episode.end"))
+
   # Order episodes by person & start date
   setorder(dt, person_id, episode.start)
   
@@ -31,13 +43,13 @@ for (episode in seq_along(files_episodes)) {
   dt[, end_year   := year(episode.end)]
   
   # Generate one row per person-year-ATC
-  dt_expanded <- dt[, 
-                    { 
+  dt_expanded <- dt[,
+                    {
                       years    <- seq(start_year, end_year)
                       repeated <- .SD[rep(1L, length(years))]
                       repeated[, year := years]
                       repeated
-                    }, by = .I]
+                    }, by = .(person_id, episode.start)]
   
   # Remove prevalence that falls outside start and end follow up
   dt_expanded <- dt_expanded[year >= year(start_follow_up) & year <= year(end_follow_up),]
@@ -60,15 +72,15 @@ for (episode in seq_along(files_episodes)) {
     prevalence_all[, rate := round(1000 * N / Freq, 3)][N == 0 & Freq == 0, rate := 0]
     
     # Set warnings if Numerator > than Denominator or if Denominator is 0 and Numerator is >0
-    if (nrow(prevalence_all[N > Freq]) > 0) {warning(red("Warning: Some numerator values exceed denominator."))}
-    if (nrow(prevalence_all[Freq == 0 & N != 0]) > 0) {warning(red("Warning: Denominator zero with non-zero numerator."))}
+    if (nrow(prevalence_all[N > Freq]) > 0) warning(red("Warning: Some numerator values exceed denominator."))
+    if (nrow(prevalence_all[Freq == 0 & N != 0]) > 0) warning(red("Warning: Denominator zero with non-zero numerator."))
     
     # Save data where odd values 
     if(nrow(prevalence_all[N > Freq])>0) fwrite(prevalence_all[N > Freq], file.path(paths$D5_dir, "1.1_prevalence", paste0(gsub("_treatment_episode\\.rds$", "", files_episodes[episode]), "_num_gt_denominator.csv")))
     if(nrow(prevalence_all[Freq == 0 & N != 0])>0) fwrite(prevalence_all[Freq == 0 & N != 0], file.path(paths$D5_dir, "1.1_prevalence", paste0(gsub("_treatment_episode\\.rds$", "", files_episodes[episode]), "_denominator_zero_numerator_nonzero.csv")))
     
     # Create column marking if rate is computable 
-    prevalence_all[, rate_computable := !(Freq == 0 & N >= 0)]
+    prevalence_all[, rate_computable := Freq > 0]
     
     # Rename columns 
     setnames(prevalence_all, c("N", "Freq"), c("n_treated", "n_total"))
@@ -77,7 +89,7 @@ for (episode in seq_along(files_episodes)) {
     saveRDS(dt_expanded, file.path(paths$D4_dir, "1.1_prevalence", paste0(gsub("_treatment_episode\\.rds$", "", files_episodes[episode]), "_prevalence_data.rds")))
     
     # Save results 
-    saveRDS(prevalence_all, file.path(paths$D5_dir, "1.1_prevalence", paste0(gsub("_treatment_episode\\.rds$", "", files_episodes[episode]), "_prevalence.rds")))
+    saveRDS(prevalence_all, file.path(paths$D5_dir, "1.1_prevalence", paste0(gsub("_treatment_episode\\.rds$", "", files_episodes[episode]), "_prevalence_counts.rds")))
     
   } else {
     

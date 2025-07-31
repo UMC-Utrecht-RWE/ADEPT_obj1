@@ -1,3 +1,8 @@
+###################################################
+# Checks which data components are available in the Common Data Model (CDM) directory and 
+# sets flags indicating whether certain types of analyses can be performed.
+###################################################
+
 # Define function
 `%!in%` = Negate(`%in%`)
 
