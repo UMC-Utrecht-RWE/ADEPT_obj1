@@ -55,6 +55,7 @@ for (episode in seq_along(files_episodes)) {
     # Calculate overall treatment stats
     overall_stats <- dt[, .(
       drug           = episode_name,
+      n_persons      = uniqueN(person_id),
       mean_months    = mean(total_months, na.rm = TRUE),
       median_months  = median(total_months, na.rm = TRUE),
       min_months     = min(total_months, na.rm = TRUE),

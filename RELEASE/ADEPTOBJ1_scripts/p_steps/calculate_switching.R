@@ -62,7 +62,7 @@ for(episode in seq_along(files_discontinued_episodes)){
   dt_discontinued[,c("episode.ID", "end.episode.gap.days", "episode.duration", "next_start", "discontinuer_flag", "year"):= NULL]
   
   # Create window start and window end columns - period where switcher could be found
-  dt_discontinued[, window_start := episode.end][, window_end := episode.end + 120]
+  dt_discontinued[, window_start := episode.start][, window_end := episode.end + 120]
   
   # Comparing Discontinued Episodes to Exposure prescriptions
   for(exposure in seq_along(files_exposures)){

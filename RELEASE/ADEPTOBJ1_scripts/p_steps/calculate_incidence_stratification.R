@@ -56,9 +56,23 @@ dt_comorbidity_dx <- rbindlist(lapply(files_comorbidities[!grepl("_med\\.rds$", 
 dt_comorbidity_meds <- unique(dt_comorbidity_meds)
 dt_comorbidity_dx <- unique(dt_comorbidity_dx)
 
-# create a folder for stratified counts
-dir.create(file.path(paths$D5_dir, "1.1_incidence", "stratified"), showWarnings = FALSE, recursive = TRUE)
+# Read in Incidence Counts files
+files_incidence_counts <- list.files(file.path(paths$D5_dir, "1.1_incidence"), pattern = "\\.rds$", full.names = TRUE)
+# Filter by prefix
+files_incidence_counts <- files_incidence_counts[grepl(paste0("^", pop_prefix, "_"), basename(files_incidence_counts))]
+# Exclude "PC_HOSP" if prefix is "PC"
+if (pop_prefix == "PC") files_incidence_counts <- files_incidence_counts[!grepl("^PC_HOSP", basename(files_incidence_counts))]
+# Exclude subgroups
+files_incidence_counts <- files_incidence_counts[!grepl("DP_ANTIEPINEW|DP_ANTIEPIOLD|DP_BENZOANTIEPILEPTIC|DP_GABAPENTINOIDS", basename(files_incidence_counts))]
 
+# load and bind all indications into one dataset
+dt_incidence_counts_all <- rbindlist(lapply(files_incidence_counts, readRDS), use.names = TRUE, fill = TRUE)
+total_new_users <- dt_incidence_counts_all[, sum(n_treated, na.rm = TRUE)]
+
+# create a folder for stratified counts and comoorbidities
+dir.create(file.path(paths$D5_dir, "1.1_incidence", "stratified"), showWarnings = FALSE, recursive = TRUE)
+dir.create(file.path(paths$D4_dir, "1.1_incidence", "comorbidities"), showWarnings = FALSE, recursive = TRUE)
+dir.create(file.path(paths$D5_dir, "1.1_incidence", "comorbidities"), showWarnings = FALSE, recursive = TRUE)
 # set stratification levels 
 # age groups
 age_levels <- c("12-18.99", "19-34.99", "35-54.99", "55-74.99", "75+", "UNKNOWN")
@@ -220,6 +234,7 @@ for(episode in seq_along(files_incidence_episodes)){
   saveRDS(indication_counts, file.path(paths$D5_dir, "1.1_incidence", "stratified", paste0(gsub("_incidence_data\\.rds$", "_incidence_indication_counts.rds", files_incidence_episodes[episode]))))
   
   #<<< COMORBIDITIES >>>#
+  
   if (!grepl("DP_ANTIEPINEW|DP_ANTIEPIOLD|DP_BENZOANTIEPILEPTIC|DP_GABAPENTINOIDS", files_incidence_episodes[episode])) {
     # prepare data for foverlaps
     # incident episodes
@@ -277,6 +292,8 @@ for(episode in seq_along(files_incidence_episodes)){
 # Read in from tmp and bind all comorbidities together 
 dt_comorbidity_all <- rbindlist(lapply(list.files(file.path(paths$D3_dir, "tmp"), pattern = "\\.rds$", full.names = TRUE), readRDS), use.names = TRUE,fill = TRUE)
 
+# if pop_prefix is PC, then drop any that are PC_HOSP
+if(pop_prefix=="PC") files_incidence_episodes <- files_incidence_episodes[!grepl("PC_HOSP", files_incidence_episodes)]
 # TODO Create co-morbidity groups according to the bridge - for now hard coded due to lack of time - matbe clean up later 
 # Define all groups
 ### C_CARDIOCEREBROVASCULARDESE_COV
@@ -307,8 +324,6 @@ dt_comorbidity_all[, comorbidity_group := fifelse(comorbidity %in% group1, "C_CA
                                                                                                   fifelse(comorbidity %in% group8, "V_HYPERTENSION_COV",
                                                                                                           NA_character_))))))))]
 
-# create a folder for stratified counts
-dir.create(file.path(paths$D4_dir, "1.1_incidence", "comorbidities"), showWarnings = FALSE, recursive = TRUE)
 
 # save co-morbidity counts in D5
 saveRDS(dt_comorbidity_all, file.path(paths$D4_dir, "1.1_incidence", "comorbidities" , paste0(pop_prefix, "_comorbidity_dataset.rds")))
@@ -317,10 +332,10 @@ saveRDS(dt_comorbidity_all, file.path(paths$D4_dir, "1.1_incidence", "comorbidit
 dt_comorbidity_all <- unique(dt_comorbidity_all, by = c("person_id", "episode.start", "comorbidity_group"))
 
 # Count unique people with each co-morbidity
-comorbidity_counts <- dt_comorbidity_all[, .(n_people = uniqueN(person_id)), by = comorbidity_group][order(-n_people)]  # Optional: sort descending
+comorbidity_counts <- dt_comorbidity_all[, .(comorbidity_counts_in_new_users = uniqueN(person_id)), by = comorbidity_group]
 
-# create a folder for stratified counts
-dir.create(file.path(paths$D5_dir, "1.1_incidence", "comorbidities"), showWarnings = FALSE, recursive = TRUE)
+# Add column with total new users 
+comorbidity_counts[, total_new_users:= total_new_users]
 
 # save co-morbidity counts in D5
 saveRDS(comorbidity_counts, file.path(paths$D5_dir, "1.1_incidence", "comorbidities", paste0(pop_prefix, "_comorbidity_counts.rds")))

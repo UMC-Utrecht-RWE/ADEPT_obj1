@@ -8,7 +8,7 @@ print("Creating Concept Sets...")
 bridge        <- unique(as.data.table(read_excel(file.path(thisdir, "definitions", "bridge", "ADEPT_O1_BRIDGE_19Mayo25.xlsx"), sheet = "OBJ1")))
 algorithm_map <- unique(as.data.table(read_excel(file.path(thisdir, "definitions", "bridge", "ADEPT_O1_BRIDGE_19Mayo25.xlsx"), sheet = "ALG")))
 codelist_meds <- unique(as.data.table(read_excel(file.path(thisdir, "definitions", "codelists", "20250515_ADEPT_medicines.xlsx"))))
-codelist_dx   <- unique(as.data.table(read_csv  (file.path(thisdir, "definitions", "codelists", "20250429_ADEPT_full_codelist.csv"), show_col_types = FALSE)))
+codelist_dx   <- unique(as.data.table(read_csv  (file.path(thisdir, "definitions", "codelists", "20250526_ADEPT_full_codelist.csv"), show_col_types = FALSE)))
 
 # Codelists not participating in algorithms
 not_algorithms <- bridge[(exposure == TRUE | cov == TRUE | indication == TRUE | algorithm_input == TRUE | dp == TRUE) & algorithm == FALSE, ]
