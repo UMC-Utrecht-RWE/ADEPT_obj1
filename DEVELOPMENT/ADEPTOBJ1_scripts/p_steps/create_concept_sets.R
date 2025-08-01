@@ -5,10 +5,25 @@
 print("Creating Concept Sets...")
 
 # Load Data
-bridge        <- unique(as.data.table(read_excel(file.path(thisdir, "definitions", "bridge", "ADEPT_O1_BRIDGE_19Mayo25.xlsx"), sheet = "OBJ1")))
-algorithm_map <- unique(as.data.table(read_excel(file.path(thisdir, "definitions", "bridge", "ADEPT_O1_BRIDGE_19Mayo25.xlsx"), sheet = "ALG")))
-codelist_meds <- unique(as.data.table(read_excel(file.path(thisdir, "definitions", "codelists", "20250515_ADEPT_medicines.xlsx"))))
-codelist_dx   <- unique(as.data.table(read_csv  (file.path(thisdir, "definitions", "codelists", "20250526_ADEPT_full_codelist.csv"), show_col_types = FALSE)))
+bridge          <- unique(as.data.table(read_excel(file.path(thisdir, "definitions", "bridge", "ADEPT_O1_BRIDGE_19Mayo25.xlsx"), sheet = "OBJ1")))
+algorithm_map   <- unique(as.data.table(read_excel(file.path(thisdir, "definitions", "bridge", "ADEPT_O1_BRIDGE_19Mayo25.xlsx"), sheet = "ALG")))
+codelist_meds   <- unique(as.data.table(read_excel(file.path(thisdir, "definitions", "codelists", "20250515_ADEPT_medicines.xlsx"))))
+codelist_dx     <- unique(as.data.table(read_csv  (file.path(thisdir, "definitions", "codelists", "20250526_ADEPT_full_codelist.csv"), show_col_types = FALSE)))
+codelist_dx_RCD <- unique(as.data.table(read_excel(file.path(thisdir, "definitions", "codelists", "20250801_READCODES.xlsx"))))
+
+if(deap_flags$is_CPRD){
+# Clean codelist with read code before binding with codelist_dx
+codelist_dx_RCD[,origin:=NULL]
+codelist_dx_RCD[event_definition == "Essential tremor", variable_name := "N_ESSENTIALTREMOR_AESI"]
+codelist_dx_RCD[event_definition == "Schizophrenia", variable_name := "Ment_SCHIZOPHRENIA_COV"]
+codelist_dx_RCD[event_definition == "Restless legs syndrome", variable_name := "M_RESTLESSLEG_COV"]
+
+# reorder the columns to match
+setcolorder(codelist_dx_RCD, names(codelist_dx))
+# bind the codelists 
+codelist_dx <- rbindlist(list(codelist_dx, codelist_dx_RCD), use.names = TRUE, fill = TRUE)
+
+}
 
 # Codelists not participating in algorithms
 not_algorithms <- bridge[(exposure == TRUE | cov == TRUE | indication == TRUE | algorithm_input == TRUE | dp == TRUE) & algorithm == FALSE, ]

@@ -100,6 +100,17 @@ if(length(event_files)>0){
             # For each varname, create a subset of all the codes belonging to the varname 
             concept_subset <- dx_concept_set_exact[Varname == varname]
             
+            if (nrow(concept_subset) == 0) {
+              message(yellow("Skipping ", varname, ": no SNOMED codes found in concept set"))
+              
+              unmatched_log <- rbind(unmatched_log, data.table(
+                med_file = current_table,
+                varname = varname,
+                reason = "No SNOMED codes in concept set"
+              ), use.names = TRUE, fill = TRUE)
+              
+              next
+            }
             # Match codes exactly
             matched <- subset_dt[code %chin% concept_subset$code]
             matched <- unique(matched)
@@ -115,7 +126,8 @@ if(length(event_files)>0){
               # If no matches found, log the unmatched code
               unmatched_log <- rbind(unmatched_log, data.table(
                 med_file = current_table,
-                varname = varname
+                varname = varname, 
+                reason = "No matches in data"
               ), use.names = TRUE, fill = TRUE)
             }
           }
@@ -132,6 +144,17 @@ if(length(event_files)>0){
             # For each varname, create a subset of all the codes belonging to the varname 
             concept_subset <- dx_concept_set_nodot[Varname == varname]
             
+            if (nrow(concept_subset) == 0) {
+              message(yellow("Skipping ", varname, ": no ICD/ICPC codes found in concept set"))
+              
+              unmatched_log <- rbind(unmatched_log, data.table(
+                med_file = current_table,
+                varname = varname,
+                reason = "No ICD/ICPC codes in concept set"
+              ), use.names = TRUE, fill = TRUE)
+              
+              next
+            }
             # create column in subset_dt with no dot 
 
             subset_dt_tmp <- copy(subset_dt)
@@ -156,7 +179,8 @@ if(length(event_files)>0){
               # If no matches found, log the unmatched code
               unmatched_log <- rbind(unmatched_log, data.table(
                 med_file = current_table,
-                varname = varname
+                varname = varname,
+                reason = "No matches in data"
               ), use.names = TRUE, fill = TRUE)
             }
           }
@@ -172,6 +196,17 @@ if(length(event_files)>0){
             # For each varname, create a subset of all the codes belonging to the varname 
             concept_subset <- dx_concept_set_startswith[Varname == varname]
             
+            if (nrow(concept_subset) == 0) {
+              message(yellow("Skipping ", varname, ": no READ codes found in concept set"))
+              
+              unmatched_log <- rbind(unmatched_log, data.table(
+                med_file = current_table,
+                varname = varname,
+                reason = "No READ codes in concept set"
+              ), use.names = TRUE, fill = TRUE)
+              
+              next
+            }
             # create column in concept_subset with escaped dots - literal dot
             concept_subset_tmp <- copy(concept_subset)
             concept_subset_tmp[, code_regex := gsub("\\.", "\\\\.", code)]
@@ -191,7 +226,8 @@ if(length(event_files)>0){
               # If no matches found, log the unmatched code
               unmatched_log <- rbind(unmatched_log, data.table(
                 med_file = current_table,
-                varname = varname
+                varname = varname, 
+                reason = "No matches in data"
               ), use.names = TRUE, fill = TRUE)
             }
           }

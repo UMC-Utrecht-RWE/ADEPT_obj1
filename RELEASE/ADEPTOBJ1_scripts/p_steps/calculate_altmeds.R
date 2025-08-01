@@ -29,7 +29,7 @@ for (altmed in seq_along(files_altmeds)) {
   message("Processing group: ", gsub("_algo_med\\.rds$", "", files_altmeds[altmed]))
   
   # get altmed name 
-  altmed_name <- tools::file_path_sans_ext(files_altmeds[altmed])
+  altmed_name <- gsub("_algo_med\\.rds$", "", files_altmeds[altmed])
   
   # load file
   dt <- readRDS(file.path(paths$D3_dir, "alternatives", files_altmeds[altmed]))
@@ -73,7 +73,7 @@ for (altmed in seq_along(files_altmeds)) {
   saveRDS(dt, file.path(paths$D4_dir, "1.2_altmeds", paste0(altmed_name, "_altmed_data.rds")))
   
   # Save results 
-  saveRDS(altmed_all, file.path(paths$D5_dir, "1.2_altmeds", paste0(pop_prefix, "_",altmed_name, "_altmed_counts.rds")))
+  saveRDS(altmed_all, file.path(paths$D5_dir, "1.2_altmeds", paste0(altmed_name, "_altmed_counts.rds")))
   
   
 }
