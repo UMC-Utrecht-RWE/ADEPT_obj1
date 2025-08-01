@@ -7,7 +7,7 @@
 - Study programmer: Magdalena Gamba 
 - Study contributors: TBD
 - Study data sources: BIFAP (ES), SIDIAP (ES), FISABIO (ES), Val Padana (IT), CPRD (UK), NHR (NO), FHR (FI), EFEMERIS (FR), PHARMO (NL).
-- Study start date: 2000-01-01 or first DEAP data availability
+- Study start date: 1999-01-01 or first DEAP data availability
 - Study end date: Last DEAP data availability
 - Publications: TBD
 - Contact: m.a.gamba@uu.nl
