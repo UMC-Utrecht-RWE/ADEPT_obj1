@@ -81,9 +81,7 @@ DEAP_data <- "CPRD"  # ← example active line
 ```
 
 #### 3.2 Specify your start study date 
-This is the earliest date from which your data is considered of sufficient quality for analysis. A **lookback period** is automatically applied starting from this date: 
-- For most data sources, lookback period is 365 days (1 year).
-- For FIN_REG and EFEMERIS, lookback period is 90 days (3 months) an 76 days (2.5 months) respectively. 
+This is the earliest date from which your data is considered of sufficient quality for analysis. A **one year lookback period** is automatically applied starting from this date: 
 
 Medicine counts begin after lookback period ends.
 
