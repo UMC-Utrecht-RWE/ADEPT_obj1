@@ -7,7 +7,7 @@
 - Study programmer: Magdalena Gamba 
 - Study contributors: TBD
 - Study data sources: BIFAP (ES), SIDIAP (ES), FISABIO (ES), Val Padana (IT), CPRD (UK), NHR (NO), FHR (FI), EFEMERIS (FR), PHARMO (NL).
-- Study start date: 2000-01-01 or first DEAP data availability
+- Study start date: 1999-01-01 or first DEAP data availability
 - Study end date: Last DEAP data availability
 - Publications: TBD
 - Contact: m.a.gamba@uu.nl
@@ -81,9 +81,7 @@ DEAP_data <- "CPRD"  # ← example active line
 ```
 
 #### 3.2 Specify your start study date 
-This is the earliest date from which your data is considered of sufficient quality for analysis. A **lookback period** is automatically applied starting from this date: 
-- For most data sources, lookback period is 365 days (1 year).
-- For FIN_REG and EFEMERIS, lookback period is 90 days (3 months) an 76 days (2.5 months) respectively. 
+This is the earliest date from which your data is considered of sufficient quality for analysis. A **one year lookback period** is automatically applied starting from this date: 
 
 Medicine counts begin after lookback period ends.
 
