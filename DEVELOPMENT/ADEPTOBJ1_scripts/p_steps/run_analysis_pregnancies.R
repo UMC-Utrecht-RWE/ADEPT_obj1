@@ -10,6 +10,7 @@ for(pop in seq_along(populations)){
   
   # Loads study population
   study_population <- readRDS(file.path(paths$D3_dir, "study_population", populations[pop]))
+  study_population[,person_id:=as.character(person_id)]
   
   # Assign study population prefix name
   pop_prefix <- gsub("_study_population.rds", "", populations[pop])

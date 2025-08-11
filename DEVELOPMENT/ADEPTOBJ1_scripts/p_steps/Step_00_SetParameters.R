@@ -68,6 +68,9 @@ if (length(subpop_value) > 0 && !is.na(subpop_value) && subpop_value != "") {
   # Get subpopulation meanings and rename columns
   subpopulation_meanings <- METADATA[type_of_metadata == "op_meaning_sets", .(subpopulations = other, meaning_sets = values)]
   
+  # Get the exclude meanings only for EVENTS and PC
+  exclude_meanings_PC <- unlist(strsplit(METADATA_subp[type_of_metadata == "exclude_meaning" & tablename == "EVENTS", values], "\\s+"))
+  
   # Split the subpopulations string by space into a vector
   subpopulations <- unlist(str_split(METADATA_subp[type_of_metadata == "subpopulations", values], pattern = " "))
   
