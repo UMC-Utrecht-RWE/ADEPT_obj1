@@ -46,7 +46,7 @@ if (nrow(dt_prepreg) > 0 && nrow(dt_counts) > 0 && nrow(dt_poly) > 0) {
   message("All datasets have data, proceeding...")
   
   # drop unneeded columns
-  dt_prepreg <- dt_prepreg[, .(person_id, atc_group, episode.start, episode.end, pregnancy_start_date, pregnancy_end_date, highest_quality)]
+  dt_prepreg <- dt_prepreg[, .(person_id, atc_group, episode.start, episode.end, pregnancy_start_date, pregnancy_end_date)]
   dt_poly <- dt_poly[, .(person_id, atc_group, i.atc_group, overlap_start, overlap_end)]
   # rename cols
   setnames(dt_prepreg, "atc_group", "atc_group_prepreg")
@@ -56,7 +56,7 @@ if (nrow(dt_prepreg) > 0 && nrow(dt_counts) > 0 && nrow(dt_poly) > 0) {
   dt_poly <- unique(dt_poly)
   
   # merge prepregnancy data with polytherapy file
-  dt <- merge(dt_prepreg, dt_poly, by = "person_id", all = FALSE)
+  dt <- merge(dt_prepreg, dt_poly, by = "person_id", all = FALSE, allow.cartesian = TRUE)
   
   if (nrow(dt) > 0) {
     
@@ -114,7 +114,7 @@ if (nrow(dt_prepreg) > 0 && nrow(dt_counts) > 0 && nrow(dt_poly) > 0) {
       setnames(poly_all, "N", "n_treated")
       
       # save output
-      saveRDS(dt_subset, file.path(paths$D4_dir, "1.4_pregnancy_polytherapy", paste0(pop_prefix, "__polytherapy_in_pregnancy_data.rds")))
+      saveRDS(dt_subset, file.path(paths$D4_dir, "1.4_pregnancy_polytherapy", paste0(pop_prefix, "_polytherapy_in_pregnancy_data.rds")))
       saveRDS(poly_all, file.path(paths$D5_dir, "1.4_pregnancy_polytherapy", paste0(pop_prefix, "_polytherapy_in_pregnancy_counts.rds")))
       
     } else {

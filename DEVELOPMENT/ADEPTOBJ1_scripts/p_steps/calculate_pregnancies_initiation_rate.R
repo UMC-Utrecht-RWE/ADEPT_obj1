@@ -35,22 +35,24 @@ for (episode in seq_along(files_episodes)) {
   dt[, episode.start := as.IDate(episode.start)][, episode.end := as.IDate(episode.end)]
   
   # Remove duplicates
-  dt <- unique(dt, by = c("person_id", "episode.start"))
+  dt <- unique(dt, by = c("person_id", "episode.start", "start_follow_up"))
   
   # Set key for joining
   setkey(dt, person_id)
   
   # Merge treatment episode with pregnancies file on person id
-  dt_all <- dt[pregnancies, on = .(person_id), nomatch = 0]
+  dt_all <- dt[pregnancies, on = .(person_id), nomatch = 0, allow.cartesian = TRUE]
   
   # First, sort by person and episode.start to ensure order
-  setorder(dt_all, person_id, episode.start)
+  setorder(dt_all, person_id, start_follow_up, episode.start)
   
   # Create a new column with the previous episode.end per person
-  dt_all[, prior_episode_end := shift(episode.end), by = person_id]
+  dt_all[, prior_episode_end := shift(episode.end), by = .(person_id, start_follow_up)]
   
   # Keep pregnancies where prior treatment episode end is more than 365 days before current episode start or there is no prior episode 
-  dt_all <- dt_all[pregnancy_start_date - prior_episode_end > 365 | is.na(prior_episode_end), ]
+  # Convert lookback_period (lubridate Period) to integer days
+  lookback_days <- as.integer((Sys.Date() + lookback_period) - Sys.Date())
+  dt_all <- dt_all[((pregnancy_start_date - prior_episode_end) > lookback_days) | (is.na(prior_episode_end))]
   
   # Keep pregnancies only if start is between start and end follow up
   dt_all <- dt_all[pregnancy_start_date >= start_follow_up & pregnancy_start_date <= end_follow_up, ]

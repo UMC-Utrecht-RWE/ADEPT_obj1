@@ -32,17 +32,30 @@ if(pop_prefix=="PC") files_switcher_episodes <- files_switcher_episodes[!grepl("
 # === Create maps ===
 # extract treatment name key
 get_treatment_key <- function(x, suffix) gsub(suffix, "", x)
-treatment_keys <- get_treatment_key(files_prepregnancy, "_pre_pregnancy_data.rds")
 
-# match corresponding files by treatment key
-prepreg_map  <- setNames(file.path(paths$D4_dir, "1.3_pre-pregnancy_use", files_prepregnancy), treatment_keys)
-counts_map   <- setNames(file.path(paths$D5_dir, "1.3_pre-pregnancy_use", files_counts), treatment_keys)
-switcher_map <- setNames(file.path(paths$D4_dir, "1.2_switching", files_switcher_episodes), treatment_keys)
+# Prepreg keys 
+prepreg_keys <- get_treatment_key(files_prepregnancy, "_pre_pregnancy_data.rds")
+prepreg_map  <- setNames(file.path(paths$D4_dir, "1.3_pre-pregnancy_use", files_prepregnancy), prepreg_keys)
 
-for (trt in seq_along(treatment_keys)) {
+# Counts keys
+counts_keys <- get_treatment_key(files_counts, "_pre_pregnancy_counts.rds")
+counts_map  <- setNames(file.path(paths$D5_dir, "1.3_pre-pregnancy_use", files_counts), counts_keys)
+
+# Discontinued keys
+switcher_keys <- get_treatment_key(files_switcher_episodes, "_switcher_data.rds")
+switcher_map  <- setNames(file.path(paths$D4_dir, "1.2_switching", files_switcher_episodes), switcher_keys)
+                 
+# 4. Keep only keys that exist in all three
+common_keys  <- Reduce(intersect, list(prepreg_keys, counts_keys, switcher_keys))
+prepreg_map  <- prepreg_map[common_keys]
+counts_map   <- counts_map[common_keys]
+switcher_map <- switcher_map[common_keys]
+
+
+for (trt in seq_along(common_keys)) {
   
   # get treatment name 
-  treatment <- treatment_keys[trt]
+  treatment <- common_keys[trt]
   
   # If none of the file found, skip
   # If none of the file found, skip

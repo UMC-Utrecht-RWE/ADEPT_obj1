@@ -40,22 +40,30 @@ if(pop_prefix=="PC") files_discontinued_episodes <- files_discontinued_episodes[
 # === Create maps ===
 # extract treatment name key
 get_treatment_key <- function(x, suffix) gsub(suffix, "", x)
-treatment_keys <- get_treatment_key(files_prepregnancy, "_pre_pregnancy_data.rds")
 
-# match corresponding files by treatment key
-prepreg_map <- setNames(file.path(paths$D4_dir, "1.3_pre-pregnancy_use", files_prepregnancy), treatment_keys)
-counts_map  <- setNames(file.path(paths$D5_dir, "1.3_pre-pregnancy_use", files_counts), treatment_keys)
-discont_map <- setNames(file.path(paths$D4_dir, "1.2_discontinued", files_discontinued_episodes), treatment_keys)
+# Prepreg keys 
+prepreg_keys <- get_treatment_key(files_prepregnancy, "_pre_pregnancy_data.rds")
+prepreg_map  <- setNames(file.path(paths$D4_dir, "1.3_pre-pregnancy_use", files_prepregnancy), prepreg_keys)
 
-for (trt in seq_along(treatment_keys)) {
+# Counts keys
+counts_keys <- get_treatment_key(files_counts, "_pre_pregnancy_counts.rds")
+counts_map  <- setNames(file.path(paths$D5_dir, "1.3_pre-pregnancy_use", files_counts), counts_keys)
+
+# Discontinued keys
+discont_keys <- get_treatment_key(files_discontinued_episodes, "_discontinued_data.rds")
+discont_map  <- setNames(file.path(paths$D4_dir, "1.2_discontinued", files_discontinued_episodes), discont_keys)
+
+# 4. Keep only keys that exist in all three
+common_keys <- Reduce(intersect, list(prepreg_keys, counts_keys, discont_keys))
+prepreg_map <- prepreg_map[common_keys]
+counts_map  <- counts_map[common_keys]
+discont_map <- discont_map[common_keys]
+
+
+for (trt in seq_along(common_keys)) {
   
   # get treatment name 
-  treatment <- treatment_keys[trt]
-  
-  # If none of the file found, skip
-  if (!file.exists(prepreg_map[[trt]]) ||
-      !file.exists(counts_map[[trt]]) ||
-      !file.exists(discont_map[[trt]])) next
+  treatment <- common_keys[trt]
   
   # read in the files
   dt_prepreg <- readRDS(prepreg_map[[trt]])
@@ -63,8 +71,8 @@ for (trt in seq_along(treatment_keys)) {
   dt_discont <- readRDS(discont_map[[trt]])
   
   # merge prepregnancy data with discontinuation file
-  dt <- merge(dt_prepreg[,.(person_id, pregnancy_start_date, pregnancy_end_date)], dt_discont, by = "person_id", all = FALSE)
-  
+  dt <- merge(dt_prepreg[,.(person_id, pregnancy_start_date, pregnancy_end_date, episode.start, episode.end)], dt_discont, by = c("person_id", "episode.start", "episode.end"), all = FALSE)
+
   if(nrow(dt)>0){
     # print message
     message(blue("Discontinued records found in pre-pregnancy users for", treatment))
@@ -74,20 +82,24 @@ for (trt in seq_along(treatment_keys)) {
     dt[, (date_cols) := lapply(.SD, as.IDate), .SDcols = date_cols]
     
     # add trimester windows
-    dt[, t1_start := pregnancy_start_date][, t1_end := pregnancy_start_date + 90]
-    dt[, t2_start := pregnancy_start_date + 91][, t2_end := pregnancy_start_date + 180]
-    dt[, t3_start := pregnancy_start_date + 181][, t3_end := pregnancy_end_date]
-    
-    # create subsets 
-    # pre-pregnancy users whose ASM use does not run into the pregnancy period
-    dt_before <- dt[episode.end < pregnancy_start_date,]
-    # discontinuation during 2nd trimester
-    dt_t2 <- dt[episode.end >= t2_start & episode.end < t2_end,]
-    # discontinuation during 3rd trimester
-    dt_t3 <- dt[episode.end >= t3_start & episode.end < t3_end,]
+    dt[, t1_start := pregnancy_start_date]
+    dt[, t1_end   := pmin(pregnancy_start_date + 90, pregnancy_end_date)]
+    dt[, t2_start := fifelse(pregnancy_end_date >= pregnancy_start_date + 91, pregnancy_start_date + 91, as.IDate(NA))]
+    dt[, t2_end   := fifelse(!is.na(t2_start), pmin(pregnancy_start_date + 180, pregnancy_end_date), as.IDate(NA))]
+    dt[, t3_start := fifelse(pregnancy_end_date >= pregnancy_start_date + 181, pregnancy_start_date + 181, as.IDate(NA))]
+    dt[, t3_end   := fifelse(!is.na(t3_start), pregnancy_end_date, as.IDate(NA))]
+
+    # create subsets
+    # Pre-pregnancy: episode ends before pregnancy starts
+    dt_before <- dt[episode.end < pregnancy_start_date]
+    # Trimester 1 discontinuation: only if T1 exists
+    dt_t1 <- dt[!is.na(t1_start) & !is.na(t1_end) & episode.end >= t1_start & episode.end < t1_end]
+    # Trimester 2 discontinuation: only if T2 exists
+    dt_t2 <- dt[!is.na(t2_start) & !is.na(t2_end) & episode.end >= t2_start & episode.end < t2_end]
+
     
     # create list of subsets
-    discont_list <- list(before = dt_before, t2 = dt_t2, t3 = dt_t3)
+    discont_list <- list(before = dt_before, t1 = dt_t1, t2 = dt_t2)
     
     for (dt in seq_along(discont_list)) {
   

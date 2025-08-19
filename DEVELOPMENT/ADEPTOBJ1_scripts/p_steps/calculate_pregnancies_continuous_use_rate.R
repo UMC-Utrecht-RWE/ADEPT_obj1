@@ -17,9 +17,6 @@ files_episodes <- list.files(file.path(paths$D4_dir, "1.3_pre-pregnancy_use"))
 # Drop PC_HOSP files if pop_prefix is PC
 if(pop_prefix == "PC") files_episodes <- files_episodes[!grepl("PC_HOSP", files_episodes)]
 
-# Pregnancy file loaded and cleaned in pre-pregnancy script
-
-
 # Loop through each treatment episode file
 for (episode in seq_along(files_episodes)) {
   
@@ -42,18 +39,24 @@ for (episode in seq_along(files_episodes)) {
   setkey(dt, person_id)
   
   # Add trimester windows
-  dt[, t1_start := pregnancy_start_date][, t1_end := pregnancy_start_date + 90]
-  dt[, t2_start := pregnancy_start_date + 91][, t2_end := pregnancy_start_date + 180]
-  dt[, t3_start := pregnancy_start_date + 181][, t3_end := pregnancy_end_date]
+  dt[, t1_start := pregnancy_start_date]
+  dt[, t1_end   := pmin(pregnancy_start_date + 90, pregnancy_end_date)]
+  dt[, t2_start := fifelse(pregnancy_end_date >= pregnancy_start_date + 91, pregnancy_start_date + 91, as.IDate(NA))]
+  dt[, t2_end   := fifelse(!is.na(t2_start), pmin(pregnancy_start_date + 180, pregnancy_end_date), as.IDate(NA))]
+  dt[, t3_start := fifelse(pregnancy_end_date >= pregnancy_start_date + 181, pregnancy_start_date + 181, as.IDate(NA))]
+  dt[, t3_end   := fifelse(!is.na(t3_start), pregnancy_end_date, as.IDate(NA))]
   
   # create flags for all trimesters
-  dt[, overlap_t1 := episode.start <= t1_end & episode.end >= t1_start]
-  dt[, overlap_t2 := episode.start <= t2_end & episode.end >= t2_start]
-  dt[, overlap_t3 := episode.start <= t3_end & episode.end >= t3_start]
-  
-  # Optional: flag if episode overlaps **all three trimesters**
+  # T1 overlap (always exists if pregnancy_start_date is valid)
+  dt[, overlap_t1 := fifelse(!is.na(t1_start) & !is.na(t1_end) & episode.start <= t1_end & episode.end >= t1_start, TRUE, FALSE)]
+  # T2 overlap (only check if t2_start and t2_end are not NA)
+  dt[, overlap_t2 := fifelse(!is.na(t2_start) & !is.na(t2_end) & episode.start <= t2_end & episode.end >= t2_start, TRUE, FALSE)]
+  # T3 overlap (only check if t3_start and t3_end are not NA)
+  dt[, overlap_t3 := fifelse(!is.na(t3_start) & !is.na(t3_end) & episode.start <= t3_end & episode.end >= t3_start, TRUE, FALSE)]
+
+  # Flag if episode overlaps **all three trimesters**
   dt_all_trimester_overlap <- dt[overlap_t1 & overlap_t2 & overlap_t3]
-  
+
   # Get list of unique ids 
   preg_ids_allt <- unique(dt_all_trimester_overlap$pregnancy_id)
   
