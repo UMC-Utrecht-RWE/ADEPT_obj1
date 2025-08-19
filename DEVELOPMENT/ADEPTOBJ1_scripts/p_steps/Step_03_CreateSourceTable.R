@@ -23,7 +23,7 @@ if(!SUBP) {
 }
 
 # Load persons file 
-persons <- readRDS(file.path(paths$D3_dir, "source_population", "persons.rds"))
+PERSONS <- readRDS(file.path(paths$D3_dir, "source_population", "persons.rds"))
 
 # Loop over each row (subpopulation) in SCHEME_03
 for(i in 1:nrow(SCHEME_03)){
@@ -31,18 +31,20 @@ for(i in 1:nrow(SCHEME_03)){
   # Read observation spells data for the current subpopulation
   SPELLS <- readRDS(file.path(paths$D3_dir, "spells", SCHEME_03[["file_in"]][i]))
   
-  # Check for duplicated person_id in SPELLS; stop if found
-  if(any(duplicated(SPELLS[["person_id"]]))) stop("Duplicates in person or observation_period table") 
+  if (any(unlist(deap_flags[c("is_BIFAP", "is_CPRD", "is_NOR_REG", "is_PHARMO", "is_SIDIAP", "is_VAL_PAD", "is_VID")]))) {
+    # Check for duplicated person_id in SPELLS; stop if found - NOT for EFEMERIS or FINREG as these are pregnancies
+    if(any(duplicated(SPELLS[["person_id"]]))) stop("Duplicates in person or observation_period table") 
+  }
   
   # Print message
   print(paste0("Merge person table with observation_periods table ",SCHEME_03[["subpopulations"]][i]))
   
   # Set keys 
-  setkey(persons, "person_id")
+  setkey(PERSONS, "person_id")
   setkey(SPELLS, "person_id")
   
   # Merge PERSONS and SPELLS by person_id, keeping only matching rows
-  SOURCE_POPULATION <- merge(persons, SPELLS, by = "person_id")
+  SOURCE_POPULATION <- merge(PERSONS, SPELLS, by = "person_id")
   
   # Print Message
   print(paste0("If op_start_date is before birth_date replace op_start_date with birth_date ", SCHEME_03[["subpopulations"]][i]))
@@ -68,23 +70,68 @@ for(i in 1:nrow(SCHEME_03)){
   )]
   
   
-  # Adjust op_start date to latest of these values: 
-  ## date person turned min age: 12 (date_min)
-  ## date person entered data source: obs_start_date
-  ## start of study period: 20000101
-  SOURCE_POPULATION[, entry_date:= pmax(date_min, op_start_date, start_study_date, na.rm = TRUE)]
-  
-  # Adjust op_end date to earliest of these values:
-  ## date person turned max age - 56 (date_max) - females only
-  ## moving out of data source - op_end_date
-  ## death
-  ## last data available from data source: recommended_end_date
-  ## last data extraction from data source: date_creation
-  ## end of study period - current date
-  
-  # Adjust date_max to death_date if person has died before date_max
-  SOURCE_POPULATION[, exit_date:= pmin(date_max, op_end_date, death_date, recommended_end_date, date_creation, end_study_date, na.rm = TRUE)]
-  
+  if(deap_flags$is_EFEMERIS || deap_flags$is_FIN_REG){
+    # Possible multiple observation periods per person_id
+    
+    # ENTRY DATE
+    ## For Efemeris & Finland we need to keep all observation periods as these represent pregnancies
+    ## Therefore I have defined Entry Date to be the latest of the following: 
+    ### 1. start study date (defined by DAP)
+    ### 2. date_min (date person turns 12)
+    ### 3. Earliest op_start_date i.e. from the first observation period. We subtract lookback period as all op_start_dates = start fu 
+    ## Entry date will be the same per patient, regardless of how many observation spells/pregnancies they have
+    
+    # Get earliest op_start date per person_id
+    SOURCE_POPULATION[, earliest_op_start := min(op_start_date, na.rm = TRUE), by = person_id]
+    
+    # Calculate entry date - according to EFEMERIS, every observation period has a lookback of 2.5 months, including the first one
+    SOURCE_POPULATION[, entry_date := pmax(
+      as.Date(start_study_date),
+      as.Date(date_min),
+      as.Date(earliest_op_start) - lookback_period,
+      na.rm = TRUE
+    )]
+    
+    # EXIT DATE
+    ## For Efemeris & Finland we need to keep all observation periods as these represent pregnancies
+    ## Therefore I have defined Exit Date to be the earliest of the following: 
+    ### 1. end study date - this is equal to recommended end date as per CDM table 
+    ### 2. Date of instance creation as per CDM table
+    ### 3. date_max (last date person was 54 - this is defined above only for females)
+    ### 4. Latest op_end_date i.e. from the last observation period. This is the latest overall treatment of the patient in the study period'
+    ### 5. Death date
+    ## Exit date will be the same per patient, regardless of how many observation spells/pregnancies they have
+    
+    # Get latest op_end date per person_id
+    SOURCE_POPULATION[, latest_op_end := max(op_end_date, na.rm = TRUE), by = person_id]
+    
+    # Calculate exit date 
+    SOURCE_POPULATION[, exit_date := pmin(end_study_date, date_creation, date_max, latest_op_end, death_date, na.rm = TRUE)]
+    
+    # delete created columns 
+    SOURCE_POPULATION[, earliest_op_start:=NULL]
+    SOURCE_POPULATION[, latest_op_end := NULL]
+    
+    
+  } else {
+    # Max one observation period per person_id
+    
+    ## ENTRY DATE is defined as the latest of the following 
+    ### 1. start study date (defined by DAP)
+    ### 2. date_min (date person turns 12)
+    ### 3. Op_start_date 
+    
+    SOURCE_POPULATION[, entry_date:= pmax(start_study_date, date_min, op_start_date, na.rm = TRUE)]
+    
+    # EXIT DATE is defined as the earliest of the following
+    ### 1. end study date - this is equal to recommended end date as per CDM table 
+    ### 2. Date of instance creation as per CDM table
+    ### 3. date_max (last date person was 54 - this is defined above only for females)
+    ### 4. Op_end_date
+    ### 5. Death date
+    SOURCE_POPULATION[, exit_date:= pmin(end_study_date, date_creation, date_max, op_end_date, death_date, na.rm = TRUE)]
+    
+  }
   
   # Add a column indicating the current subpopulation
   SOURCE_POPULATION[, population := SCHEME_03[["subpopulations"]][i]]
@@ -96,4 +143,4 @@ for(i in 1:nrow(SCHEME_03)){
 }
 
 # save file 
-saveRDS(SCHEME_03, file = file.path(paths$D5_dir,"flowcharts" ,"scheme_03.rds"))
+# saveRDS(SCHEME_03, file = file.path(paths$D5_dir,"flowcharts" ,"scheme_03.rds"))
