@@ -113,9 +113,12 @@ for(episode in seq_along(files_prevalence_episodes)){
   dt_temp <- copy(dt)
   # prepare data for foverlaps
   # incident episodes
-  dt_temp[, start_window := episode.start - lookback_period][, end_window := episode.start]
+  dt_temp[, start_window := as.IDate(as.Date(episode.start) %m-% lookback_period)]
+  dt_temp[, end_window   := as.IDate(episode.start)]
+  
   # indication data
-  dt_indication[, start_event := event_date][, end_event := event_date]
+  dt_indication[, start_event := as.IDate(event_date)]
+  dt_indication[, end_event   := as.IDate(event_date)]
   
   # set keys 
   setkey(dt_temp, person_id, start_window, end_window)

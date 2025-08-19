@@ -52,3 +52,6 @@ if (nrow(study_population) > 0) {
   message("No study population found; skipping denominator creation.")
   
 }
+
+
+rm(list = grep("FUyears", ls(), value = TRUE, ignore.case = TRUE))
