@@ -16,7 +16,7 @@ exclude <- c("DP_ANTIEPINEW", "DP_ANTIEPIOLD", "DP_BENZOANTIEPILEPTIC", "DP_GABA
 
 # Load Data Sets
 # Discontinued episodes
-files_discontinued_episodes <- list.files(file.path(paths$D4_dir, "1.2_discontinued"), pattern = "\\.rds$")
+files_discontinued_episodes <- list.files(file.path(paths$D4_dir, "1.2_discontinued"))
 # Filter episodes for current pop_prefix only
 files_discontinued_episodes <- files_discontinued_episodes[grepl(paste0("^", pop_prefix, "_"), files_discontinued_episodes)]
 # If pop_prefix is PC, then drop any that are PC_HOSP
@@ -41,13 +41,16 @@ files_altmeds <- files_altmeds[grepl(paste0("^", pop_prefix, "_"), files_altmeds
 if(pop_prefix=="PC") files_altmeds <- files_altmeds[!grepl("PC_HOSP", files_altmeds)]
 
 # Prevalence counts 
-files_prevalence_counts <- list.files(file.path(paths$D5_dir, "1.1_prevalence"), pattern = "\\.rds$")
-# Filter prevalence counts for current pop_prefix only
-files_prevalence_counts <- files_prevalence_counts[grepl(paste0("^", pop_prefix, "_"), files_prevalence_counts)]
-# If pop_prefix is PC, then drop any that are PC_HOSP
-if(pop_prefix=="PC") files_prevalence_counts <- files_prevalence_counts[!grepl("PC_HOSP", files_prevalence_counts)]
-# Exclude subgroups
-files_prevalence_counts <- files_prevalence_counts[!(gsub(paste0("^", pop_prefix, "_|_prevalence_counts\\.rds$"), "", files_prevalence_counts) %in% exclude)]
+if (any(unlist(deap_flags[c("is_BIFAP", "is_CPRD", "is_NOR_REG", "is_PHARMO", "is_SIDIAP", "is_VAL_PAD", "is_VID")]))) {
+  # Prevalence counts 
+  files_prevalence_counts <- list.files(file.path(paths$D5_dir, "1.1_prevalence"), pattern = "\\.rds$")
+  # Filter prevalence counts for current pop_prefix only
+  files_prevalence_counts <- files_prevalence_counts[grepl(paste0("^", pop_prefix, "_"), files_prevalence_counts)]
+  # If pop_prefix is PC, then drop any that are PC_HOSP
+  if(pop_prefix=="PC") files_prevalence_counts <- files_prevalence_counts[!grepl("PC_HOSP", files_prevalence_counts)]
+  # Exclude subgroups
+  files_prevalence_counts <- files_prevalence_counts[!(gsub(paste0("^", pop_prefix, "_|_prevalence_counts\\.rds$"), "", files_prevalence_counts) %in% exclude)]
+}
 
 
 for(episode in seq_along(files_discontinued_episodes)){
@@ -59,7 +62,7 @@ for(episode in seq_along(files_discontinued_episodes)){
   dt_discontinued <- readRDS(file.path(paths$D4_dir, "1.2_discontinued", files_discontinued_episodes[episode]))
   
   # Drop unnecessary columns
-  dt_discontinued[,c("episode.ID", "end.episode.gap.days", "episode.duration", "next_start", "discontinuer_flag", "year"):= NULL]
+  dt_discontinued[,c("episode.ID", "end.episode.gap.days", "episode.duration", "next_start", "discontinuer_flag"):= NULL]
   
   # Create window start and window end columns - period where switcher could be found
   dt_discontinued[, window_start := pmax(episode.start, episode.end - 92)][, window_end := episode.end + 120]
@@ -75,9 +78,12 @@ for(episode in seq_along(files_discontinued_episodes)){
     # Load exposure prescriptions
     dt_exposures <- as.data.table(readRDS(file.path(paths$D3_dir, "exposure", files_exposures[exposure])))
     
+    # Only keep records between entry and exit dates - this used to be done in create subsets. It is not being done there anymore
+    dt_exposures <- dt_exposures[rx_date >= entry_date & rx_date <= exit_date]
+    
     # Remove duplicates
     dt_exposures <- unique(dt_exposures, by = c("person_id", "code", "rx_date"))
-
+    
     # Keep needed cols only 
     dt_exposures <- dt_exposures[, .(person_id, code, Varname, rx_date)]
     
@@ -96,6 +102,7 @@ for(episode in seq_along(files_discontinued_episodes)){
     
     # remove any results where switch date is outside study period
     switchers <- switchers[rx_date >= start_follow_up & rx_date <= end_follow_up,]
+    
     
     if (nrow(switchers)>0){
       
@@ -208,64 +215,67 @@ for (pfx in seq_along(unique_prefixes)) {
   # make copy to save
   switchers_data <- copy(switchers)
   
-  # keep one switch per episode
-  switchers <- switchers[, .SD[1], by = .(person_id, episode.start)]
-  
-  if(nrow(switchers)>0){
+  if(nrow(switchers_data)>0){
+    # Save dataset 
+    saveRDS(switchers_data, file.path(paths$D4_dir, "1.2_switching", paste0(unique_prefixes[pfx], "_switcher_data.rds")))
     
-    # Assign calendar year of each switch
-    switchers[, year := year(rx_date)]
-    
-    # Remove duplicates: Keep only one person id per year
-    switchers <- unique(switchers, by = c("person_id", "year"))
-    
-    # Count number of discontinuers per year
-    switcher_counts <- switchers[, .("N" = .N), by = year]
-    
-    # Match corresponding prevalence file
-    matched_prevalence_file <- files_prevalence_counts[gsub("_prevalence_counts\\.rds$", "", files_prevalence_counts) == unique_prefixes[pfx]]
-    
-    if (length(matched_prevalence_file) == 1) {
+    if (any(unlist(deap_flags[c("is_BIFAP", "is_CPRD", "is_NOR_REG", "is_PHARMO", "is_SIDIAP", "is_VAL_PAD", "is_VID")]))) {
       
-      # Read in Prevalence file if file found 
-      prev_counts <- readRDS(file.path(paths$D5_dir, "1.1_prevalence", matched_prevalence_file))
       
-      # Prepare prevalence counts
-      prev_counts[,c("n_total", "rate", "rate_computable") := NULL]
-      setnames(prev_counts, "n_treated", "n_total")
+      # keep one switch per episode
+      switchers <- switchers[, .SD[1], by = .(person_id, episode.start)]
       
-      # Merge discontinued with prevalence
-      switcher_all <- merge(switcher_counts, prev_counts, by = "year", all.y = TRUE)
+      # Assign calendar year of each switch
+      switchers[, year := year(rx_date)]
       
-      # Set N = 0 for years with no treatments
-      switcher_all[is.na(N), N := 0]
+      # Remove duplicates: Keep only one person id per year
+      switchers <- unique(switchers, by = c("person_id", "year"))
       
-      # Calculate discontinued as a rate (*100)
-      switcher_all[, rate := round(100 * N / n_total, 3)][N == 0 & n_total == 0, rate := 0]
+      # Count number of discontinuers per year
+      switcher_counts <- switchers[, .("N" = .N), by = year]
       
-      # Set warnings if Numerator > than Denominator or if Denominator is 0 and Numerator is >0
-      if (nrow(switcher_all[N > n_total]) > 0) warning(red("Warning: Some numerator values exceed denominator."))
-      if (nrow(switcher_all[n_total == 0 & N != 0]) > 0) warning(red("Warning: Denominator zero with non-zero numerator."))
+      # Match corresponding prevalence file
+      matched_prevalence_file <- files_prevalence_counts[gsub("_prevalence_counts\\.rds$", "", files_prevalence_counts) == unique_prefixes[pfx]]
       
-      # Save data where odd values 
-      if(nrow(switcher_all[N > n_total])>0) fwrite(switcher_all[N > n_total], file.path(paths$D5_dir, "1.2_switching", paste0(current_prefix, "_num_gt_denominator.csv")))
-      if(nrow(switcher_all[n_total == 0 & N != 0])>0) fwrite(switcher_all[n_total == 0 & N != 0], file.path(paths$D5_dir, "1.2_switching", paste0(current_prefix, "_denominator_zero_numerator_nonzero.csv")))
-      
-      # Create column marking if rate is computable 
-      switcher_all[, rate_computable := n_total > 0]
-      
-      # rename columns
-      setnames(switcher_all, "N", "n_treated")
-      
-      # Save dataset 
-      saveRDS(switchers_data, file.path(paths$D4_dir, "1.2_switching", paste0(unique_prefixes[pfx], "_switcher_data.rds")))
-      
-      # Save results 
-      saveRDS(switcher_all, file.path(paths$D5_dir, "1.2_switching", paste0(unique_prefixes[pfx], "_switcher_counts.rds")))
-      
-    } else {
-      
-      message("No matching prevalence file found for ", unique_prefixes[pfx])
+      if (length(matched_prevalence_file) == 1) {
+        
+        # Read in Prevalence file if file found 
+        prev_counts <- readRDS(file.path(paths$D5_dir, "1.1_prevalence", matched_prevalence_file))
+        
+        # Prepare prevalence counts
+        prev_counts[,c("n_total", "rate", "rate_computable") := NULL]
+        setnames(prev_counts, "n_treated", "n_total")
+        
+        # Merge discontinued with prevalence
+        switcher_all <- merge(switcher_counts, prev_counts, by = "year", all.y = TRUE)
+        
+        # Set N = 0 for years with no treatments
+        switcher_all[is.na(N), N := 0]
+        
+        # Calculate discontinued as a rate (*100)
+        switcher_all[, rate := round(100 * N / n_total, 3)][N == 0 & n_total == 0, rate := 0]
+        
+        # Set warnings if Numerator > than Denominator or if Denominator is 0 and Numerator is >0
+        if (nrow(switcher_all[N > n_total]) > 0) warning(red("Warning: Some numerator values exceed denominator."))
+        if (nrow(switcher_all[n_total == 0 & N != 0]) > 0) warning(red("Warning: Denominator zero with non-zero numerator."))
+        
+        # Save data where odd values 
+        if(nrow(switcher_all[N > n_total])>0) fwrite(switcher_all[N > n_total], file.path(paths$D5_dir, "1.2_switching", paste0(current_prefix, "_num_gt_denominator.csv")))
+        if(nrow(switcher_all[n_total == 0 & N != 0])>0) fwrite(switcher_all[n_total == 0 & N != 0], file.path(paths$D5_dir, "1.2_switching", paste0(current_prefix, "_denominator_zero_numerator_nonzero.csv")))
+        
+        # Create column marking if rate is computable 
+        switcher_all[, rate_computable := n_total > 0]
+        
+        # rename columns
+        setnames(switcher_all, "N", "n_treated")
+        
+        # Save results 
+        saveRDS(switcher_all, file.path(paths$D5_dir, "1.2_switching", paste0(unique_prefixes[pfx], "_switcher_counts.rds")))
+        
+      } else {
+        
+        message("No matching prevalence file found for ", unique_prefixes[pfx])
+      }
     }
   }
 }

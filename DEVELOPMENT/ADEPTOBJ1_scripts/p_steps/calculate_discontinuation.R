@@ -32,26 +32,22 @@ if(pop_prefix=="PC") files_prevalence_counts <- files_prevalence_counts[!grepl("
 # Loop through each treatment episode file
 for (episode in seq_along(files_episodes)) {
   
-  episode_filename <- files_episodes[episode]
-  
-  if (is.na(episode_filename)) stop("Missing episode filename")
-  
-  episode_name <- gsub("_treatment_episode\\.rds$", "", episode_filename)
+  episode_name <- gsub("_treatment_episode\\.rds$", "", files_episodes[episode])
 
   # Read the treatment episode file
   dt <- readRDS(file.path(paths$D3_dir, "tx_episodes", files_episodes[episode]))
   
   # Print Message
-  message("Processing: ", gsub("_treatment_episode\\.rds$", "", files_episodes[episode]))
+  message("Processing: ", episode_name)
   
   # Remove duplicates
-  dt <- unique(dt, by = c("person_id", "episode.start", "episode.end"))
+  dt <- unique(dt, by = c("person_id", "episode.start", "episode.end", "start_follow_up", "end_follow_up"))
   
   # Order episodes by person & start date
-  setorder(dt, person_id, episode.start)
+  setorder(dt, person_id, start_follow_up, episode.start)
   
   # Get next episode start date
-  dt[, next_start := shift(episode.start, type = "lead"), by = .(person_id)]
+  dt[, next_start := shift(episode.start, type = "lead"), by = .(person_id, start_follow_up)]
   
   # Flag discontinuation events
   dt[, discontinuer_flag := fifelse(is.na(next_start), (exit_date - episode.end >= 120), (next_start - episode.end >= 120))]
@@ -62,7 +58,24 @@ for (episode in seq_along(files_episodes)) {
   # Keep only episodes between entry and exit date
   discontinuers <- discontinuers[episode.end >= start_follow_up & episode.end <= end_follow_up,]
   
+  if (deap_flags$is_EFEMERIS || deap_flags$is_FIN_REG) {
+    
+    if (nrow(discontinuers) == 0) {
+      # print message 
+      message(red(paste("No discontinuers were found for:", episode_name)))
+      
+    } else {
+      # Save discontinued data
+      saveRDS(discontinuers, file.path(paths$D4_dir, "1.2_discontinued", paste0(gsub("_treatment_episode\\.rds$", "", files_episodes[episode]), "_discontinued_data.rds")))
+    }
+    next
+  }
+  
+    
   if(nrow(discontinuers)>0){
+    
+    # Save discontinued data
+    saveRDS(discontinuers, file.path(paths$D4_dir, "1.2_discontinued", paste0(gsub("_treatment_episode\\.rds$", "", files_episodes[episode]), "_discontinued_data.rds")))
     
     # Assign calendar year of each discontinued episode
     discontinuers[, year := year(episode.end)]
@@ -107,11 +120,7 @@ for (episode in seq_along(files_episodes)) {
         
         # rename columns
         setnames(discontinued_all, "N", "n_treated")
-        
-        # Save dataset 
-        saveRDS(discontinuers, file.path(paths$D4_dir, "1.2_discontinued", paste0(gsub("_treatment_episode\\.rds$", "", files_episodes[episode]), "_discontinued_data.rds")))
-        
-        # Save results 
+         # Save results 
         saveRDS(discontinued_all, file.path(paths$D5_dir, "1.2_discontinued", paste0(gsub("_treatment_episode\\.rds$", "", files_episodes[episode]), "_discontinued_counts.rds")))
         
     } else {

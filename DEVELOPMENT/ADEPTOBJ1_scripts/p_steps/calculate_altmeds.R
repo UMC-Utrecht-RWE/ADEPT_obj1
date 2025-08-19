@@ -10,8 +10,10 @@ print("=========================================================================
 print("========================= PROCESSING ALTERNATIVE MEDICATIONS =========================")
 print("======================================================================================")
 
-# Load denominator file
-denominator <- readRDS(file.path(paths$D3_dir, "denominator", paste0(pop_prefix, "_denominator.rds")))
+if (any(unlist(deap_flags[c("is_BIFAP", "is_CPRD", "is_NOR_REG", "is_PHARMO", "is_SIDIAP", "is_VAL_PAD", "is_VID")]))) {
+  # Load denominator file
+  denominator <- readRDS(file.path(paths$D3_dir, "denominator", paste0(pop_prefix, "_denominator.rds")))
+}
 
 # List all altmed files 
 files_altmeds <- list.files(file.path(paths$D3_dir, "alternatives"), pattern = "\\.rds$")
@@ -25,18 +27,26 @@ if(pop_prefix=="PC") files_altmeds <- files_altmeds[!grepl("PC_HOSP", files_altm
 # Loop through each alternative folder
 for (altmed in seq_along(files_altmeds)) {
   
-  # print message
-  message("Processing group: ", gsub("_algo_med\\.rds$", "", files_altmeds[altmed]))
-  
   # get altmed name 
   altmed_name <- gsub("_algo_med\\.rds$", "", files_altmeds[altmed])
+  
+  # print message
+  message("Processing group: ", altmed_name)
   
   # load file
   dt <- readRDS(file.path(paths$D3_dir, "alternatives", files_altmeds[altmed]))
   
-  # remove any rxs that fall outside star and end follow up 
-  dt_clean <- dt[rx_date >= start_follow_up & rx_date <= end_follow_up,]
+  # Only keep records between entry and exit dates - this used to be done in create subsets. It is not being done there anymore
+  dt <- dt[rx_date >= entry_date & rx_date <= exit_date]
   
+  # Save data set 
+  saveRDS(dt, file.path(paths$D4_dir, "1.2_altmeds", paste0(altmed_name, "_altmed_data.rds")))
+  
+  if(deap_flags$is_EFEMERIS || deap_flags$is_FIN_REG) next
+  
+  # Only keep records between start and end follow up for counts 
+  dt_clean <- dt[rx_date >= start_follow_up & rx_date <= end_follow_up]
+
   # Create a column with year of rxm and name of altmed group it comes 
   dt_clean[, `:=`(year = year(rx_date), source = altmed_name)]
   
@@ -68,9 +78,6 @@ for (altmed in seq_along(files_altmeds)) {
   
   # Rename columns
   setnames(altmed_all, c("N", "Freq"), c("n_treated", "n_total"))
-  
-  # Save dataset 
-  saveRDS(dt, file.path(paths$D4_dir, "1.2_altmeds", paste0(altmed_name, "_altmed_data.rds")))
   
   # Save results 
   saveRDS(altmed_all, file.path(paths$D5_dir, "1.2_altmeds", paste0(altmed_name, "_altmed_counts.rds")))
