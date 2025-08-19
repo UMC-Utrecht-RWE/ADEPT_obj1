@@ -55,7 +55,9 @@ all_combinations_indications <- CJ(year = all_years, indication = indication_lev
 dt_temp <- copy(dt)
 dt_temp <- dt_temp[, .(person_id, atc_group, episode.start, episode.end, i.atc_group, i.episode.start, i.episode.end, overlap_start, overlap_end, overlap_days, start_follow_up, end_follow_up)] 
 setnames(dt_temp,c("atc_group", "episode.start", "episode.end", "i.atc_group", "i.episode.start", "i.episode.end"), c("atc_group1", "episode.start1", "episode.end1", "atc_group2", "episode.start2", "episode.end2"))          
-dt_temp[, start_window := overlap_start - lookback_period][, end_window := overlap_start]
+
+dt_temp[, start_window := as.IDate(as.Date(overlap_start) %m-% lookback_period)]
+dt_temp[, end_window := overlap_start]
 
 # Drop unnecessary columns
 dt_indication <- dt_indication[, .(person_id, event_date, event_definition)] 
