@@ -20,30 +20,55 @@ for (p in paths) {
   }
 }
 
-# Create list of all folders to be created
-subfolders <- list(
-  
-  file.path(paths$D3_dir, c(
-    "concept_sets", "denominator", "source_population", "spells", "study_population", "tmp", "tx_episodes",
-    "algorithm_input", "alternatives", "cov", "exposure", "indication" 
-  )),
-  
-  file.path(paths$D4_dir, c(
-    "1.1_incidence", "1.1_prevalence",
-    "1.2_treatment_duration", "1.2_discontinued", "1.2_altmeds", "1.2_switching", "1.2_polytherapy", 
-    "1.3_pre-pregnancy_use", "1.3_pregnancy_initiation", "1.3_pregnancy_continuous", 
-    "1.4_pregnancy_discontinuation", "1.4_pregnancy_switching", "1.4_pregnancy_polytherapy"
-  )),
-  
-  file.path(paths$D5_dir, c(
-    "1.1_incidence", "1.1_prevalence",
-    "1.2_treatment_duration", "1.2_discontinued", "1.2_altmeds", "1.2_switching", "1.2_polytherapy", 
-    "1.3_pre-pregnancy_use", "1.3_pregnancy_initiation", "1.3_pregnancy_continuous", 
-    "1.4_pregnancy_discontinuation", "1.4_pregnancy_switching", "1.4_pregnancy_polytherapy",
-    "flowcharts", "baseline_tables", "plots"
+if(deap_flags$is_EFEMERIS | deap_flags$is_FIN_REG) {
+  # Create list of all folders to be created
+  subfolders <- list(
     
-  ))
-) |> unlist()
+    file.path(paths$D3_dir, c(
+      "concept_sets", "denominator", "source_population", "spells", "study_population", "tmp", "tx_episodes",
+      "algorithm_input", "alternatives", "cov", "exposure", "indication" 
+    )),
+    
+    file.path(paths$D4_dir, c(
+      "1.2_discontinued", "1.2_altmeds", "1.2_switching", "1.2_polytherapy", 
+      "1.3_pre-pregnancy_use", "1.3_pregnancy_initiation", "1.3_pregnancy_continuous", 
+      "1.4_pregnancy_discontinuation", "1.4_pregnancy_switching", "1.4_pregnancy_polytherapy"
+    )),
+    
+    file.path(paths$D5_dir, c(
+      "1.3_pre-pregnancy_use", "1.3_pregnancy_initiation", "1.3_pregnancy_continuous", 
+      "1.4_pregnancy_discontinuation", "1.4_pregnancy_switching", "1.4_pregnancy_polytherapy",
+      "flowcharts", "baseline_tables", "plots"
+      
+    ))
+  ) |> unlist()
+  
+} else {
+  # Create list of all folders to be created
+  subfolders <- list(
+    
+    file.path(paths$D3_dir, c(
+      "concept_sets", "denominator", "source_population", "spells", "study_population", "tmp", "tx_episodes",
+      "algorithm_input", "alternatives", "cov", "exposure", "indication" 
+    )),
+    
+    file.path(paths$D4_dir, c(
+      "1.1_incidence", "1.1_prevalence",
+      "1.2_treatment_duration", "1.2_discontinued", "1.2_altmeds", "1.2_switching", "1.2_polytherapy", 
+      "1.3_pre-pregnancy_use", "1.3_pregnancy_initiation", "1.3_pregnancy_continuous", 
+      "1.4_pregnancy_discontinuation", "1.4_pregnancy_switching", "1.4_pregnancy_polytherapy"
+    )),
+    
+    file.path(paths$D5_dir, c(
+      "1.1_incidence", "1.1_prevalence",
+      "1.2_treatment_duration", "1.2_discontinued", "1.2_altmeds", "1.2_switching", "1.2_polytherapy", 
+      "1.3_pre-pregnancy_use", "1.3_pregnancy_initiation", "1.3_pregnancy_continuous", 
+      "1.4_pregnancy_discontinuation", "1.4_pregnancy_switching", "1.4_pregnancy_polytherapy",
+      "flowcharts", "baseline_tables", "plots"
+      
+    ))
+  ) |> unlist()
+}
 
 
 # Create folders
