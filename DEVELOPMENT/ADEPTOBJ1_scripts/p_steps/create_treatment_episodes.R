@@ -6,9 +6,6 @@ print("=========================================================================
 print("========================= CREATING TREATMENT EPISODES =========================")
 print("===============================================================================")
 
-# # Vector of patterns to exclude
-# exclude_patterns <- c("DP_ANTIEPINEW", "DP_ANTIEPIOLD", "DP_GABAPENTINOIDS", "DP_BENZOANTIEPILEPTIC")
-
 # List all files in exposure folder
 files_exposures <- list.files(file.path(paths$D3_dir, "exposure"))
 
@@ -18,12 +15,6 @@ files_exposures <- files_exposures[grepl(paste0("^", pop_prefix, "_"), files_exp
 # If pop_prefix is PC, then drop any that are PC_HOSP
 if(pop_prefix=="PC") files_exposures <- files_exposures[!grepl("PC_HOSP", files_exposures)]
 
-# # Create a combined regex pattern
-# pattern <- paste(exclude_patterns, collapse = "|")
-# 
-# # Filter out files containing any of the patterns
-# files_exposures <- files_exposures[!grepl(pattern, files_exposures)]
-
 # For each one, create treatment episodes and save in treatment episodes folder with the same name + suffix treatment_episode
 for (exposure in seq_along(files_exposures)) {
   
@@ -31,20 +22,26 @@ for (exposure in seq_along(files_exposures)) {
   # Remove prefix and either '_algo_med.rds' or '.rds'
   atc_group <- gsub(paste0("^", pop_prefix, "_"), "", gsub("_algo_med\\.rds$|\\.rds$", "", files_exposures[exposure]))
   
+  # Print message
+  message("Processing: ", paste0(pop_prefix, "_", atc_group))
+  
   # Read the current file
   dt <- readRDS(file.path(paths$D3_dir, "exposure", files_exposures[exposure]))
   
-  # Set assumed duration if missing
-  dt[, assumed_duration := ifelse(is.na(presc_duration_days) | presc_duration_days < 30, 30, presc_duration_days)]
+  # Only keep records between entry and exit dates 
+  dt <- dt[rx_date >= entry_date & rx_date <= exit_date]
+  
+  # Get assumed durations per DAP 
+  source(file.path(thisdir, "p_steps", "calculate_DAP_specific_assumed_durations.R"), local = TRUE) 
   
   # Add atc_group column
   dt[, atc_group := atc_group]
   
+  # save the file back so we have assumed duration
+  saveRDS(dt, file.path(paths$D3_dir, "exposure", files_exposures[exposure]))
+  
   # Remove true duplicates
   dt <- unique(dt, by = c("person_id", "atc_group", "rx_date"))
-
-  # Print message
-  message("Processing: ", paste0(pop_prefix, "_", atc_group))
   
   if(nrow(dt)>0){
     # Create Treatment Episode
@@ -79,19 +76,19 @@ for (exposure in seq_along(files_exposures)) {
     treat_episode[, atc_group := atc_group]
     
     # Merge with dt to get unique ATC
-    treat_episode <- merge(treat_episode, dt[, .(person_id, rx_date, code)], by.x = c("person_id", "episode.start"), by.y = c("person_id", "rx_date"), all.x = TRUE)
+    treat_episode <- merge(treat_episode, dt[, .(person_id, rx_date, code)], by.x = c("person_id", "episode.start"), by.y = c("person_id", "rx_date"), all.x = TRUE, allow.cartesian = TRUE)
     
     # Merge with study population to get start, end follow ups, entry/exit dates
-    treat_episode <- merge(treat_episode, study_population[, .(person_id, sex_at_instance_creation, birth_date, start_follow_up, end_follow_up, entry_date, exit_date)], by = "person_id")
+    treat_episode <- merge(treat_episode, study_population[, .(person_id, sex_at_instance_creation, birth_date, start_follow_up, end_follow_up, entry_date, exit_date)], by = "person_id", allow.cartesian = TRUE)
     
     # Convert date columns to IDate
     treat_episode[, `:=`(episode.start = as.IDate(episode.start), episode.end = as.IDate(episode.end))]
     
-    # Apply episode validity filters
-    treat_episode <- treat_episode[episode.end > entry_date - 90,]
-    treat_episode <- treat_episode[episode.start < end_follow_up,]
-    treat_episode[episode.end > end_follow_up, episode.end := end_follow_up]
-    treat_episode <- treat_episode[episode.end > episode.start,]
+      # Apply episode validity filters
+      treat_episode <- treat_episode[episode.end > entry_date - 90,] 
+      treat_episode <- treat_episode[episode.start < exit_date,] 
+      treat_episode[episode.end > exit_date, episode.end := exit_date] 
+      treat_episode <- treat_episode[episode.end > episode.start,] 
     
     # Remove duplicates
     treat_episode <- unique(treat_episode)
@@ -100,3 +97,7 @@ for (exposure in seq_along(files_exposures)) {
     if(nrow(treat_episode)>0) saveRDS(treat_episode, file = file.path(paths$D3_dir, "tx_episodes", paste0(pop_prefix, "_", atc_group, "_treatment_episode.rds")))
   }
 }
+
+
+# clean up before moving on
+rm(list = grep("algorithm_map|antiepinew|antiepiold|atc_group|benzo|defined_cols|dt|files_exposure|gaba|median_lookup|meds_map|treat_episode", ls(), value = TRUE, ignore.case = TRUE))
