@@ -45,7 +45,7 @@ if(length(event_files)>0){
     dt[, event_date := as.IDate(as.character(event_date), format = "%Y%m%d")]
     
     # Merge event table with study population - make sure person_id is of the same type
-    dt[, person_id := as.character(person_id)]
+    dt[, person_id := as.character(person_id), allow.cartesian = TRUE]
     study_population[, person_id := as.character(person_id)]
     
     # Merge on person id - keep all in study population
@@ -53,7 +53,7 @@ if(length(event_files)>0){
     
     # Drop any records that fall outside entry and exit dates
     dt <- dt[event_date >= entry_date & event_date <= exit_date]
-    
+
     # Delete any rows where event_date or code is missing
     dt <- dt[!((is.na(code) | trimws(code) == "") & (is.na(coding_system) | trimws(coding_system) == ""))]
 
