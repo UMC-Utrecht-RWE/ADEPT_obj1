@@ -97,15 +97,24 @@ This is where your CDM folders are saved
 ```r
 CDM_dir <- "Path/To/Your/CDM/Folders/here"
 ```
-#### 3.4 Specify pregnancies directory
-This should be the **full path** to the folder containing the `D3_pregnancy_final.RData` file.
+#### 3.4 Specify pregnancies directory 
+This should be the **full path** to the folder containing the `D3_pregnancy_final.RData` file. 
 
 ```r
 preg_dir <- "Path/To/Your/Pregnancy/D3_pregnancy_final.RData/File/Here"
 ```
+#### 3.5 ⚠️ If not participating in Objectives 1.3 and 1.4 please comment out the line: 
+
+```r
+source(file.path(thisdir, "p_steps", "run_analysis_pregnancies.R"), local = TRUE)
+```
+#### 3.6 ⚠️ If not participating in Objective 1.5 please comment out the line: 
+
+```r
+source(file.path(thisdir, "p_steps", "calculate_weighted_daily_dose.R"), local = TRUE)
+```
 
 ---
-
 ### 4. ✅ Run the Script  
 Once the configuration is complete, run the `to_run.R` script.
 
