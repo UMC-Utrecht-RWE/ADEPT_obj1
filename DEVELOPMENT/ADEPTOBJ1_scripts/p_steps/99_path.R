@@ -32,12 +32,14 @@ if(deap_flags$is_EFEMERIS | deap_flags$is_FIN_REG) {
     file.path(paths$D4_dir, c(
       "1.2_discontinued", "1.2_altmeds", "1.2_switching", "1.2_polytherapy", 
       "1.3_pre-pregnancy_use", "1.3_pregnancy_initiation", "1.3_pregnancy_continuous", 
-      "1.4_pregnancy_discontinuation", "1.4_pregnancy_switching", "1.4_pregnancy_polytherapy"
+      "1.4_pregnancy_discontinuation", "1.4_pregnancy_switching", "1.4_pregnancy_polytherapy",
+      "1.5_mean_weighted_daily_dose"
     )),
     
     file.path(paths$D5_dir, c(
       "1.3_pre-pregnancy_use", "1.3_pregnancy_initiation", "1.3_pregnancy_continuous", 
       "1.4_pregnancy_discontinuation", "1.4_pregnancy_switching", "1.4_pregnancy_polytherapy",
+      "1.5_mean_weighted_daily_dose",
       "flowcharts", "baseline_tables", "plots"
       
     ))
@@ -56,7 +58,8 @@ if(deap_flags$is_EFEMERIS | deap_flags$is_FIN_REG) {
       "1.1_incidence", "1.1_prevalence",
       "1.2_treatment_duration", "1.2_discontinued", "1.2_altmeds", "1.2_switching", "1.2_polytherapy", 
       "1.3_pre-pregnancy_use", "1.3_pregnancy_initiation", "1.3_pregnancy_continuous", 
-      "1.4_pregnancy_discontinuation", "1.4_pregnancy_switching", "1.4_pregnancy_polytherapy"
+      "1.4_pregnancy_discontinuation", "1.4_pregnancy_switching", "1.4_pregnancy_polytherapy",
+      "1.5_mean_weighted_daily_dose"
     )),
     
     file.path(paths$D5_dir, c(
@@ -64,6 +67,7 @@ if(deap_flags$is_EFEMERIS | deap_flags$is_FIN_REG) {
       "1.2_treatment_duration", "1.2_discontinued", "1.2_altmeds", "1.2_switching", "1.2_polytherapy", 
       "1.3_pre-pregnancy_use", "1.3_pregnancy_initiation", "1.3_pregnancy_continuous", 
       "1.4_pregnancy_discontinuation", "1.4_pregnancy_switching", "1.4_pregnancy_polytherapy",
+      "1.5_mean_weighted_daily_dose",
       "flowcharts", "baseline_tables", "plots"
       
     ))

@@ -72,5 +72,5 @@ flow_data <- data.table(
 )
 
 # save table 
-saveRDS(flow_data, file.path(paths$D5_dir,"flowcharts" ,paste0(pop_prefix, "_study_pop_to_Pregnant_ASM_users_users_flowchart.rds")))
+saveRDS(flow_data, file.path(paths$D5_dir,"flowcharts" ,paste0(pop_prefix, "_study_pop_to_Pregnant_ASM_users_flowchart.rds")))
 

@@ -1,3 +1,7 @@
+print("================================================================================================================")
+print("========================= CALCULATING INDICATIONS AND COMORBIDITIES OF BASE POPULATION =========================")
+print("================================================================================================================")
+
 # << Total population (base cohort) >> #
 total_population_base_cohort <- uniqueN(study_population$person_id)
 
@@ -115,7 +119,7 @@ saveRDS(indication_counts, file.path(paths$D5_dir,  "baseline_tables", "indicati
 # Comorbidities 
 files_comorbidities <- list.files(file.path(paths$D3_dir, "cov"), pattern = "\\.rds$", full.names = FALSE) #list files in comorbidity folder
 files_comorbidities <- files_comorbidities[grepl(paste0("^", pop_prefix, "_"), files_comorbidities)] # keeo files of current pop prefix
-if (pop_prefix == "PC") files_comorbidities <- files_indication[!grepl("PC_HOSP", files_comorbidities)] #BIFAP
+if (pop_prefix == "PC") files_comorbidities <- files_comorbidities[!grepl("PC_HOSP", files_comorbidities)] #BIFAP
 files_comorbidities <- files_comorbidities[!grepl(paste(exclude, collapse = "|"), files_comorbidities)] # Exclude subgroups
 dt_comorbidity_meds <- rbindlist(lapply(file.path(paths$D3_dir, "cov", files_comorbidities[grepl("_med\\.rds$", files_comorbidities)]), readRDS), use.names = TRUE, fill = TRUE)
 dt_comorbidity_dx <- rbindlist(lapply(file.path(paths$D3_dir, "cov", files_comorbidities[!grepl("_med\\.rds$", files_comorbidities)]), readRDS), use.names = TRUE, fill = TRUE)
@@ -312,8 +316,6 @@ baseline_table <-data.table(names, values)
 saveRDS(baseline_table, file.path(paths$D5_dir, "baseline_tables", paste0(pop_prefix, "_ASM_users_baseline_table.rds")))
 
 
-# clean up before moving on
-rm(list = grep("age_at|age_group|baseline|comorbid|exposure|flow_data|fu_|group|indication|med|names|nr_unique", ls(), value = TRUE, ignore.case = TRUE))
 
 
 

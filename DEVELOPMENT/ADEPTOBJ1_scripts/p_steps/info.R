@@ -154,5 +154,4 @@ if (subpopulations_present) {
   subpopulations_names <- unlist(str_split(subpop_values, pattern = " "))
 }
 
-# clean up before moving on
-rm(list = grep("actual_tables|deap_names|diagnoses|METADATA|pregnancy", ls(), value = TRUE, ignore.case = TRUE))
+

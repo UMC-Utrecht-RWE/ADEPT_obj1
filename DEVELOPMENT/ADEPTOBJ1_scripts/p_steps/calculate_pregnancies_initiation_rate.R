@@ -35,7 +35,7 @@ for (episode in seq_along(files_episodes)) {
   dt[, episode.start := as.IDate(episode.start)][, episode.end := as.IDate(episode.end)]
   
   # Remove duplicates
-  dt <- unique(dt, by = c("person_id", "episode.start", "start_follow_up"))
+  dt <- unique(dt, by = c("person_id", "episode.start", "episode.end","start_follow_up"))
   
   # Set key for joining
   setkey(dt, person_id)

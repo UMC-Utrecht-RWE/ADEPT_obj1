@@ -131,5 +131,3 @@ saveRDS(indication_counts, file.path(paths$D5_dir, "1.4_pregnancy_polytherapy", 
   }
 
 
-
-

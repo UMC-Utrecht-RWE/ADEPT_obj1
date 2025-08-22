@@ -190,7 +190,3 @@ bind_and_save_group("alternatives")
 bind_and_save_group("exposure")
 bind_and_save_group("indication")
 bind_and_save_group("cov")
-
-
-# clean up before moving on
-rm(list = grep("algorithms|alt_component|alt_components|alt_with_atc|alternatives_list|ATC_codelist|ATC_concept|bridge|code|codelist|combined|concept_|copied_files|current_table|dt|event_files|file_info|files_to_bind|matched|med_files|merged|not_copied|original|rds_files|row|subset|varname|voc", ls(), value = TRUE, ignore.case = TRUE))

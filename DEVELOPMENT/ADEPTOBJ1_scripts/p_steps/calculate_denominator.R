@@ -53,5 +53,3 @@ if (nrow(study_population) > 0) {
   
 }
 
-
-rm(list = grep("FUyears", ls(), value = TRUE, ignore.case = TRUE))

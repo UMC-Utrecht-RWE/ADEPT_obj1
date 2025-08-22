@@ -37,9 +37,6 @@ pregnancies <- merge(pregnancies, study_population[, .(person_id, start_follow_u
 # keep pregnancies that start after start follow up to ensure lookback period
 pregnancies <- pregnancies[pregnancy_start_date >= start_follow_up,]
 
-# TODO!
-pregnancies[person_id=="1194510272", person_id:= "592810070"]
-
 # Drop the start and end follow up columns as these will be available again when merged with treatment episodes
 pregnancies[, c("start_follow_up", "end_follow_up", "entry_date", "exit_date") := NULL]
 

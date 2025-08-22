@@ -220,9 +220,6 @@ baseline_table <-data.table(names, values)
 saveRDS(baseline_table, file.path(paths$D5_dir, "baseline_tables", paste0(pop_prefix, "_study_population_baseline_table.rds")))
 
 
-# clean up before moving on
-rm(list = grep("agegroup|age_levels|age_group|all_|altmed|baseline|common_ids|denominator|discontinue|dt|epi1|epi2|exposure|files_|fu_|final_summary|incidence|indication|name|overlap|prev|switcher|temp", ls(), value = TRUE, ignore.case = TRUE))
-
 
 
 

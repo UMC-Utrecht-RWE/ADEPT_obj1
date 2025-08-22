@@ -1,7 +1,7 @@
 ###############################################################################################################################################################################
 # <<< Sub-objective 1.2: Alternative medications >>> 
 # Measure: Annual rate of alternative medication use
-# Numerator: Number of individuals with ≥1 prescription/dispensing of all alternative medications for each indication of interest within a calendar year in the data source
+# Numerator: Number of individuals with one prescription/dispensing of all alternative medications for each indication of interest within a calendar year in the data source
 # Denominator: Total number of person-time in that calendar year in the data source 
 
 ###############################################################################################################################################################################
