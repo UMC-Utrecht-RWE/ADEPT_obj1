@@ -33,12 +33,11 @@ start_study_date <- "1999-01-01"
 
 #<<< ===========================================================================================================>>>
 # Set directory where CDM tables are
-# CDM_dir  <- "F:/ADEPT/Updated_CDM"
-CDM_dir <- "C:/Users/mgamb/Documents/GitHub/ADEPT_obj1/DEVELOPMENT/CDM_INSTANCES_mixed"
+CDM_dir <- "Path/To/Your/CDM/Folders/here"
 
 #<<< ===========================================================================================================>>>
 # Set directory where D3_pregnancy_final.RData file is (created by Pregnancy Algorithm)
-preg_dir <- "C:/Users/mgamb/Documents/GitHub/ADEPT_obj1/DEVELOPMENT"
+preg_dir <- "Path/To/Your/Pregnancy/D3_pregnancy_final.RData/File/Here"
 
 #<<< ===========================================================================================================>>>
 
@@ -51,3 +50,6 @@ source(file.path(thisdir, "p_steps", "run_analysis.R"), local = TRUE)
 
 # Objectives 1.3 and 1.4
 source(file.path(thisdir, "p_steps", "run_analysis_pregnancies.R"), local = TRUE)
+
+# Objectives 1.5
+source(file.path(thisdir, "p_steps", "calculate_weighted_daily_dose.R"), local = TRUE)
