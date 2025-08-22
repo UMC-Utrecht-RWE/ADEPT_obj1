@@ -108,7 +108,7 @@ preg_dir <- "Path/To/Your/Pregnancy/D3_pregnancy_final.RData/File/Here"
 ```r
 source(file.path(thisdir, "p_steps", "run_analysis_pregnancies.R"), local = TRUE)
 ```
-#### 3.6 ⚠️ If not participating in Objectives 1.5 please comment out the line: 
+#### 3.6 ⚠️ If not participating in Objective 1.5 please comment out the line: 
 
 ```r
 source(file.path(thisdir, "p_steps", "calculate_weighted_daily_dose.R"), local = TRUE)
