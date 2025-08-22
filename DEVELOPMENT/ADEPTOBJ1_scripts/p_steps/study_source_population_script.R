@@ -16,6 +16,3 @@ source(file.path(thisdir, "p_steps", "Step_02_PreparePersonsTable.R"), local = T
 source(file.path(thisdir, "p_steps", "Step_03_CreateSourceTable.R"), local = TRUE)
 source(file.path(thisdir, "p_steps", "Step_04_CreateStudyPopulation.R"), local = TRUE)
 
-# clean up before moving on
-rm(list = grep("after|attrition|before|CDM_SOURCE|combined|CountPersonTime|CreateBands|crit_name|flow_chart|get_files|IMPORT_PATTERN|inputed|INPUTMATRIX|Line_|load_package|METADATA|OBSERVATION_|PERSONS|POP_tree|SCHEME|select_most_recent|SelectionCriteria|SeparateRanges|SOURCE|step|subfolders|SelectionCriteria|SPELLS", ls(), value = TRUE, ignore.case = TRUE))
-

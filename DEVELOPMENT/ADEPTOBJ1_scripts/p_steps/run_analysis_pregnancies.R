@@ -48,11 +48,5 @@ for(pop in seq_along(populations)){
   #Polytherapy during pregnancy - stratification
   source(file.path(thisdir, "p_steps", "calculate_pregnancies_polytherapy_rate_stratification.R"), local = TRUE)
 
-  # Weighted daily dose calculations 
-  # source(file.path(thisdir, "p_steps", "calculate_weighted_daily_dose.R"), local = TRUE) 
-  
-  # clean up before moving on
-  # rm(list = grep("agegroup|all|counts|dt|indications|list", ls(), value = TRUE, ignore.case = TRUE))
-  
 }
 

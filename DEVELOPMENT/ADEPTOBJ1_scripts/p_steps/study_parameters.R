@@ -23,7 +23,7 @@ if (deap_flags$is_EFEMERIS) lookback_period <- months(2) + days(15)  # 2.5 month
 if (deap_flags$is_FIN_REG)  lookback_period <- months(3)    # 3 months
 
 
-rm(list = grep("CDM_SOURCE", ls(), value = TRUE, ignore.case = TRUE))
+
 
 
 

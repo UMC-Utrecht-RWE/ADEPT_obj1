@@ -88,8 +88,8 @@ for(i in 1:nrow(SCHEME_04)){
   study_population <- copy(SOURCE)
   # # attrition
   # before <- nrow(study_population)
-  # # keep rows only if start_follow_up is before end_follow_up
-  # study_population <- study_population[start_follow_up < end_follow_up ,]
+  # keep rows only if start_follow_up is before end_follow_up
+  study_population <- study_population[start_follow_up < end_follow_up ,]
   # 
   # after <- nrow(study_population)
   
