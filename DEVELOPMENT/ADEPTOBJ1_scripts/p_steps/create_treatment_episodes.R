@@ -34,6 +34,10 @@ for (exposure in seq_along(files_exposures)) {
   # Get assumed durations per DAP 
   source(file.path(thisdir, "p_steps", "calculate_DAP_specific_assumed_durations.R"), local = TRUE) 
   
+  # If assumed duration >100, then change it to median 
+  med_val <- median(dt$assumed_duration, na.rm = TRUE)
+  dt[assumed_duration > 100, assumed_duration := med_val]
+  
   # Add atc_group column
   dt[, atc_group := atc_group]
   
@@ -98,6 +102,3 @@ for (exposure in seq_along(files_exposures)) {
   }
 }
 
-
-# clean up before moving on
-rm(list = grep("algorithm_map|antiepinew|antiepiold|atc_group|benzo|defined_cols|dt|files_exposure|gaba|median_lookup|meds_map|treat_episode", ls(), value = TRUE, ignore.case = TRUE))
