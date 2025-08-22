@@ -14,6 +14,9 @@ print('Import and append observation periods files')
 # Load Observation Spells 
 OBSERVATION_PERIODS <- as.data.table(rbindlist(lapply(list.files(CDM_dir, pattern = "^OBSERVATION_PERIODS", full.names = TRUE), fread), use.names = TRUE, fill = TRUE))
 
+# If EFEMERIS, filter person_id starting with "M" as these are mothers 
+if (deap_flags$is_EFEMERIS) OBSERVATION_PERIODS <- OBSERVATION_PERIODS[grepl("^M", person_id)]
+
 # Label for initial step in flowchart
 step0 <- "original data" 
 
@@ -241,7 +244,7 @@ if (SUBP) {
     flow_chart_create_spells[[paste0("Spells_", subpopulation_meanings[["subpopulations"]][i])]]$after <- after
     
     # Save flowchart list to file
-    saveRDS(flow_chart_create_spells, file = file.path(paths$D5_dir, "flowcharts", "SUBPOP_flowchart_overlap.rds"))
+    saveRDS(flow_chart_create_spells, file = file.path(paths$D5_dir, "flowcharts", "SUBPOP_overlap_flowchart.rds"))
   }
   
   # If no subpopulations exist
@@ -273,15 +276,18 @@ if (SUBP) {
   # Print message
   print("select most recent Observation Period")
   
+  # keep only the row with the maximum num_spell unless EFEMERIS or FIN REG where we keep all observation periods 
+  if (any(unlist(deap_flags[c("is_BIFAP", "is_CPRD", "is_NOR_REG", "is_PHARMO", "is_SIDIAP", "is_VAL_PAD", "is_VID")]))) {
+    
+    OBSERVATION_PERIODS1 <- OBSERVATION_PERIODS1[, temp := lapply(.SD, max), by = c("person_id"), .SDcols = "num_spell"][temp == num_spell, ][, temp := NULL]
+    
+  }
+
   # Count rows in Observation Periods1 after keeping max spell only
   select_most_recent <- nrow(OBSERVATION_PERIODS1)
   
   # Print Message
   print("CLEANUP OBSERVATION_PERIODS1")
-  
-  # keep only the row with the maximum num_spell
-  OBSERVATION_PERIODS1 <- OBSERVATION_PERIODS1[, temp := lapply(.SD, max), by = c("person_id"), .SDcols = "num_spell"][temp == num_spell, ][, temp := NULL]
-  
   
   # Rename date columns 
   setnames(OBSERVATION_PERIODS1, "entry_spell_category", "op_start_date")
@@ -301,18 +307,20 @@ if (SUBP) {
   
   combined_steps <- c(
     "Original number of OBSERVATION PERIODS",
+    "Original number of unique person IDs",
     "Rows with missing start date",
     "Rows with missing end date",
-    "Original number of unique person IDs",
+    "Rows where op_start_date is after op_end_date",
     "Number of OBSERVATION PERIODS after concatenating observations with gaps <= 7 days",
     "Number of OBSERVATION PERIODS after selecting the most recent observation (one spell per unique ID)"
   )
   
   combined_counts <- c(
     nrow(OBSERVATION_PERIODS),
+    length(unique(OBSERVATION_PERIODS$person_id)),
     sum(is.na(OBSERVATION_PERIODS$op_start_date)),
     sum(is.na(OBSERVATION_PERIODS$op_end_date)),
-    length(unique(OBSERVATION_PERIODS$person_id)),
+    uniqueN(OBSERVATION_PERIODS[op_start_date >= op_end_date]$person_id),
     after_CreateSpells,
     select_most_recent
   )
@@ -323,13 +331,13 @@ if (SUBP) {
     stringsAsFactors = FALSE
   )
   
-  saveRDS(flow_chart_create_spells_combined, file = file.path(paths$D5_dir, "flowcharts", "flow_chart_create_spells.rds"))
+  saveRDS(flow_chart_create_spells_combined, file = file.path(paths$D5_dir, "flowcharts", "create_spells_flowchart.rds"))
   
   
   # Save overlap info if exists
   # If an object called flowchart_overlap exists, Save it
   if (exists("flowchart_overlap")) {
-    saveRDS(flowchart_overlap, file = file.path(paths$D5_dir, "flowcharts", "SUBPOP_flowchart_overlap.rds"))
+    saveRDS(flowchart_overlap, file = file.path(paths$D5_dir, "flowcharts", "SUBPOP_overlap_flowchart.rds"))
   }
 }
 

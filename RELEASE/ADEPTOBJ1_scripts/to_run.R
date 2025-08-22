@@ -33,7 +33,6 @@ start_study_date <- "1999-01-01"
 
 #<<< ===========================================================================================================>>>
 # Set directory where CDM tables are
-# CDM_dir  <- "F:/ADEPT/Updated_CDM"
 CDM_dir <- "Path/To/Your/CDM/Folders/here"
 
 #<<< ===========================================================================================================>>>
@@ -51,3 +50,6 @@ source(file.path(thisdir, "p_steps", "run_analysis.R"), local = TRUE)
 
 # Objectives 1.3 and 1.4
 source(file.path(thisdir, "p_steps", "run_analysis_pregnancies.R"), local = TRUE)
+
+# Objectives 1.5
+source(file.path(thisdir, "p_steps", "calculate_weighted_daily_dose.R"), local = TRUE)

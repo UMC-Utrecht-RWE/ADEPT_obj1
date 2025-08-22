@@ -50,7 +50,7 @@ CreateSpells <- function(dataset, id, start_date, end_date, category, replace_mi
   }
   if ("category" %in% names(dataset)) {
     setnames(dataset, "category", "op_meaning")
-    end_date = "op_meaning"
+    category = "op_meaning"
     flag_category = T
   }
 

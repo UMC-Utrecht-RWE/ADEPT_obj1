@@ -14,10 +14,11 @@ source(file.path(thisdir, "p_steps", "study_parameters.R"), local = TRUE)
 source(file.path(thisdir, "p_steps", "study_source_population_script.R"), local = TRUE)
 
 # clean up before moving on
-rm(list = grep("actual|SOURCE|flow|input|metadata|observation|persons|scheme|selection|spells|TEMP|after|before|step", ls(), value = TRUE, ignore.case = TRUE))
+rm(list = grep("actual_tables|CDM_SOURCE|^flow_chart|inputed|METADATA|OBSERVATION|PERSONS|SCHEME|Selection|SOURCE|SPELLS", ls(), value = TRUE, ignore.case = TRUE))
 
 # Loads study population/populations 
 populations <- list.files(file.path(paths$D3_dir, "study_population"))
+
 
 # Loops over each subpopulation
 for(pop in seq_along(populations)){
@@ -27,7 +28,7 @@ for(pop in seq_along(populations)){
   
   # Assign study population prefix name
   original_pop_prefix <- gsub("_study_population.rds", "", populations[pop])
-
+  
   # Get unique sex groups (e.g., "F", "M")
   sex_groups <- unique(study_population$sex_at_instance_creation)
   sex_groups <- sex_groups[!is.na(sex_groups)]  
@@ -39,7 +40,7 @@ for(pop in seq_along(populations)){
     
     # Subset study population for current sex
     study_population_sex <- study_population_all[sex_at_instance_creation == sex_groups[sex]]
-    
+
     # Create sex-specific prefix (e.g., "CPRD_F")
     sex_label <- ifelse(sex_groups[sex] == "F", "F", "M")
     pop_prefix <- paste0(original_pop_prefix, "_", sex_groups[sex])
@@ -47,62 +48,106 @@ for(pop in seq_along(populations)){
     # Assign to environment so sourced scripts can access
     assign("study_population", study_population_sex, envir = .GlobalEnv)
     
-    # Denominator Counts
-    source(file.path(thisdir, "p_steps", "calculate_denominator.R"), local = TRUE)
-    
-    # Create concept sets
-    source(file.path(thisdir, "p_steps", "create_concept_sets.R"), local = TRUE)
-    
-    # Create ATC subsets
-    source(file.path(thisdir, "p_steps", "create_subsets_ATC.R"), local = TRUE)
-    
-    # Create indication subsets
-    source(file.path(thisdir, "p_steps", "create_subsets_dx.R"), local = TRUE)
-    
-    # Move algorithm inputs to folders
-    source(file.path(thisdir, "p_steps", "move_files_to_folders.R"), local = TRUE)
-    
-    # Create Treatment Episodes
-    source(file.path(thisdir, "p_steps", "create_treatment_episodes.R"), local = TRUE)
-    
-    # Calculate incidence
-    source(file.path(thisdir, "p_steps", "calculate_incidence.R"), local = TRUE)
+    if (any(unlist(deap_flags[c("is_BIFAP", "is_CPRD", "is_NOR_REG", "is_PHARMO", "is_SIDIAP", "is_VAL_PAD", "is_VID")]))) {
+      
+      # Denominator Counts
+      source(file.path(thisdir, "p_steps", "calculate_denominator.R"), local = TRUE)
+      
+      # Create concept sets
+      source(file.path(thisdir, "p_steps", "create_concept_sets.R"), local = TRUE)
+      
+      # Create ATC subsets
+      source(file.path(thisdir, "p_steps", "create_subsets_ATC.R"), local = TRUE)
+      
+      # Create indication subsets
+      source(file.path(thisdir, "p_steps", "create_subsets_dx.R"), local = TRUE)
+      
+      # Move algorithm inputs to folders
+      source(file.path(thisdir, "p_steps", "move_files_to_folders.R"), local = TRUE)
+      
+      # Comorbidity and Indication Counts
+      source(file.path(thisdir, "p_steps", "calculate_indication_and_comorbidities.R"), local = TRUE)
+      
+      # Create Treatment Episodes
+      source(file.path(thisdir, "p_steps", "create_treatment_episodes.R"), local = TRUE)
+      
+      # Calculate incidence
+      source(file.path(thisdir, "p_steps", "calculate_incidence.R"), local = TRUE)
+      
+      # Calculate incidence - stratification
+      source(file.path(thisdir, "p_steps", "calculate_incidence_stratification.R"), local = TRUE)
+      
+      # Calculate prevalence
+      source(file.path(thisdir, "p_steps", "calculate_prevalence.R"), local = TRUE)
 
-    # Calculate incidence - stratification
-    source(file.path(thisdir, "p_steps", "calculate_incidence_stratification.R"), local = TRUE)
+      # Calculate prevalence - stratification
+      source(file.path(thisdir, "p_steps", "calculate_prevalence_stratification.R"), local = TRUE)
+      
+      # Treatment Durations
+      source(file.path(thisdir, "p_steps", "calculate_treatment_duration.R"), local = TRUE)
 
-    # Calculate prevalence
-    source(file.path(thisdir, "p_steps", "calculate_prevalence.R"), local = TRUE)
+      # Calculate Discontinuers
+      source(file.path(thisdir, "p_steps", "calculate_discontinuation.R"), local = TRUE)
 
-    # Calculate prevalence - stratification
-    source(file.path(thisdir, "p_steps", "calculate_prevalence_stratification.R"), local = TRUE)
+      # Calculate Discontinuers - stratification
+      source(file.path(thisdir, "p_steps", "calculate_discontinuation_stratification.R"), local = TRUE)
 
-    # Treatment Durations
-    source(file.path(thisdir, "p_steps", "calculate_treatment_duration.R"), local = TRUE)
+      # Calculate alternative medications
+      source(file.path(thisdir, "p_steps", "calculate_altmeds.R"), local = TRUE)
 
-    # Calculate Discontinuers
-    source(file.path(thisdir, "p_steps", "calculate_discontinuation.R"), local = TRUE)
+      # Calculate Switching
+      source(file.path(thisdir, "p_steps", "calculate_switching.R"), local = TRUE)
 
-    # Calculate Discontinuers - stratification
-    source(file.path(thisdir, "p_steps", "calculate_discontinuation_stratification.R"), local = TRUE)
+      # Find Polytherapy
+      source(file.path(thisdir, "p_steps", "calculate_polytherapy.R"), local = TRUE)
 
-    # Calculate alternative medications
-    source(file.path(thisdir, "p_steps", "calculate_altmeds.R"), local = TRUE)
+      # Find Polytherapy
+      source(file.path(thisdir, "p_steps", "calculate_polytherapy_indications.R"), local = TRUE)
+      
+      # Baseline Tables
+      source(file.path(thisdir, "p_steps", "create_baseline_tables.R"), local = TRUE)
+      
+    } else {
+      # EFEMERIS and FIN_REG
+      
+      # Create concept sets
+      source(file.path(thisdir, "p_steps", "create_concept_sets.R"), local = TRUE)
+      
+      # Create ATC subsets
+      source(file.path(thisdir, "p_steps", "create_subsets_ATC.R"), local = TRUE)
+      
+      # Create indication subsets
+      source(file.path(thisdir, "p_steps", "create_subsets_dx.R"), local = TRUE)
+      
+      # Move algorithm inputs to folders
+      source(file.path(thisdir, "p_steps", "move_files_to_folders.R"), local = TRUE)
+      
+      # Comorbidity and Indication Counts
+      source(file.path(thisdir, "p_steps", "calculate_indication_and_comorbidities.R"), local = TRUE)
 
-    # Calculate Switching
-    source(file.path(thisdir, "p_steps", "calculate_switching.R"), local = TRUE)
+      # Create Treatment Episodes
+      source(file.path(thisdir, "p_steps", "create_treatment_episodes.R"), local = TRUE)
+      
+      # Calculate Discontinuers
+      source(file.path(thisdir, "p_steps", "calculate_discontinuation.R"), local = TRUE)
 
-    # Find Polytherapy
-    source(file.path(thisdir, "p_steps", "calculate_polytherapy.R"), local = TRUE)
+      # Calculate alternative medications
+      source(file.path(thisdir, "p_steps", "calculate_altmeds.R"), local = TRUE)
 
-    # Find Polytherapy
-    source(file.path(thisdir, "p_steps", "calculate_polytherapy_indications.R"), local = TRUE)
+      # Calculate Switching
+      source(file.path(thisdir, "p_steps", "calculate_switching.R"), local = TRUE)
 
-    # Baseline Tables
-    source(file.path(thisdir, "p_steps", "create_baseline_tables.R"), local = TRUE)
+      # Find Polytherapy
+      source(file.path(thisdir, "p_steps", "calculate_polytherapy.R"), local = TRUE)
 
-    # Clean up
-    rm(list = grep("dt|overall|incidence|prev|discontinue|overlap|switcher|treat|stat|summary|altmed", ls(), value = TRUE))
+      # Baseline Tables
+      source(file.path(thisdir, "p_steps", "create_baseline_tables.R"), local = TRUE)
+      
+    }
+
   }
 }
+
+# clean up before moving on
+rm(list = grep("agegroup|^age_at|^age_group|age_levels|algo|all_|alt|anti|ATC|attrition|baseline|benzo|bridge|code|combined|common|comorbidity|concept|current|denominator|discont|dt|file|final|flow|fu_|gaba|incidence|indication|med|merge|overlap|prev|row|step|study_pop|switcher|treat", ls(), value = TRUE, ignore.case = TRUE))
 

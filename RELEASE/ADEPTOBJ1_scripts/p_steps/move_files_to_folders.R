@@ -190,4 +190,3 @@ bind_and_save_group("alternatives")
 bind_and_save_group("exposure")
 bind_and_save_group("indication")
 bind_and_save_group("cov")
-

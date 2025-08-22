@@ -25,7 +25,11 @@ if(pop_prefix=="PC") files_episodes <- files_episodes[!grepl("PC_HOSP", files_ep
 files_episodes <- files_episodes[!(gsub(paste0("^", pop_prefix, "_|_treatment_episode\\.rds$"), "", files_episodes) %in% exclude)]
 
 # Load denominator file
-denominator <- readRDS(file.path(paths$D3_dir, "denominator", paste0(pop_prefix, "_denominator.rds")))
+if (any(unlist(deap_flags[c("is_BIFAP", "is_CPRD", "is_NOR_REG", "is_PHARMO", "is_SIDIAP", "is_VAL_PAD", "is_VID")]))) {
+  # Load denominator file
+  denominator <- readRDS(file.path(paths$D3_dir, "denominator", paste0(pop_prefix, "_denominator.rds")))
+}
+
 
 for (epi1 in seq_along(files_episodes)){
   
@@ -117,48 +121,50 @@ if(length(files_overlaps)>0){
   # Read and combine all pairwise overlap files
   all_overlaps <- rbindlist(lapply(file.path(paths$D3_dir, "tmp", files_overlaps), readRDS), use.names = TRUE, fill = TRUE)
   
-  
   # Ensure overlap dates are IDate
   all_overlaps[, `:=`(overlap_start = as.IDate(overlap_start), overlap_end = as.IDate(overlap_end))]
   
   # Assign year(s) to each overlap start
   all_overlaps[,year:= year(overlap_start)]
   
-  # Keep only one row per person per year
-  all_overlaps_unique <- unique(all_overlaps, by = c("person_id", "year"))
-  
-  # Count unique individuals per year
-  overall_counts <- all_overlaps_unique[, .N, by = year]
-  
-  # Merge with denominator
-  overlap_all <- merge(overall_counts, denominator, by = "year", all.y = TRUE)
-  
-  # Handle missing numerator values
-  overlap_all[is.na(N), N := 0]
-  
-  # Compute polytherapy rate per 1000 persons
-  overlap_all[, rate := round(1000 * N / Freq, 3)]
-  overlap_all[N == 0 & Freq == 0, rate := 0]
-  
-  # Set warnings if Numerator > than Denominator or if Denominator is 0 and Numerator is >0
-  if (nrow(overlap_all[N > Freq]) > 0) warning(red("Warning: Some numerator values exceed denominator."))
-  if (nrow(overlap_all[Freq == 0 & N != 0]) > 0) warning(red("Warning: Denominator zero with non-zero numerator."))
-  
-  # Save data where odd values 
-  if(nrow(overlap_all[N > Freq])>0) fwrite(overlap_all[N > Freq], file.path(paths$D5_dir, "1.2_polytherapy",  "polytherapy_num_gt_denominator.csv"))
-  if(nrow(overlap_all[Freq == 0 & N != 0])>0) fwrite(overlap_all[Freq == 0 & N != 0], file.path(paths$D5_dir, "1.2_polytherapy", "polytherapy_denominator_zero_numerator_nonzero.csv"))
-  
-  # Create column marking if rate is computable 
-  overlap_all[, rate_computable := Freq > 0]
-  
-  # Rename columns 
-  setnames(overlap_all, c("N", "Freq"), c("n_treated", "n_total"))
-  
   # Save dataset 
   saveRDS(all_overlaps, file.path(paths$D4_dir, "1.2_polytherapy", paste0(pop_prefix, "_polytherapy_data.rds")))
   
-  # Save results
-  saveRDS(overlap_all, file.path(paths$D5_dir, "1.2_polytherapy", paste0(pop_prefix, "_OVERALL_polytherapy_counts.rds")))
+  if (any(unlist(deap_flags[c("is_BIFAP", "is_CPRD", "is_NOR_REG", "is_PHARMO", "is_SIDIAP", "is_VAL_PAD", "is_VID")]))) {
+    # Keep only one row per person per year
+    all_overlaps_unique <- unique(all_overlaps, by = c("person_id", "year"))
+    
+    # Count unique individuals per year
+    overall_counts <- all_overlaps_unique[, .N, by = year]
+    
+    # Merge with denominator
+    overlap_all <- merge(overall_counts, denominator, by = "year", all.y = TRUE)
+    
+    # Handle missing numerator values
+    overlap_all[is.na(N), N := 0]
+    
+    # Compute polytherapy rate per 1000 persons
+    overlap_all[, rate := round(1000 * N / Freq, 3)]
+    overlap_all[N == 0 & Freq == 0, rate := 0]
+    
+    # Set warnings if Numerator > than Denominator or if Denominator is 0 and Numerator is >0
+    if (nrow(overlap_all[N > Freq]) > 0) warning(red("Warning: Some numerator values exceed denominator."))
+    if (nrow(overlap_all[Freq == 0 & N != 0]) > 0) warning(red("Warning: Denominator zero with non-zero numerator."))
+    
+    # Save data where odd values 
+    if(nrow(overlap_all[N > Freq])>0) fwrite(overlap_all[N > Freq], file.path(paths$D5_dir, "1.2_polytherapy",  "polytherapy_num_gt_denominator.csv"))
+    if(nrow(overlap_all[Freq == 0 & N != 0])>0) fwrite(overlap_all[Freq == 0 & N != 0], file.path(paths$D5_dir, "1.2_polytherapy", "polytherapy_denominator_zero_numerator_nonzero.csv"))
+    
+    # Create column marking if rate is computable 
+    overlap_all[, rate_computable := Freq > 0]
+    
+    # Rename columns 
+    setnames(overlap_all, c("N", "Freq"), c("n_treated", "n_total"))
+    
+    # Save results
+    saveRDS(overlap_all, file.path(paths$D5_dir, "1.2_polytherapy", paste0(pop_prefix, "_OVERALL_polytherapy_counts.rds")))
+    
+  }
   
   # Clean out tmp folder
   if(length(list.files(file.path(paths$D3_dir, "tmp"), full.names = TRUE)) > 0) unlink(list.files(file.path(paths$D3_dir, "tmp"), full.names = TRUE))

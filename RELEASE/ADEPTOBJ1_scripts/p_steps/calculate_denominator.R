@@ -52,3 +52,4 @@ if (nrow(study_population) > 0) {
   message("No study population found; skipping denominator creation.")
   
 }
+

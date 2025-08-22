@@ -37,25 +37,6 @@ dt_indication <- rbindlist(lapply(files_indication, readRDS), use.names = TRUE, 
 # remove any true duplicates
 dt_indication <- unique(dt_indication)
 
-# COMORBIDITY FILES 
-files_comorbidities <- list.files(file.path(paths$D3_dir, "cov"), pattern = "\\.rds$", full.names = TRUE)
-
-# filter for pop_prefix
-files_comorbidities <- files_comorbidities[grepl(paste0("^", pop_prefix, "_"), basename(files_comorbidities))]
-
-# if pop_prefix is PC, then drop any that are PC_HOSP
-if (pop_prefix == "PC") files_comorbidities <- files_comorbidities[!grepl("PC_HOSP", basename(files_comorbidities))]
-
-# Read all med files into one combined data.table
-dt_comorbidity_meds <- rbindlist(lapply(files_comorbidities[grepl("_med\\.rds$", files_comorbidities)], readRDS), use.names = TRUE, fill = TRUE)
-
-# Read all dx files into one combined data.table
-dt_comorbidity_dx <- rbindlist(lapply(files_comorbidities[!grepl("_med\\.rds$", files_comorbidities)], readRDS), use.names = TRUE, fill = TRUE)
-
-# remove any true duplicates
-dt_comorbidity_meds <- unique(dt_comorbidity_meds)
-dt_comorbidity_dx <- unique(dt_comorbidity_dx)
-
 # Read in Incidence Counts files
 files_incidence_counts <- list.files(file.path(paths$D5_dir, "1.1_incidence"), pattern = "\\.rds$", full.names = TRUE)
 # Filter by prefix
@@ -67,12 +48,10 @@ files_incidence_counts <- files_incidence_counts[!grepl("DP_ANTIEPINEW|DP_ANTIEP
 
 # load and bind all indications into one dataset
 dt_incidence_counts_all <- rbindlist(lapply(files_incidence_counts, readRDS), use.names = TRUE, fill = TRUE)
-total_new_users <- dt_incidence_counts_all[, sum(n_treated, na.rm = TRUE)]
 
 # create a folder for stratified counts and comoorbidities
 dir.create(file.path(paths$D5_dir, "1.1_incidence", "stratified"), showWarnings = FALSE, recursive = TRUE)
-dir.create(file.path(paths$D4_dir, "1.1_incidence", "comorbidities"), showWarnings = FALSE, recursive = TRUE)
-dir.create(file.path(paths$D5_dir, "1.1_incidence", "comorbidities"), showWarnings = FALSE, recursive = TRUE)
+
 # set stratification levels 
 # age groups
 age_levels <- c("12-18.99", "19-34.99", "35-54.99", "55-74.99", "75+", "UNKNOWN")
@@ -80,9 +59,6 @@ age_levels <- c("12-18.99", "19-34.99", "35-54.99", "55-74.99", "75+", "UNKNOWN"
 # indications
 indication_levels <- c("M_RESTLESSLEG_COV", "Ment_ANXIETY_COV", "Ment_BIPOLAR_AESI", "Ment_DEPRESSION_COV", "Ment_SCHIZOPHRENIA_COV",
                        "N_CONVULSION_AESI", "N_EPILEPSY_COV", "N_ESSENTIALTREMOR_AESI", "N_MIGRAINE_COV", "O_NEUROPATHICPAINALG_COV", "UNKNOWN")
-
-comorbidity_levels <- c("C_CARDIOCEREBROVASCULARDESE_COV", "M_FRACTURESOSTEOPOROSISALG_COV", "Ment_Insomnia_COV", "N_BRAINHYPOXIA_COV", 
-                        "N_BRAININJURYALL_AESI", "N_DEMENTIAMILDCI_COV", "R_RESPCHRONICALGORITHM_COV", "V_HYPERTENSION_COV")
 
 # create empty dt year for counts to include all possible combinations
 all_years <- seq(year(start_study_date), year(end_study_date))
@@ -155,9 +131,12 @@ for(episode in seq_along(files_incidence_episodes)){
   # incident episodes
   dt_temp <- copy(dt)
   
-  dt_temp[, start_window := episode.start - lookback_period][, end_window := episode.start]
+  dt_temp[, start_window := as.IDate(as.Date(episode.start) %m-% lookback_period)]
+  dt_temp[, end_window := as.IDate(episode.start)]
+  
   # indication data
-  dt_indication[, start_event := event_date][, end_event := event_date]
+  dt_indication[, start_event := as.IDate(event_date)]
+  dt_indication[, end_event := as.IDate(event_date)]
   
   # set keys 
   setkey(dt_temp, person_id, start_window, end_window)
@@ -233,112 +212,5 @@ for(episode in seq_along(files_incidence_episodes)){
   # save counts
   saveRDS(indication_counts, file.path(paths$D5_dir, "1.1_incidence", "stratified", paste0(gsub("_incidence_data\\.rds$", "_incidence_indication_counts.rds", files_incidence_episodes[episode]))))
   
-  #<<< COMORBIDITIES >>>#
-  
-  if (!grepl("DP_ANTIEPINEW|DP_ANTIEPIOLD|DP_BENZOANTIEPILEPTIC|DP_GABAPENTINOIDS", files_incidence_episodes[episode])) {
-    # prepare data for foverlaps
-    # incident episodes
-    dt_temp <- copy(dt)
-    dt_temp[, start_window := episode.start - lookback_period][, end_window := episode.start-1]
-    
-    # indication data
-    dt_comorbidity_dx[, start_event := event_date][, end_event := event_date]
-    dt_comorbidity_meds[, start_event := rx_date][, end_event := rx_date]
-    
-    
-    # set keys 
-    setkey(dt_temp, person_id, start_window, end_window)
-    setkey(dt_comorbidity_dx, person_id, start_event, end_event)
-    setkey(dt_comorbidity_meds, person_id, start_event, end_event)
-    
-    
-    # perform overlap join -dx
-    comorbidity_dx <- foverlaps(dt_temp, 
-                                dt_comorbidity_dx[, .(person_id, event_date, code, coding_system, event_definition, start_event, end_event)], 
-                                by.x = c("person_id", "start_window", "end_window"),
-                                by.y = c("person_id", "start_event", "end_event"), 
-                                nomatch = 0
-    )
-    
-    # perform overlap join - meds
-    comorbidity_meds <- foverlaps(dt_temp, 
-                                  dt_comorbidity_meds[, .(person_id, rx_date, code, Varname, start_event, end_event)], 
-                                  by.x = c("person_id", "start_window", "end_window"),
-                                  by.y = c("person_id", "start_event", "end_event"), 
-                                  nomatch = 0
-    )
-    
-    
-    # drop unnecessary columns
-    comorbidity_dx   <- comorbidity_dx[, .SD, .SDcols   = c("person_id", "episode.start", "atc_group", "start_window", "end_window", "event_date", "event_definition", "start_event", "end_event", "start_follow_up", "end_follow_up")]
-    comorbidity_meds <- comorbidity_meds[, .SD, .SDcols = c("person_id", "episode.start", "atc_group", "start_window", "end_window", "rx_date", "Varname", "start_event", "end_event", "start_follow_up", "end_follow_up")]
-    
-    # calculate difference in days between episode start and event date of indication 
-    comorbidity_dx[ ,diff_days:= as.numeric(difftime(episode.start, event_date, units = "days"))]
-    comorbidity_meds[ ,diff_days:= as.numeric(difftime(episode.start, rx_date, units = "days"))]
-    
-    # Rename columns to be the same before binding dataset 
-    setnames(comorbidity_dx, c("event_date", "event_definition"), c("comorbidity_date", "comorbidity"))
-    setnames(comorbidity_meds, c("rx_date", "Varname"), c("comorbidity_date", "comorbidity"))
-    
-    # Bind the two data sets into one
-    dt_comorbidity <- rbindlist(list(comorbidity_dx, comorbidity_meds), use.names = TRUE, fill = TRUE)
-    
-    # save in tmp file - once out of loop you will bind them, count them and save them in folder stratification 
-    saveRDS(dt_comorbidity, file.path(paths$D3_dir, "tmp", paste0(gsub("_incidence_data\\.rds$", "_incidence_comorbidities.rds", files_incidence_episodes[episode]))))
-  }
 }
 
-# Read in from tmp and bind all comorbidities together 
-dt_comorbidity_all <- rbindlist(lapply(list.files(file.path(paths$D3_dir, "tmp"), pattern = "\\.rds$", full.names = TRUE), readRDS), use.names = TRUE,fill = TRUE)
-
-# if pop_prefix is PC, then drop any that are PC_HOSP
-if(pop_prefix=="PC") files_incidence_episodes <- files_incidence_episodes[!grepl("PC_HOSP", files_incidence_episodes)]
-# TODO Create co-morbidity groups according to the bridge - for now hard coded due to lack of time - matbe clean up later 
-# Define all groups
-### C_CARDIOCEREBROVASCULARDESE_COV
-group1 <- c("C_ANGINA_AESI", "C_CARDIOMYOPATHY_COV", "C_HF_COV", "C_MI_COV", "C_MYOCARDALL_COV", "C_PERICARDALL_COV", "DP_COVCARDIOCEREBROVAS", "N_STROKE_COV", "V_ANEURYSMVASCMALF_COV")
-### M_FRACTURESOSTEOPOROSISALG_COV
-group2 <- c("M_FRACTURES_AESI", "M_OSTEOPOROSIS_COV")
-### N_BRAININJURYALL_AESI
-group3 <- c("N_BRAININJURY_AESI", "N_MENINGOENC_AESI", "N_NEONATENCEPHALOPATHY_AESI", "N_STROKEHEMO_AESI", "N_STROKEISCH_AESI")
-### N_DEMENTIAMILDCI_COV
-group4 <- c("N_DEMENTIA_COV", "N_MILDCOGNITIVEIMP_COV")
-### R_RESPCHRONICALGORITHM_COV
-group5 <- c("DP_COVRESPCHRONIC", "R_CHRONICPULMONARYDISEASE_COV")
-### Ment_Insomnia_COV
-group6 <- c("Ment_Insomnia_COV")
-### N_BRAINHYPOXIA_COV
-group7 <- c("N_BRAINHYPOXIA_COV")
-### V_HYPERTENSION_COV
-group8 <- c("V_HYPERTENSION_COV")
-
-# Assign group names to comorbidities
-dt_comorbidity_all[, comorbidity_group := fifelse(comorbidity %in% group1, "C_CARDIOCEREBROVASCULARDESE_COV",
-                                                  fifelse(comorbidity %in% group2, "M_FRACTURESOSTEOPOROSISALG_COV",
-                                                          fifelse(comorbidity %in% group3, "N_BRAININJURYALL_AESI",
-                                                                  fifelse(comorbidity %in% group4, "N_DEMENTIAMILDCI_COV",
-                                                                          fifelse(comorbidity %in% group5, "R_RESPCHRONICALGORITHM_COV",
-                                                                                  fifelse(comorbidity %in% group6, "Ment_Insomnia_COV",
-                                                                                          fifelse(comorbidity %in% group7, "N_BRAINHYPOXIA_COV",
-                                                                                                  fifelse(comorbidity %in% group8, "V_HYPERTENSION_COV",
-                                                                                                          NA_character_))))))))]
-
-
-# save co-morbidity counts in D5
-saveRDS(dt_comorbidity_all, file.path(paths$D4_dir, "1.1_incidence", "comorbidities" , paste0(pop_prefix, "_comorbidity_dataset.rds")))
-
-# Make unique by person_id, episode.start, and co-morbidity
-dt_comorbidity_all <- unique(dt_comorbidity_all, by = c("person_id", "episode.start", "comorbidity_group"))
-
-# Count unique people with each co-morbidity
-comorbidity_counts <- dt_comorbidity_all[, .(comorbidity_counts_in_new_users = uniqueN(person_id)), by = comorbidity_group]
-
-# Add column with total new users 
-comorbidity_counts[, total_new_users:= total_new_users]
-
-# save co-morbidity counts in D5
-saveRDS(comorbidity_counts, file.path(paths$D5_dir, "1.1_incidence", "comorbidities", paste0(pop_prefix, "_comorbidity_counts.rds")))
-
-# Clean up temp folder 
-invisible(file.remove(list.files(file.path(paths$D3_dir, "tmp"), full.names = TRUE)))

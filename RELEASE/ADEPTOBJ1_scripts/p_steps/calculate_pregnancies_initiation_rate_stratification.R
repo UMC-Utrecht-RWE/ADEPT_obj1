@@ -109,7 +109,9 @@ for(episode in seq_along(files_preg_init_episodes)){
   
   # incident episodes
   dt_temp <- copy(dt)
-  dt_temp[, start_window := episode.start - lookback_period][, end_window := episode.start]
+  dt_temp[, start_window := as.IDate(as.Date(episode.start) - lookback_period)]
+  dt_temp[, end_window := episode.start]
+  
   # indication data
   dt_indication[, start_event := event_date][, end_event := event_date]
   

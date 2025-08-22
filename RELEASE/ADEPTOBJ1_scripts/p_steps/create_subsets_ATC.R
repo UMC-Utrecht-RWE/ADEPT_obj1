@@ -56,10 +56,10 @@ for (med in seq_along(med_files)) {
   study_population[, person_id := as.character(person_id)]
   
   # merge dt with study population. Keep only those in study population
-  dt <- dt[study_population, on=.(person_id)]
+  dt <- dt[study_population, on=.(person_id), allow.cartesian = TRUE]
   
-  # Drop any records that fall outside entry and exit dates
-  dt <- dt[rx_date >= entry_date & rx_date <= exit_date]
+  # # Drop any records that fall outside entry and exit dates - I will do this before creating treatment episodes. I need counts of all meds for flowchart
+  # dt <- dt[rx_date >= entry_date & rx_date <= exit_date]
   
   # If no records for dt, then skip to the next Medicines table 
   if (nrow(dt) == 0) next  

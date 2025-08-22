@@ -45,7 +45,7 @@ if(length(event_files)>0){
     dt[, event_date := as.IDate(as.character(event_date), format = "%Y%m%d")]
     
     # Merge event table with study population - make sure person_id is of the same type
-    dt[, person_id := as.character(person_id)]
+    dt[, person_id := as.character(person_id), allow.cartesian = TRUE]
     study_population[, person_id := as.character(person_id)]
     
     # Merge on person id - keep all in study population
@@ -53,18 +53,14 @@ if(length(event_files)>0){
     
     # Drop any records that fall outside entry and exit dates
     dt <- dt[event_date >= entry_date & event_date <= exit_date]
-    
+
     # Delete any rows where event_date or code is missing
     dt <- dt[!((is.na(code) | trimws(code) == "") & (is.na(coding_system) | trimws(coding_system) == ""))]
-    
+
     # Exclusion of meanings ### for BIFAP
-    # PC: Meanings to be limited/restricted to: "primary_care_events_BIFAP" (or "procedure_primary_care", where applicable); 
-    # excludes "primary_care_conditionants_BIFAP", "primary_care_antecedents_BIFAP", "hospitalisation_primary" and "hospitalisation_secundary"
-    if(pop_prefix == "PC_F" | pop_prefix == "PC_M") dt <- dt[meaning=="primary_care_events_BIFAP",]
-    # PC_HOSP: Meanings to be limited/restricted to:  "primary_care_events_BIFAP" and "hospitalisation_primary" (or "procedure_primary_care" and  "procedure_during_hospitalisation" where applicable); 
-    # excludes "primary_care_conditionants_BIFAP", "primary_care_antecedents_BIFAP" and "hospitalisation_secundary".
-    if(pop_prefix == "PC_HOSP_F" | pop_prefix == "PC_HOSP_M") dt <- dt[meaning=="primary_care_events_BIFAP" | meaning=="hospitalisation_primary",]
-    
+    # PC 
+    if (pop_prefix == "PC_F" | pop_prefix == "PC_M" ) dt <- dt[!meaning %in% exclude_meanings_PC]
+  
     # Remove any true duplicates 
     dt <- unique(dt)
     
