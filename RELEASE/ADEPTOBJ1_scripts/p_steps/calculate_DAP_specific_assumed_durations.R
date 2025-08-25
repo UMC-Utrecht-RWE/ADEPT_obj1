@@ -46,7 +46,7 @@ if(deap_flags$is_CPRD){
                                         median(gabas$presc_quantity_per_day,       na.rm = TRUE))
   )
   
-
+  
   # map each algorithm's medicines to its subgroup
   antiepinew_meds <- algorithm_map[Algorithm == "DP_ANTIEPINEW", VariableName]
   antiepiold_meds <- algorithm_map[Algorithm == "DP_ANTIEPIOLD", VariableName]
@@ -81,7 +81,7 @@ if(deap_flags$is_CPRD){
   ################################################################################################################
   # Step 2. Use presc_duration_days;
   dt[is.na(assumed_duration) & !is.na(presc_duration_days) & presc_duration_days > 0 & presc_duration_days < 57, assumed_duration := presc_duration_days]
-
+  
   ################################################################################################################
   # If any assumed duration is still missing or less than 1 or infinite, then use 30 days
   dt[is.na(assumed_duration) | assumed_duration < 1 | is.infinite(assumed_duration), assumed_duration := 30]
@@ -95,18 +95,32 @@ if(deap_flags$is_EFEMERIS) dt[, assumed_duration:=30]
 
 
 #<<< FIN REG >>>#
-# 1. fixed duration of 90 days.
-if(deap_flags$is_FIN_REG)dt[, assumed_duration:=90]
+# 1. presc_duration_days (based on DDDs);
+# 2. fixed duration of 90 days unless Benzos then 30.
+if(deap_flags$is_FIN_REG){  
+  
+  dt[, assumed_duration := as.numeric(presc_duration_days)]
+  
+  if(atc_group %in% c("DP_BENZOANTIEPILEPTIC", "DP_CLOBAZAM", "DP_CLONAZEPAM", "DP_DIAZEPAM","DP_LORAZEPAM", "DP_MIDAZOLAM")){
+    dt[is.na(assumed_duration) | assumed_duration <= 0 | is.infinite(assumed_duration), assumed_duration := 30]
+  } else {
+    dt[is.na(assumed_duration) | assumed_duration <= 0 | is.infinite(assumed_duration), assumed_duration := 90]
+  }
+}
 
 
 #<<< NORWAY >>>#
 # 1. presc_duration_days (based on DDDs);
-# 2. fixed duration of 90 days.
+# 2. fixed duration of 90 days unless Benzos then 30.
 if(deap_flags$is_NOR_REG){
-  dt[, assumed_duration := as.numeric(presc_duration_days)]
-  # If any NA's or value of 0, we take the value of 30 days 
-  dt[is.na(assumed_duration) | assumed_duration <= 0 | is.infinite(assumed_duration), assumed_duration := 90]
   
+  dt[, assumed_duration := as.numeric(presc_duration_days)]
+  
+  if(atc_group %in% c("DP_BENZOANTIEPILEPTIC", "DP_CLOBAZAM", "DP_CLONAZEPAM", "DP_DIAZEPAM","DP_LORAZEPAM", "DP_MIDAZOLAM")){
+    dt[is.na(assumed_duration) | assumed_duration <= 0 | is.infinite(assumed_duration), assumed_duration := 30]
+  } else {
+    dt[is.na(assumed_duration) | assumed_duration <= 0 | is.infinite(assumed_duration), assumed_duration := 90]
+  }
 }
 
 
@@ -122,6 +136,7 @@ if(deap_flags$is_PHARMO) dt[, assumed_duration:=30]
 if(deap_flags$is_SIDIAP){
   
   dt[, assumed_duration := as.numeric(presc_duration_days)]
+  
   # If any NA's or value of 0, we take the value of 30 days 
   dt[is.na(assumed_duration) | assumed_duration <= 0 | is.infinite(assumed_duration), assumed_duration := 30]
   
@@ -141,7 +156,7 @@ if(deap_flags$is_VAL_PAD){
 #<<< FISABIO >>>#
 # 1. presc_duration_days (based on some local algorithm).
 if(deap_flags$is_VID){
-
+  
   dt[, assumed_duration := as.numeric(presc_duration_days)]
   # If any NA's or value of 0, we take the value of 30 days 
   dt[is.na(assumed_duration) | assumed_duration <= 0 | is.infinite(assumed_duration), assumed_duration := 30]
