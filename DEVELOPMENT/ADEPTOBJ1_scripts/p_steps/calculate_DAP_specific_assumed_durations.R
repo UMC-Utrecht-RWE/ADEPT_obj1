@@ -125,9 +125,14 @@ if(deap_flags$is_NOR_REG){
 
 
 #<<< PHARMO >>>#
-# 1. fixed duration of 30 days.
-if(deap_flags$is_PHARMO) dt[, assumed_duration:=30]
-
+# 1. presc_duration_days;
+# 2. fixed duration of 30 days.
+if(deap_flags$is_PHARMO) {
+  
+  dt[, assumed_duration := as.numeric(presc_duration_days)]
+  # If any NA's or value of 0, we take the value of 30 days 
+  dt[is.na(assumed_duration) | assumed_duration <= 0 | is.infinite(assumed_duration), assumed_duration := 30]
+}
 
 
 #<<< SIDIAP >>>#
