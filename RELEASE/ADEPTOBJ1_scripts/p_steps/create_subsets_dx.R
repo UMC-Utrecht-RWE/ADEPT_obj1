@@ -35,6 +35,11 @@ if(length(event_files)>0){
     # Read Current Medicines file
     dt <- fread(file.path(CDM_dir, event_files[event]), stringsAsFactors = FALSE)
     
+    if (nrow(dt) == 0) {
+      message(red("Skipping empty EVENTS file: ", current_table))
+      next
+    }
+    
     # Keep only needed columns
     dt <- dt[, .(person_id, start_date_record, event_code, event_record_vocabulary, meaning_of_event, event_free_text)]
     

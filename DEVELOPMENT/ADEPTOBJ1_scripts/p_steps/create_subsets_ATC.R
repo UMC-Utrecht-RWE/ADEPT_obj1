@@ -40,6 +40,11 @@ for (med in seq_along(med_files)) {
   # Read Current Medicines file
   dt <- fread(file.path(CDM_dir, med_files[med]), stringsAsFactors = FALSE)
   
+  if (nrow(dt) == 0) {
+    message(red("Skipping empty MEDICINES file: ", current_table))
+    next
+  }
+  
   # Keep only needed columns
   dt[, .(person_id, medicinal_product_atc_code, date_dispensing, date_prescription, 
          meaning_of_drug_record, presc_duration_days, disp_number_medicinal_product, 
