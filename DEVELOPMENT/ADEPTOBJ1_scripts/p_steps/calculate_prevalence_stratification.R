@@ -112,7 +112,7 @@ for(episode in seq_along(files_prevalence_episodes)){
   
   dt_temp <- copy(dt)
   # prepare data for foverlaps
-  # incident episodes
+  # prevalence episodes
   dt_temp[, start_window := as.IDate(as.Date(episode.start) %m-% lookback_period)]
   dt_temp[, end_window   := as.IDate(episode.start)]
   
