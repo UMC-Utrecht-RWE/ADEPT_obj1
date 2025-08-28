@@ -52,7 +52,7 @@ dt_temp <- copy(dt)
 # set start and end windows 
 # dt_temp[, start_window := as.IDate(as.Date(overlap_start) - lookback_period)]
 dt_temp[, start_window := as.IDate(as.Date(overlap_start) %m-% lookback_period)]
-dt_temp[, end_window := overlap_end]
+dt_temp[, end_window := overlap_start]
 # Drop unnecessary columns
 dt_indication <- dt_indication[, .(person_id, event_date, event_definition)] 
 # indication data
