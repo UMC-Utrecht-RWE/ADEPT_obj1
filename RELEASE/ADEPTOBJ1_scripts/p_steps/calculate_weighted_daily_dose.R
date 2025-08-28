@@ -216,8 +216,12 @@ if (nrow(dt_all)>0){
       dt_subset[, paste0("prop_", p) := pmin(get(p) / assumed_duration, 1)] 
       
       # calculate the amount of medication taken during this period
-      dt_subset[, paste0("amount_",p) := get(paste0("prop_",p)) * disp_number_medicinal_product]
+      if(deap_flags$is_CPRD) dt_subset[, paste0("amount_",p) := get(paste0("prop_",p)) * disp_number_medicinal_product]
       
+      if(deap_flags$is_BIFAP | deap_flags$is_VID) {
+        dt_subset[, paste0("amount_",p) := get(paste0("prop_",p)) * disp_number_medicinal_product * unit_of_presentation_num]
+      }
+
       # compute strength considering formulation amount
       dt_subset[, paste0("strength_", p) := get(paste0("amount_", p)) * subst1_amount_per_form]
       
