@@ -60,8 +60,34 @@ for (med in seq_along(med_files)) {
   dt[, person_id := as.character(person_id)]
   study_population[, person_id := as.character(person_id)]
   
-  # merge dt with study population. Keep only those in study population
-  dt <- dt[study_population, on=.(person_id), allow.cartesian = TRUE]
+  if(deap_flags$is_EFEMERIS){
+    
+    # add interval columns
+    study_population[, `:=`(start_window = op_start_date, end_window = op_end_date)]
+    dt[, `:=`(start_event = rx_date, end_event = rx_date)]
+    
+    # set keys
+    setkey(study_population, person_id, start_window, end_window)
+    setkey(dt, person_id, start_event, end_event)
+    
+    # foverlaps join: match prescription dates to pregnancy windows
+    dt <- foverlaps(
+      dt, study_population,
+      by.x = c("person_id", "start_event", "end_event"),   # columns in dt
+      by.y = c("person_id", "start_window", "end_window"), # columns in study_population
+      type = "within",
+      nomatch = 0L
+    )
+    
+    # clean up helper columns
+    dt[, c("start_event", "end_event", "start_window", "end_window") := NULL]
+    study_population[,c("start_window", "end_window"):= NULL]
+  } else {
+    
+    # merge dt with study population. Keep only those in study population
+    dt <- dt[study_population, on=.(person_id), allow.cartesian = TRUE]
+  }
+  
   
   # # Drop any records that fall outside entry and exit dates - I will do this before creating treatment episodes. I need counts of all meds for flowchart
   # dt <- dt[rx_date >= entry_date & rx_date <= exit_date]

@@ -10,19 +10,17 @@ print("=========================================================================
 print("========================= PROCESSING ALTERNATIVE MEDICATIONS =========================")
 print("======================================================================================")
 
-if (any(unlist(deap_flags[c("is_BIFAP", "is_CPRD", "is_NOR_REG", "is_PHARMO", "is_SIDIAP", "is_VAL_PAD", "is_VID")]))) {
-  # Load denominator file
-  denominator <- readRDS(file.path(paths$D3_dir, "denominator", paste0(pop_prefix, "_denominator.rds")))
-}
-
 # List all altmed files 
 files_altmeds <- list.files(file.path(paths$D3_dir, "alternatives"), pattern = "\\.rds$")
 
-# Filter altmeds for current pop_prefix only
-files_altmeds <- files_altmeds[grepl(paste0("^", pop_prefix, "_"), files_altmeds)]
-
-# If pop_prefix is PC, then drop any that are PC_HOSP
-if(pop_prefix=="PC") files_altmeds <- files_altmeds[!grepl("PC_HOSP", files_altmeds)]
+if (!deap_flags$is_EFEMERIS) {
+  
+  files_altmeds <- files_altmeds[grepl(paste0("^", pop_prefix, "_"), files_altmeds)]# Filter altmeds for current pop_prefix only
+  if(pop_prefix=="PC") files_altmeds <- files_altmeds[!grepl("PC_HOSP", files_altmeds)]# If pop_prefix is PC, then drop any that are PC_HOSP
+  
+  # Load denominator file 
+  denominator <- readRDS(file.path(paths$D3_dir, "denominator", paste0(pop_prefix, "_denominator.rds")))
+}
 
 # Loop through each alternative folder
 for (altmed in seq_along(files_altmeds)) {
@@ -37,7 +35,7 @@ for (altmed in seq_along(files_altmeds)) {
   dt <- readRDS(file.path(paths$D3_dir, "alternatives", files_altmeds[altmed]))
   
   # Only keep records between entry and exit dates - this used to be done in create subsets. It is not being done there anymore
-  dt <- dt[rx_date >= entry_date & rx_date <= exit_date]
+  if(!deap_flags$is_EFEMERIS) dt <- dt[rx_date >= entry_date & rx_date <= exit_date]
   
   # Save data set 
   saveRDS(dt, file.path(paths$D4_dir, "1.2_altmeds", paste0(altmed_name, "_altmed_data.rds")))

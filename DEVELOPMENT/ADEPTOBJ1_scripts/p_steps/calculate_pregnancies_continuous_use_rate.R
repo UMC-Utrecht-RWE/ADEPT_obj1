@@ -11,11 +11,9 @@ print("=========================================================================
 print("========================= CALCULATING CONTINUOUS USE DURING PREGNANCY =========================")
 print("===============================================================================================")
 
-# List all treatment episode files matching population prefix
+# List all episodes of pre pregnancy use 
 files_episodes <- list.files(file.path(paths$D4_dir, "1.3_pre-pregnancy_use"))
-
-# Drop PC_HOSP files if pop_prefix is PC
-if(pop_prefix == "PC") files_episodes <- files_episodes[!grepl("PC_HOSP", files_episodes)]
+if(pop_prefix == "PC") files_episodes <- files_episodes[!grepl("PC_HOSP", files_episodes)] #BIFAP
 
 # Loop through each treatment episode file
 for (episode in seq_along(files_episodes)) {
@@ -29,14 +27,12 @@ for (episode in seq_along(files_episodes)) {
   # Load treatment episodes
   dt <- readRDS(file.path(paths$D4_dir, "1.3_pre-pregnancy_use", files_episodes[episode]))
   
-  # Convert episode dates to IDate
-  dt[, episode.start := as.IDate(episode.start)][, episode.end := as.IDate(episode.end)]
-  
   # Remove true duplicates
   dt <- unique(dt)
   
-  # Set key for joining
-  setkey(dt, person_id)
+  # Convert episode dates to IDate
+  dt[, episode.start := as.IDate(episode.start)][, episode.end := as.IDate(episode.end)]
+  dt[, pregnancy_start_date := as.IDate(pregnancy_start_date)][, pregnancy_end_date := as.IDate(pregnancy_end_date)]
   
   # Add trimester windows
   dt[, t1_start := pregnancy_start_date]
@@ -53,14 +49,14 @@ for (episode in seq_along(files_episodes)) {
   dt[, overlap_t2 := fifelse(!is.na(t2_start) & !is.na(t2_end) & episode.start <= t2_end & episode.end >= t2_start, TRUE, FALSE)]
   # T3 overlap (only check if t3_start and t3_end are not NA)
   dt[, overlap_t3 := fifelse(!is.na(t3_start) & !is.na(t3_end) & episode.start <= t3_end & episode.end >= t3_start, TRUE, FALSE)]
-
+  
   # Flag if episode overlaps **all three trimesters**
   dt_all_trimester_overlap <- dt[overlap_t1 & overlap_t2 & overlap_t3]
-
+  
   # Get list of unique ids 
   preg_ids_allt <- unique(dt_all_trimester_overlap$pregnancy_id)
   
-  # Check if any pre-pregnancy ASM use was found 
+  # Check if any continuous use was found
   if(nrow(dt_all_trimester_overlap)>0){
     
     # Count the number of pregnancies with ASM use in first trimester, grouped by pregnancy year
@@ -97,6 +93,9 @@ for (episode in seq_along(files_episodes)) {
     saveRDS(continuous_rate_all, file = file.path(paths$D5_dir, "1.3_pregnancy_continuous", paste0(treatment_name, "_continuous_use_rate_in_pregnancy_counts.rds")))
     
   } else {
+    
     message(red(paste0("There was no continuous use of ", treatment_name)))
+    
   }
 }
+

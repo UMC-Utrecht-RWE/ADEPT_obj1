@@ -19,7 +19,7 @@ age_max <- 54
 
 # look back period - default is 365
 lookback_period <- years(1)
-if (deap_flags$is_EFEMERIS) lookback_period <- months(2) + days(15)  # 2.5 months
+if (deap_flags$is_EFEMERIS) lookback_period <- 3*30.4375-14  # 2.5 months
 if (deap_flags$is_FIN_REG)  lookback_period <- months(3)    # 3 months
 
 

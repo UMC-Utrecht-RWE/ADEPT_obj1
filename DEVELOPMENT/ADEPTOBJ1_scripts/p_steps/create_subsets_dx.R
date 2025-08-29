@@ -53,12 +53,37 @@ if(length(event_files)>0){
     dt[, person_id := as.character(person_id), allow.cartesian = TRUE]
     study_population[, person_id := as.character(person_id)]
     
-    # Merge on person id - keep all in study population
-    dt <- dt[study_population,on=.(person_id)]
+    if(deap_flags$is_EFEMERIS){
+      
+      # add interval columns
+      study_population[, `:=`(start_window = op_start_date, end_window = op_end_date)]
+      dt[, `:=`(start_event = event_date, end_event = event_date)]
+      
+      # set keys
+      setkey(study_population, person_id, start_window, end_window)
+      setkey(dt, person_id, start_event, end_event)
+      
+      # foverlaps join: match prescription dates to pregnancy windows
+      dt <- foverlaps(
+        dt, study_population,
+        by.x = c("person_id", "start_event", "end_event"),   # columns in dt
+        by.y = c("person_id", "start_window", "end_window"), # columns in study_population
+        type = "within",
+        nomatch = 0L
+      )
+      
+      # clean up helper columns
+      dt[, c("start_event", "end_event", "start_window", "end_window") := NULL]
+      study_population[,c("start_window", "end_window"):= NULL]
+    } else {
+      
+      # merge dt with study population. Keep only those in study population
+      dt <- dt[study_population, on=.(person_id), allow.cartesian = TRUE]
+      
+      # Drop any records that fall outside entry and exit dates
+      dt <- dt[event_date >= entry_date & event_date <= exit_date]
+    }
     
-    # Drop any records that fall outside entry and exit dates
-    dt <- dt[event_date >= entry_date & event_date <= exit_date]
-
     # Delete any rows where event_date or code is missing
     dt <- dt[!((is.na(code) | trimws(code) == "") & (is.na(coding_system) | trimws(coding_system) == ""))]
 
