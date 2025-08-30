@@ -114,22 +114,22 @@ for(pop in seq_along(populations)){
   # Continued Use during pregnancy - stratification
   source(file.path(thisdir, "p_steps", "calculate_pregnancies_continuous_use_rate_stratification.R"), local = TRUE)
 
-  # # Calculate Discontinuers /discontinuation in pregnancy
-  # source(file.path(thisdir, "p_steps", "calculate_discontinuation.R"), local = TRUE)
-  # source(file.path(thisdir, "p_steps", "calculate_pregnancies_discontinuation_rate.R"), local = TRUE)
-  # 
-  # # Calculate Switching
-  # source(file.path(thisdir, "p_steps", "calculate_switching.R"), local = TRUE)
-  # source(file.path(thisdir, "p_steps", "calculate_pregnancies_switching_rate.R"), local = TRUE)
-  # 
-  # # Polytherapy 
-  # source(file.path(thisdir, "p_steps", "calculate_polytherapy.R"), local = TRUE)
-  # source(file.path(thisdir, "p_steps", "calculate_pregnancies_polytherapy_rate.R"), local = TRUE)
-  # #Polytherapy during pregnancy - stratification
-  # source(file.path(thisdir, "p_steps", "calculate_pregnancies_polytherapy_rate_stratification.R"), local = TRUE)
-  # 
-  # # Baseline Tables
-  # source(file.path(thisdir, "p_steps", "create_baseline_tables.R"), local = TRUE)
+  # Calculate Discontinuers /discontinuation in pregnancy
+  source(file.path(thisdir, "p_steps", "calculate_discontinuation.R"), local = TRUE)
+  source(file.path(thisdir, "p_steps", "calculate_pregnancies_discontinuation_rate.R"), local = TRUE)
+
+  # Calculate Switching
+  source(file.path(thisdir, "p_steps", "calculate_switching.R"), local = TRUE)
+  source(file.path(thisdir, "p_steps", "calculate_pregnancies_switching_rate.R"), local = TRUE)
+
+  # Polytherapy
+  source(file.path(thisdir, "p_steps", "calculate_polytherapy.R"), local = TRUE)
+  source(file.path(thisdir, "p_steps", "calculate_pregnancies_polytherapy_rate.R"), local = TRUE)
+  #Polytherapy during pregnancy - stratification
+  source(file.path(thisdir, "p_steps", "calculate_pregnancies_polytherapy_rate_stratification.R"), local = TRUE)
+
+  # Baseline Tables
+  source(file.path(thisdir, "p_steps", "create_baseline_tables.R"), local = TRUE)
   
 }
 

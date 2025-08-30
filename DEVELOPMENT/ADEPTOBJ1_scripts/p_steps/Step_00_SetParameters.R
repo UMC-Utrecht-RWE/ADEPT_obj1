@@ -36,13 +36,13 @@ if(deap_flags$is_EFEMERIS || deap_flags$is_FIN_REG){
   SelectionCriteria$persons_younger_than_12_before_end_study_date_and_op_end_date = expression((date_min < end_study_date) & (date_min < op_end_date))
   
   # All males and women who are below 56 at start_study_date 
-  SelectionCriteria$women_older_than_55_before_start_study_date_and_op_start_date = expression(sex_at_instance_creation == "M" | ((date_max > start_study_date) & (date_max > op_start_date)))
+  SelectionCriteria$women_older_than_55_before_start_study_date_and_op_start_date = expression((date_max > start_study_date) & (date_max > op_start_date))
   
   # Observation Period should overlaps study period 
   SelectionCriteria$no_overlap_observation_period_with_study_period = expression(op_start_date <= end_study_date & op_end_date >= start_study_date)   
   
   # Keeps full observation periods only as these are pregnancies
-  SelectionCriteria$pregnancies_that_start_before_start_fup <- expression(op_start_date >= start_follow_up)
+  # SelectionCriteria$pregnancies_that_start_before_start_fup <- expression(op_start_date >= start_follow_up)
   
 
 } else {

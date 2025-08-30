@@ -14,44 +14,39 @@ print("=========================================================================
 # List subgroups to exclude
 exclude <- c("DP_ANTIEPINEW", "DP_ANTIEPIOLD", "DP_BENZOANTIEPILEPTIC", "DP_GABAPENTINOIDS")
 
-# Load Data Sets
 # Discontinued episodes
 files_discontinued_episodes <- list.files(file.path(paths$D4_dir, "1.2_discontinued"))
-# Filter episodes for current pop_prefix only
-files_discontinued_episodes <- files_discontinued_episodes[grepl(paste0("^", pop_prefix, "_"), files_discontinued_episodes)]
-# If pop_prefix is PC, then drop any that are PC_HOSP
-if(pop_prefix=="PC") files_discontinued_episodes <- files_discontinued_episodes[!grepl("PC_HOSP", files_discontinued_episodes)]
-# Exclude subgroups
-files_discontinued_episodes <- files_discontinued_episodes[!(gsub(paste0("^", pop_prefix, "_|_discontinued_data\\.rds$"), "", files_discontinued_episodes)) %in% exclude]
+files_discontinued_episodes <- files_discontinued_episodes[!(gsub(paste0("^", pop_prefix, "_|_discontinued_data\\.rds$"), "", files_discontinued_episodes)) %in% exclude] # exclude subgroups
 
 # Exposure Meds
 files_exposures <- list.files(file.path(paths$D3_dir, "exposure"))
-# Filter exposures for current pop_prefix only
-files_exposures <- files_exposures[grepl(paste0("^", pop_prefix, "_"), files_exposures)]
-# If pop_prefix is PC, then drop any that are PC_HOSP
-if(pop_prefix=="PC") files_exposures <- files_exposures[!grepl("PC_HOSP", files_exposures)]
-# Exclude subgroups
-files_exposures <- files_exposures[!(gsub(paste0("^", pop_prefix, "_|_algo_med\\.rds$|\\.rds$"), "", files_exposures) %in% exclude)]
+files_exposures <- files_exposures[!(gsub(paste0("^", pop_prefix, "_|_algo_med\\.rds$|\\.rds$"), "", files_exposures) %in% exclude)] # exclude subgroups
 
 # Alternative Meds
 files_altmeds <- list.files(file.path(paths$D4_dir, "1.2_altmeds"))
-# Filter exposures for current pop_prefix only
-files_altmeds <- files_altmeds[grepl(paste0("^", pop_prefix, "_"), files_altmeds)]
-# If pop_prefix is PC, then drop any that are PC_HOSP
-if(pop_prefix=="PC") files_altmeds <- files_altmeds[!grepl("PC_HOSP", files_altmeds)]
 
 # Prevalence counts 
-if (any(unlist(deap_flags[c("is_BIFAP", "is_CPRD", "is_NOR_REG", "is_PHARMO", "is_SIDIAP", "is_VAL_PAD", "is_VID")]))) {
+if (!deap_flags$is_EFEMERIS) {
+  files_discontinued_episodes <- files_discontinued_episodes[grepl(paste0("^", pop_prefix, "_"), files_discontinued_episodes)] # picks either F or M
+  if(pop_prefix=="PC") files_discontinued_episodes <- files_discontinued_episodes[!grepl("PC_HOSP", files_discontinued_episodes)] #BIFAP
+  
+  files_exposures <- files_exposures[grepl(paste0("^", pop_prefix, "_"), files_exposures)] # picks either F or M
+  if(pop_prefix=="PC") files_exposures <- files_exposures[!grepl("PC_HOSP", files_exposures)] #BIFAP
+  
+  # Filter exposures for current pop_prefix only
+  files_altmeds <- files_altmeds[grepl(paste0("^", pop_prefix, "_"), files_altmeds)]  #picks either F or M
+  if(pop_prefix=="PC") files_altmeds <- files_altmeds[!grepl("PC_HOSP", files_altmeds)] # BIFAP
+  
   # Prevalence counts 
   files_prevalence_counts <- list.files(file.path(paths$D5_dir, "1.1_prevalence"), pattern = "\\.rds$")
-  # Filter prevalence counts for current pop_prefix only
-  files_prevalence_counts <- files_prevalence_counts[grepl(paste0("^", pop_prefix, "_"), files_prevalence_counts)]
-  # If pop_prefix is PC, then drop any that are PC_HOSP
-  if(pop_prefix=="PC") files_prevalence_counts <- files_prevalence_counts[!grepl("PC_HOSP", files_prevalence_counts)]
-  # Exclude subgroups
-  files_prevalence_counts <- files_prevalence_counts[!(gsub(paste0("^", pop_prefix, "_|_prevalence_counts\\.rds$"), "", files_prevalence_counts) %in% exclude)]
+  files_prevalence_counts <- files_prevalence_counts[grepl(paste0("^", pop_prefix, "_"), files_prevalence_counts)]  #picks either F or M
+  if(pop_prefix=="PC") files_prevalence_counts <- files_prevalence_counts[!grepl("PC_HOSP", files_prevalence_counts)] #BIFAP
+  files_prevalence_counts <- files_prevalence_counts[!(gsub(paste0("^", pop_prefix, "_|_prevalence_counts\\.rds$"), "", files_prevalence_counts) %in% exclude)] #exclude subgroups
 }
 
+###############################################################################################################
+###############################################################################################################
+###############################################################################################################
 
 for(episode in seq_along(files_discontinued_episodes)){
   
@@ -78,22 +73,42 @@ for(episode in seq_along(files_discontinued_episodes)){
     # Load exposure prescriptions
     dt_exposures <- as.data.table(readRDS(file.path(paths$D3_dir, "exposure", files_exposures[exposure])))
     
-    # Only keep records between entry and exit dates - this used to be done in create subsets. It is not being done there anymore
-    dt_exposures <- dt_exposures[rx_date >= entry_date & rx_date <= exit_date]
+    if(!deap_flags$is_EFEMERIS){
+      
+      # Only keep records between entry and exit dates - this used to be done in create subsets. It is not being done there anymore
+      dt_exposures <- dt_exposures[rx_date >= entry_date & rx_date <= exit_date]
+      
+      # Remove duplicates
+      dt_exposures <- unique(dt_exposures, by = c("person_id", "code", "rx_date"))
+      
+      # Keep needed cols only 
+      dt_exposures <- dt_exposures[, .(person_id, code, Varname, rx_date)]
+      
+      # Create window start and window end columns
+      dt_exposures[, window_start := rx_date][, window_end := rx_date]
+      
+      # Set on keys
+      setkey(dt_exposures, person_id, window_start, window_end)
+      setkey(dt_discontinued, person_id, window_start, window_end)
+      
+    } else {
+      
+      # Remove duplicates
+      dt_exposures <- unique(dt_exposures, by = c("pregnancy_id", "code", "rx_date"))
+      
+      # Keep needed cols only 
+      dt_exposures <- dt_exposures[, .(pregnancy_id, code, Varname, rx_date)]
+      
+      # Create window start and window end columns
+      dt_exposures[, window_start := rx_date][, window_end := rx_date]
+      
+      # Set on keys
+      setkey(dt_exposures, pregnancy_id, window_start, window_end)
+      setkey(dt_discontinued, pregnancy_id, window_start, window_end)
+    }
     
-    # Remove duplicates
-    dt_exposures <- unique(dt_exposures, by = c("person_id", "code", "rx_date"))
     
-    # Keep needed cols only 
-    dt_exposures <- dt_exposures[, .(person_id, code, Varname, rx_date)]
-    
-    # Create window start and window end columns
-    dt_exposures[, window_start := rx_date][, window_end := rx_date]
-    
-    # Set on keys
-    setkey(dt_exposures, person_id, window_start, window_end)
-    setkey(dt_discontinued, person_id, window_start, window_end)
-    
+    # COMMON TO BOTH
     # Find overlaps within 120 days after discontinuation
     switchers <- foverlaps(dt_exposures, dt_discontinued, type = "within", nomatch = 0)
     
@@ -103,26 +118,27 @@ for(episode in seq_along(files_discontinued_episodes)){
     # remove any results where switch date is outside study period
     switchers <- switchers[rx_date >= start_follow_up & rx_date <= end_follow_up,]
     
-    
-    if (nrow(switchers)>0){
-      
-      message("Switchers found for: ", discontinued_episode_name, " and ", exposure_name)
-      
-      # Drop columns window_start and window_end for the prescription as we have rx_date
-      switchers[, c("i.window_start", "i.window_end"):=NULL]
-      
-      # Rename columns
-      setnames(switchers, c("i.code", "Varname"), c("code_switched_to", "atc_group_switched_to"))
-      
-      # Save file
-      saveRDS(switchers, file = file.path(paths$D3_dir, "tmp", paste0(discontinued_episode_name, "_to_", exposure_name, ".rds")))
-      
-    } else {
-      
+    if(nrow(switchers)==0){
       message(red(paste0("No switchers: ", discontinued_episode_name, " and ", exposure_name)))
-      
+      next
     }
+    
+    message("Switchers found for: ", discontinued_episode_name, " and ", exposure_name)
+    
+    # Drop columns window_start and window_end for the prescription as we have rx_date
+    switchers[, c("i.window_start", "i.window_end"):=NULL]
+    
+    # Rename columns
+    setnames(switchers, c("i.code", "Varname"), c("code_switched_to", "atc_group_switched_to"))
+    
+    # Save file
+    saveRDS(switchers, file = file.path(paths$D3_dir, "tmp", paste0(discontinued_episode_name, "_to_", exposure_name, ".rds")))
+    
   }
+  
+  ###############################################################################################################
+  ###############################################################################################################
+  ###############################################################################################################
   
   # Comparing Discontinued Episodes to Alternative Medications
   for (altmed in seq_along(files_altmeds)){
@@ -133,16 +149,31 @@ for(episode in seq_along(files_discontinued_episodes)){
     # Load altmed
     dt_altmeds <- as.data.table(readRDS(file.path(paths$D4_dir, "1.2_altmeds", files_altmeds[altmed])))
     
-    # Keep needed cols only 
-    dt_altmeds <- dt_altmeds[, .(person_id, code, Varname, rx_date)]
-    
-    # Create window start and window end columns
-    dt_altmeds[, window_start := rx_date][, window_end := rx_date]
-    
-    # Set on key for faster searches
-    setkey(dt_altmeds, person_id, window_start, window_end)
-    setkey(dt_discontinued, person_id, window_start, window_end)
-    
+    if(!deap_flags$is_EFEMERIS){
+      
+      # Keep needed cols only 
+      dt_altmeds <- dt_altmeds[, .(person_id, code, Varname, rx_date)]
+      
+      # Create window start and window end columns
+      dt_altmeds[, window_start := rx_date][, window_end := rx_date]
+      
+      # Set on key for faster searches
+      setkey(dt_altmeds, person_id, window_start, window_end)
+      setkey(dt_discontinued, person_id, window_start, window_end)
+      
+    } else {
+      
+      # Keep needed cols only 
+      dt_altmeds <- dt_altmeds[, .(pregnancy_id, person_id, code, Varname, rx_date)]
+      
+      # Create window start and window end columns
+      dt_altmeds[, window_start := rx_date][, window_end := rx_date]
+      
+      # Set on key for faster searches
+      setkey(dt_altmeds, pregnancy_id, window_start, window_end)
+      setkey(dt_discontinued, pregnancy_id, window_start, window_end)  
+    }
+    ############################################################
     # Find overlaps within 120 days after discontinuation
     switchers <- foverlaps(dt_altmeds, dt_discontinued, type = "within", nomatch = 0)
     
@@ -152,24 +183,21 @@ for(episode in seq_along(files_discontinued_episodes)){
     # remove any results where switch date is outside study period
     switchers <- switchers[rx_date >= start_follow_up & rx_date <= end_follow_up,]
     
-    if (nrow(switchers)>0){
-      
-      message("Switchers found for: ", discontinued_episode_name, " and ", altmed_name)
-      
-      # Drop columns window_start and window_end for the prescription as we have rx_date
-      switchers[, c("i.window_start", "i.window_end"):=NULL]
-      
-      # Rename columns
-      setnames(switchers, c("i.code", "Varname"), c("code_switched_to", "atc_group_switched_to"))
-      
-      # Save file
-      saveRDS(switchers, file = file.path(paths$D3_dir, "tmp", paste0(discontinued_episode_name, "_to_", altmed_name, ".rds")))
-      
-    } else {
-      
+    if(nrow(switchers)==0){
       message(red(paste0("No switchers: ", discontinued_episode_name, " and ", altmed_name)))
-      
+      next
     }
+    
+    message("Switchers found for: ", discontinued_episode_name, " and ", altmed_name)
+    
+    # Drop columns window_start and window_end for the prescription as we have rx_date
+    switchers[, c("i.window_start", "i.window_end"):=NULL]
+    
+    # Rename columns
+    setnames(switchers, c("i.code", "Varname"), c("code_switched_to", "atc_group_switched_to"))
+    
+    # Save file
+    saveRDS(switchers, file = file.path(paths$D3_dir, "tmp", paste0(discontinued_episode_name, "_to_", altmed_name, ".rds")))
   }
 }
 
@@ -204,7 +232,8 @@ for (pfx in seq_along(unique_prefixes)) {
   switchers <- rbindlist(lapply(file.path(paths$D3_dir, "tmp", group), function(f) as.data.table(readRDS(f))), use.names = TRUE, fill = TRUE)
   
   # Order by person_id, and episode start and rx date
-  setorder(switchers, person_id, episode.start, rx_date)
+  if(!deap_flags$is_EFEMERIS) setorder(switchers, person_id, episode.start, rx_date)
+  if(deap_flags$is_EFEMERIS) setorder(switchers, person_id, pregnancy_id, episode.start, rx_date)
   
   # remove true duplicates
   switchers <- unique(switchers)
@@ -215,70 +244,71 @@ for (pfx in seq_along(unique_prefixes)) {
   # make copy to save
   switchers_data <- copy(switchers)
   
+  
   if(nrow(switchers_data)>0){
+    
     # Save dataset 
     saveRDS(switchers_data, file.path(paths$D4_dir, "1.2_switching", paste0(unique_prefixes[pfx], "_switcher_data.rds")))
     
-    if (any(unlist(deap_flags[c("is_BIFAP", "is_CPRD", "is_NOR_REG", "is_PHARMO", "is_SIDIAP", "is_VAL_PAD", "is_VID")]))) {
+    if (deap_flags$is_EFEMERIS) next
+    
+    # keep one switch per episode
+    switchers <- switchers[, .SD[1], by = .(person_id, episode.start)]
+    
+    # Assign calendar year of each switch
+    switchers[, year := year(rx_date)]
+    
+    # Remove duplicates: Keep only one person id per year
+    switchers <- unique(switchers, by = c("person_id", "year"))
+    
+    # Count number of discontinuers per year
+    switcher_counts <- switchers[, .("N" = .N), by = year]
+    
+    # Match corresponding prevalence file
+    matched_prevalence_file <- files_prevalence_counts[gsub("_prevalence_counts\\.rds$", "", files_prevalence_counts) == unique_prefixes[pfx]]
+    
+    if (length(matched_prevalence_file) == 1) {
       
+      # Read in Prevalence file if file found 
+      prev_counts <- readRDS(file.path(paths$D5_dir, "1.1_prevalence", matched_prevalence_file))
       
-      # keep one switch per episode
-      switchers <- switchers[, .SD[1], by = .(person_id, episode.start)]
+      # Prepare prevalence counts
+      prev_counts[,c("n_total", "rate", "rate_computable") := NULL]
+      setnames(prev_counts, "n_treated", "n_total")
       
-      # Assign calendar year of each switch
-      switchers[, year := year(rx_date)]
+      # Merge discontinued with prevalence
+      switcher_all <- merge(switcher_counts, prev_counts, by = "year", all.y = TRUE)
       
-      # Remove duplicates: Keep only one person id per year
-      switchers <- unique(switchers, by = c("person_id", "year"))
+      # Set N = 0 for years with no treatments
+      switcher_all[is.na(N), N := 0]
       
-      # Count number of discontinuers per year
-      switcher_counts <- switchers[, .("N" = .N), by = year]
+      # Calculate discontinued as a rate (*100)
+      switcher_all[, rate := round(100 * N / n_total, 3)][N == 0 & n_total == 0, rate := 0]
       
-      # Match corresponding prevalence file
-      matched_prevalence_file <- files_prevalence_counts[gsub("_prevalence_counts\\.rds$", "", files_prevalence_counts) == unique_prefixes[pfx]]
+      # Set warnings if Numerator > than Denominator or if Denominator is 0 and Numerator is >0
+      if (nrow(switcher_all[N > n_total]) > 0) warning(red("Warning: Some numerator values exceed denominator."))
+      if (nrow(switcher_all[n_total == 0 & N != 0]) > 0) warning(red("Warning: Denominator zero with non-zero numerator."))
       
-      if (length(matched_prevalence_file) == 1) {
-        
-        # Read in Prevalence file if file found 
-        prev_counts <- readRDS(file.path(paths$D5_dir, "1.1_prevalence", matched_prevalence_file))
-        
-        # Prepare prevalence counts
-        prev_counts[,c("n_total", "rate", "rate_computable") := NULL]
-        setnames(prev_counts, "n_treated", "n_total")
-        
-        # Merge discontinued with prevalence
-        switcher_all <- merge(switcher_counts, prev_counts, by = "year", all.y = TRUE)
-        
-        # Set N = 0 for years with no treatments
-        switcher_all[is.na(N), N := 0]
-        
-        # Calculate discontinued as a rate (*100)
-        switcher_all[, rate := round(100 * N / n_total, 3)][N == 0 & n_total == 0, rate := 0]
-        
-        # Set warnings if Numerator > than Denominator or if Denominator is 0 and Numerator is >0
-        if (nrow(switcher_all[N > n_total]) > 0) warning(red("Warning: Some numerator values exceed denominator."))
-        if (nrow(switcher_all[n_total == 0 & N != 0]) > 0) warning(red("Warning: Denominator zero with non-zero numerator."))
-        
-        # Save data where odd values 
-        if(nrow(switcher_all[N > n_total])>0) fwrite(switcher_all[N > n_total], file.path(paths$D5_dir, "1.2_switching", paste0(current_prefix, "_num_gt_denominator.csv")))
-        if(nrow(switcher_all[n_total == 0 & N != 0])>0) fwrite(switcher_all[n_total == 0 & N != 0], file.path(paths$D5_dir, "1.2_switching", paste0(current_prefix, "_denominator_zero_numerator_nonzero.csv")))
-        
-        # Create column marking if rate is computable 
-        switcher_all[, rate_computable := n_total > 0]
-        
-        # rename columns
-        setnames(switcher_all, "N", "n_treated")
-        
-        # Save results 
-        saveRDS(switcher_all, file.path(paths$D5_dir, "1.2_switching", paste0(unique_prefixes[pfx], "_switcher_counts.rds")))
-        
-      } else {
-        
-        message("No matching prevalence file found for ", unique_prefixes[pfx])
-      }
+      # Save data where odd values 
+      if(nrow(switcher_all[N > n_total])>0) fwrite(switcher_all[N > n_total], file.path(paths$D5_dir, "1.2_switching", paste0(current_prefix, "_num_gt_denominator.csv")))
+      if(nrow(switcher_all[n_total == 0 & N != 0])>0) fwrite(switcher_all[n_total == 0 & N != 0], file.path(paths$D5_dir, "1.2_switching", paste0(current_prefix, "_denominator_zero_numerator_nonzero.csv")))
+      
+      # Create column marking if rate is computable 
+      switcher_all[, rate_computable := n_total > 0]
+      
+      # rename columns
+      setnames(switcher_all, "N", "n_treated")
+      
+      # Save results 
+      saveRDS(switcher_all, file.path(paths$D5_dir, "1.2_switching", paste0(unique_prefixes[pfx], "_switcher_counts.rds")))
+      
+    } else {
+      
+      message("No matching prevalence file found for ", unique_prefixes[pfx])
     }
   }
 }
+
 
 # Clean out tmp folder
 if(length(list.files(file.path(paths$D3_dir, "tmp"), full.names = TRUE)) > 0) unlink(list.files(file.path(paths$D3_dir, "tmp"), full.names = TRUE))

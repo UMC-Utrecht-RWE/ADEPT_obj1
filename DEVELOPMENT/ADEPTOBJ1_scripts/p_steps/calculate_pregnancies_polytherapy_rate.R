@@ -13,51 +13,65 @@ print("=========================================================================
 print("========================= CALCULATING POLYTHERAPY RATES DURING PREGNANCY =========================")
 print("==================================================================================================")
 
-# Create regex pattern to match any of the excluded subgroup names
-pattern_exclude <- paste(c("DP_ANTIEPINEW", "DP_ANTIEPIOLD", "DP_BENZOANTIEPILEPTIC", "DP_GABAPENTINOIDS"), collapse = "|")
+# Subgroups to be excluded
+exclude <- paste(c("DP_ANTIEPINEW", "DP_ANTIEPIOLD", "DP_BENZOANTIEPILEPTIC", "DP_GABAPENTINOIDS"), collapse = "|")
 
-#=== List files ===
 # Pre-pregnancy data and counts 
 files_prepregnancy <- list.files(file.path(paths$D4_dir, "1.3_pre-pregnancy_use"))
 files_counts       <- list.files(file.path(paths$D5_dir, "1.3_pre-pregnancy_use"))
 
-# filter for BIFAP subpops
-if(pop_prefix == "PC") files_prepregnancy  <- files_prepregnancy[!grepl("PC_HOSP", files_prepregnancy)]
-if(pop_prefix == "PC") files_counts <- files_counts[!grepl("PC_HOSP", files_counts)]
-
 # Apply exclusions
-files_prepregnancy <- files_prepregnancy[!grepl(pattern_exclude, files_prepregnancy)]
-files_counts       <- files_counts[!grepl(pattern_exclude, files_counts)]
+files_prepregnancy <- files_prepregnancy[!grepl(exclude, files_prepregnancy)]
+files_counts       <- files_counts[!grepl(exclude, files_counts)]
 
 # Polytherapy episodes 
 files_polytherapy_episodes <- list.files(file.path(paths$D4_dir, "1.2_polytherapy"), pattern = "\\.rds$")
-# filter for Female subpop only 
-files_polytherapy_episodes <- files_polytherapy_episodes[grepl("_F_", files_polytherapy_episodes)]
-# filter for BIFAP subpops
-if(pop_prefix=="PC") files_polytherapy_episodes <- files_polytherapy_episodes[!grepl("PC_HOSP", files_polytherapy_episodes)]
+
+if(!deap_flags$is_EFEMERIS){
+  files_polytherapy_episodes <- files_polytherapy_episodes[grepl("_F_", files_polytherapy_episodes)] # Females only
+  if(pop_prefix == "PC") files_prepregnancy  <- files_prepregnancy[!grepl("PC_HOSP", files_prepregnancy)] #BIFAP
+  if(pop_prefix == "PC") files_counts <- files_counts[!grepl("PC_HOSP", files_counts)] #BIFAP
+  if(pop_prefix=="PC") files_polytherapy_episodes <- files_polytherapy_episodes[!grepl("PC_HOSP", files_polytherapy_episodes)] # BIFAP
+}
 
 # Read in all files 
 dt_prepreg <- rbindlist(lapply(file.path(paths$D4_dir, "1.3_pre-pregnancy_use", files_prepregnancy), readRDS), fill = TRUE)
-dt_counts  <- rbindlist(lapply(file.path(paths$D5_dir, "1.3_pre-pregnancy_use", files_counts),               readRDS), fill = TRUE)
+dt_counts  <- rbindlist(lapply(file.path(paths$D5_dir, "1.3_pre-pregnancy_use", files_counts), readRDS), fill = TRUE)
 dt_poly    <- rbindlist(lapply(file.path(paths$D4_dir, "1.2_polytherapy",       files_polytherapy_episodes), readRDS), fill = TRUE)
 
 if (nrow(dt_prepreg) > 0 && nrow(dt_counts) > 0 && nrow(dt_poly) > 0) {
-  # All three have rows, so proceed with your code
+  # All three have rows, so proceed...
   message("All datasets have data, proceeding...")
   
-  # drop unneeded columns
-  dt_prepreg <- dt_prepreg[, .(person_id, atc_group, episode.start, episode.end, pregnancy_start_date, pregnancy_end_date)]
-  dt_poly <- dt_poly[, .(person_id, atc_group, i.atc_group, overlap_start, overlap_end)]
-  # rename cols
-  setnames(dt_prepreg, "atc_group", "atc_group_prepreg")
-  setnames(dt_poly, c("atc_group", "i.atc_group"), c("atc_group_poly1", "atc_group_poly2"))
-  # remove duplicates
-  dt_prepreg <- unique(dt_prepreg)
-  dt_poly <- unique(dt_poly)
+  if(!deap_flags$is_EFEMERIS){
+    # drop unneeded columns
+    dt_prepreg <- dt_prepreg[, .(person_id, atc_group, episode.start, episode.end, pregnancy_start_date, pregnancy_end_date)]
+    dt_poly <- dt_poly[, .(person_id, atc_group, i.atc_group, overlap_start, overlap_end)]
+    # rename cols
+    setnames(dt_prepreg, "atc_group", "atc_group_prepreg")
+    setnames(dt_poly, c("atc_group", "i.atc_group"), c("atc_group_poly1", "atc_group_poly2"))
+    # remove duplicates
+    dt_prepreg <- unique(dt_prepreg)
+    dt_poly <- unique(dt_poly)
+    # merge prepregnancy data with polytherapy file
+    dt <- merge(dt_prepreg, dt_poly, by = "person_id", all = FALSE, allow.cartesian = TRUE)
+    
+  } else {
+    # drop unneeded columns
+    dt_prepreg <- dt_prepreg[, .(person_id, pregnancy_id, atc_group, episode.start, episode.end, pregnancy_start_date, pregnancy_end_date)]
+    dt_poly <- dt_poly[, .(person_id, pregnancy_id, atc_group, i.atc_group, overlap_start, overlap_end)]
+    # rename cols
+    setnames(dt_prepreg, "atc_group", "atc_group_prepreg")
+    setnames(dt_poly, c("atc_group", "i.atc_group"), c("atc_group_poly1", "atc_group_poly2"))
+    # remove duplicates
+    dt_prepreg <- unique(dt_prepreg)
+    dt_poly <- unique(dt_poly)
+    # merge prepregnancy data with polytherapy file
+    dt <- merge(dt_prepreg, dt_poly, by = "pregnancy_id", all = FALSE, allow.cartesian = TRUE)
+    
+  }
   
-  # merge prepregnancy data with polytherapy file
-  dt <- merge(dt_prepreg, dt_poly, by = "person_id", all = FALSE, allow.cartesian = TRUE)
-  
+
   if (nrow(dt) > 0) {
     
     # Calculate intersection between overlap period and pregnancy period
@@ -79,7 +93,8 @@ if (nrow(dt_prepreg) > 0 && nrow(dt_counts) > 0 && nrow(dt_poly) > 0) {
       dt_subset[, preg_year := year(pregnancy_start_date)]
       
       # keep one person per year
-      dt_subset <- unique(dt_subset, by = c("person_id", "preg_year"))
+      if(!deap_flags$is_EFEMERIS) dt_subset <- unique(dt_subset, by = c("person_id", "preg_year"))
+      if(deap_flags$is_EFEMERIS)  dt_subset <- unique(dt_subset, by = c("pregnancy_id", "preg_year"))
       
       # count by pregnancy
       poly_counts <- dt_subset[, .(N = .N), by = preg_year]

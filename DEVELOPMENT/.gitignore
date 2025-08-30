@@ -3,7 +3,7 @@
 .RData
 .Ruserdata
 
-
+D5_results_masked_csv
 data/D2_cdm/*
 !data/D2_cdm/.gitkeep
 data/D3_study_variables/*

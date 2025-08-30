@@ -6,12 +6,9 @@ print("=========================================================================
 ################################### Individual ATC Codes #######################################
 # List all episode files 
 files_episodes <- list.files(file.path(paths$D3_dir, "tx_episodes"), pattern = "\\.rds$")
+files_episodes <- files_episodes[grepl(paste0("^", pop_prefix, "_"), files_episodes)] # for pop-prefix only
+if(pop_prefix=="PC") files_episodes <- files_episodes[!grepl("PC_HOSP", files_episodes)] #BIFAP
 
-# Filter exposures for current pop_prefix only
-files_episodes <- files_episodes[grepl(paste0("^", pop_prefix, "_"), files_episodes)]
-
-# If pop_prefix is PC, then drop any that are PC_HOSP
-if(pop_prefix=="PC") files_episodes <- files_episodes[!grepl("PC_HOSP", files_episodes)]
 
 for (episode in seq_along(files_episodes)) {
   
@@ -22,10 +19,10 @@ for (episode in seq_along(files_episodes)) {
   message("Processing: ", gsub("_treatment_episode\\.rds$", "", files_episodes[episode]))
   
   # Keep only unique persons id
-  dt <- unique(dt, by = "person_id")
+  if(!deap_flags$is_EFEMERIS) dt <- unique(dt, by = "person_id")
+  if(deap_flags$is_EFEMERIS)  dt <- unique(dt, by = "pregnancy_id")
   
   # 1. Create columns 
-  
   # Make sure all dates are IDate
   dt[, (c("birth_date", "start_follow_up", "end_follow_up")) := lapply(.SD, as.IDate), .SDcols = c("birth_date", "start_follow_up", "end_follow_up")]
   
@@ -57,11 +54,11 @@ for (episode in seq_along(files_episodes)) {
   age_at_start_fu_SD   <- sd(dt$age_at_start_follow_up)
   
   # Counts Per Age_Group 
-  age_group_12_18.99_count <- sum(dt$age_group == "12-18.99")
-  age_group_19_34.99_count <- sum(dt$age_group == "19-34.99")
-  age_group_35_54.99_count <- sum(dt$age_group == "35-54.99")
-  age_group_55_74.99_count <- sum(dt$age_group == "55-74.99")
-  age_group_above_75_count <- sum(dt$age_group == "75+")
+  age_group_12_18.99_count <- sum(dt$age_group == "12-18.99", na.rm = TRUE)
+  age_group_19_34.99_count <- sum(dt$age_group == "19-34.99", na.rm = TRUE)
+  age_group_35_54.99_count <- sum(dt$age_group == "35-54.99", na.rm = TRUE)
+  age_group_55_74.99_count <- sum(dt$age_group == "55-74.99", na.rm = TRUE)
+  age_group_above_75_count <- sum(dt$age_group == "75+", na.rm = TRUE)
   
   # Calculates percentages
   age_group_12_18.99_perc <- (age_group_12_18.99_count/nrow(dt)) * 100
@@ -116,7 +113,8 @@ for (episode in seq_along(files_episodes)) {
   
   # Join names and values 
   baseline_table <-data.table(names, values)
-  
+  #TODO 
+  print("I'm working here!!!")
   # Save baseline table 
   saveRDS(baseline_table, file.path(paths$D5_dir, "baseline_tables", paste0(gsub("_treatment_episode\\.rds$", "", files_episodes[episode]), "_baseline_table.rds")))
 }
@@ -155,11 +153,11 @@ age_at_start_fu_mean <-mean(study_population$age_at_start_follow_up)
 age_at_start_fu_SD   <-sd(study_population$age_at_start_follow_up)
 
 # Counts Per Age_Group 
-age_group_12_18.99_count <- sum(study_population$age_group == "12-18.99")
-age_group_19_34.99_count <- sum(study_population$age_group == "19-34.99")
-age_group_35_54.99_count <- sum(study_population$age_group == "35-54.99")
-age_group_55_74.99_count <- sum(study_population$age_group == "55-74.99")
-age_group_above_75_count <- sum(study_population$age_group == "75+")
+age_group_12_18.99_count <- sum(study_population$age_group == "12-18.99", na.rm = TRUE)
+age_group_19_34.99_count <- sum(study_population$age_group == "19-34.99", na.rm = TRUE)
+age_group_35_54.99_count <- sum(study_population$age_group == "35-54.99", na.rm = TRUE)
+age_group_55_74.99_count <- sum(study_population$age_group == "55-74.99", na.rm = TRUE)
+age_group_above_75_count <- sum(study_population$age_group == "75+", na.rm = TRUE)
 
 # Calculates percentages
 age_group_12_18.99_perc <- (age_group_12_18.99_count/nrow(study_population)) * 100

@@ -8,9 +8,6 @@ print('Import and append persons files')
 # Load all persons Tables 
 PERSONS <- as.data.table(rbindlist(lapply(list.files(CDM_dir, pattern = "^PERSONS", full.names = TRUE), fread), use.names = TRUE, fill = TRUE))
 
-# If EFEMERIS, filter person_id starting with "M" as these are mothers 
-if (deap_flags$is_EFEMERIS) PERSONS <- PERSONS[grepl("^M", person_id)]
-
 # Define vector of date-related column names
 dates_persons <- c("year_of_birth", "month_of_birth","day_of_birth","year_of_death", "month_of_death","day_of_death")
 
@@ -69,4 +66,4 @@ PERSONS[,age_start_study := floor(time_length(interval(birth_date, start_study_d
 saveRDS(PERSONS, file = file.path(paths$D3_dir, "source_population", "persons.rds"))
 
 # Check for duplicate person_id entries and stop if any found
-if(any(duplicated(PERSONS[["person_id"]]))) stop("Duplicates in person table") 
+if(!deap_flags$is_EFEMERIS) {if(any(duplicated(PERSONS[["person_id"]]))) stop("Duplicates in person table")} 
