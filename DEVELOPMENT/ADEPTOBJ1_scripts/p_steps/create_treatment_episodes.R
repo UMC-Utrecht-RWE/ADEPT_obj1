@@ -29,7 +29,7 @@ for (exposure in seq_along(files_exposures)) {
   dt <- readRDS(file.path(paths$D3_dir, "exposure", files_exposures[exposure]))
   
   # Only keep records between entry and exit dates 
-  if(!deap_flags$is_EFEMERIS) dt <- dt[rx_date >= entry_date & rx_date <= exit_date]
+  if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG) dt <- dt[rx_date >= entry_date & rx_date <= exit_date]
   
   # Get assumed durations per DAP 
   source(file.path(thisdir, "p_steps", "calculate_DAP_specific_assumed_durations.R"), local = TRUE) 
@@ -47,7 +47,7 @@ for (exposure in seq_along(files_exposures)) {
   
   if(nrow(dt)>0){
     
-    if(!deap_flags$is_EFEMERIS) {
+    if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG) {
       
       dt <- unique(dt, by = c("person_id", "atc_group", "rx_date"))
       
@@ -104,7 +104,7 @@ for (exposure in seq_along(files_exposures)) {
       if(nrow(treat_episode)>0) saveRDS(treat_episode, file = file.path(paths$D3_dir, "tx_episodes", paste0(pop_prefix, "_", atc_group, "_treatment_episode.rds")))
       
     } else {
-      # FOR EFEMERIS 
+      # FOR EFEMERIS & FIN REG
       # Create Treatment Episode
       
       dt <- unique(dt, by = c("pregnancy_id", "atc_group", "rx_date"))

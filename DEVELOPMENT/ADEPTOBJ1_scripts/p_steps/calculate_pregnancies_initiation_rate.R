@@ -14,7 +14,7 @@ print("=========================================================================
 # List all treatment episodes
 files_episodes <- list.files(file.path(paths$D3_dir, "tx_episodes"), pattern = "\\.rds$")
 
-if(!deap_flags$is_EFEMERIS){
+if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG) {
   
   files_episodes <- files_episodes[grepl(paste0("^", pop_prefix, "_"), files_episodes) & grepl("_F_", files_episodes)] # Picks only Female records
   if(pop_prefix == "PC") files_episodes <- files_episodes[!grepl("PC_HOSP", files_episodes)] # BIFAP

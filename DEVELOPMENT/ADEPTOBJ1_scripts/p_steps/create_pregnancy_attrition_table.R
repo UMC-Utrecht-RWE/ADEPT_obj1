@@ -13,7 +13,7 @@ dt_exposures <- as.data.table(rbindlist(lapply(file.path(paths$D3_dir, "exposure
 dt_exposures <- unique(dt_exposures) # remove true duplicates 
 
 
-if(!deap_flags$is_EFEMERIS){
+if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG){
   
   # << Total population (base cohort) >> #
   total_population_base_cohort <- uniqueN(study_population$person_id)

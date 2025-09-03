@@ -19,9 +19,11 @@ for (episode in seq_along(files_episodes)) {
   message("Processing: ", gsub("_treatment_episode\\.rds$", "", files_episodes[episode]))
   
   # Keep only unique persons id
-  if(!deap_flags$is_EFEMERIS) dt <- unique(dt, by = "person_id")
-  if(deap_flags$is_EFEMERIS)  dt <- unique(dt, by = "pregnancy_id")
-  
+  if(deap_flags$is_EFEMERIS || deap_flags$is_FIN_REG) {
+    dt <- unique(dt, by = "pregnancy_id")
+    } else {
+    dt <- unique(dt, by = "person_id")
+    } 
   # 1. Create columns 
   # Make sure all dates are IDate
   dt[, (c("birth_date", "start_follow_up", "end_follow_up")) := lapply(.SD, as.IDate), .SDcols = c("birth_date", "start_follow_up", "end_follow_up")]
@@ -113,8 +115,7 @@ for (episode in seq_along(files_episodes)) {
   
   # Join names and values 
   baseline_table <-data.table(names, values)
-  #TODO 
-  print("I'm working here!!!")
+
   # Save baseline table 
   saveRDS(baseline_table, file.path(paths$D5_dir, "baseline_tables", paste0(gsub("_treatment_episode\\.rds$", "", files_episodes[episode]), "_baseline_table.rds")))
 }

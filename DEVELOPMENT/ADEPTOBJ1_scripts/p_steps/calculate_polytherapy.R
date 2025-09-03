@@ -20,7 +20,7 @@ files_episodes <- list.files(file.path(paths$D3_dir, "tx_episodes"), pattern = "
 files_episodes <- files_episodes[!(gsub(paste0("^", pop_prefix, "_|_treatment_episode\\.rds$"), "", files_episodes) %in% exclude)] # exclude subgroups
 
 # Load denominator file
-if (!deap_flags$is_EFEMERIS) {
+if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG) {
   files_episodes <- files_episodes[grepl(paste0("^", pop_prefix, "_"), files_episodes)] # Filters female vs Male
   if(pop_prefix=="PC") files_episodes <- files_episodes[!grepl("PC_HOSP", files_episodes)] #BIFAP
   # Load denominator file
@@ -43,7 +43,7 @@ for (epi1 in seq_along(files_episodes)){
     dt1 <- as.data.table(readRDS(file.path(paths$D3_dir, "tx_episodes", files_episodes[epi1])))
     dt2 <- as.data.table(readRDS(file.path(paths$D3_dir, "tx_episodes", files_episodes[epi2])))
     
-    if(!deap_flags$is_EFEMERIS){
+    if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG) {
     # Remove duplicates
     dt1 <- unique(dt1, by = c("person_id", "episode.start"))
     dt2 <- unique(dt2, by = c("person_id", "episode.start"))
@@ -150,7 +150,7 @@ if(length(files_overlaps)>0){
   # Save dataset 
   saveRDS(all_overlaps, file.path(paths$D4_dir, "1.2_polytherapy", paste0(pop_prefix, "_polytherapy_data.rds")))
   
-  if(deap_flags$is_EFEMERIS) next
+  if(deap_flags$is_EFEMERIS || deap_flags$is_FIN_REG) next
   
   # Keep only one row per person per year
   all_overlaps_unique <- unique(all_overlaps, by = c("person_id", "year"))

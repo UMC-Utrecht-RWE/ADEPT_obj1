@@ -20,7 +20,7 @@ dt_exposures <- unique(dt_exposures) # remove true duplicates
 # keep only prescriptions between start and end fu
 dt_exposures <- dt_exposures[rx_date>=start_follow_up & rx_date<=end_follow_up,]
 
-if(!deap_flags$is_EFEMERIS){
+if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG){
   
   #<<< For Flow chart >>>## 
   total_population_base_cohort  <- uniqueN(study_population$person_id) #total population (base cohort)
@@ -51,7 +51,7 @@ if(!deap_flags$is_EFEMERIS){
   dt_exposures <- dt_exposures[, .SD[1], by = person_id]
   
 } else {
-  
+
   #<<< For Flow chart >>>#
   total_pregnancies_base_cohort <- uniqueN(study_population$pregnancy_id) # base cohort
   nr_unique_pregnancies_with_rx_between_startfu_and_endfu    <- uniqueN(dt_exposures$pregnancy_id)
@@ -98,7 +98,7 @@ dt_indication <- unique(dt_indication) # remove true duplicates
 # Make a copy of exposures
 dt_exposures_temp <- copy(dt_exposures)
 
-if(!deap_flags$is_EFEMERIS){
+if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG){
   
   # Create windows  
   # Exposures
@@ -149,7 +149,9 @@ if(!deap_flags$is_EFEMERIS){
 } else {
   
   # Create windows  
-  dt_exposures_temp[, start_window := as.IDate(as.Date(rx_date) - lookback_period)]
+  if(deap_flags$is_EFEMERIS) dt_exposures_temp[, start_window := as.IDate(as.Date(rx_date) - lookback_period)]
+  if(deap_flags$is_FIN_REG)  dt_exposures_temp[, start_window := as.IDate(as.Date(rx_date) %m-% lookback_period)]
+  
   dt_exposures_temp[, end_window := rx_date - 1]
   dt_indication[, start_event := event_date][, end_event := event_date]
   # rename columns
@@ -230,7 +232,7 @@ group7 <- c("N_BRAINHYPOXIA_COV")
 group8 <- c("V_HYPERTENSION_COV")
 
 
-if(!deap_flags$is_EFEMERIS){
+if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG){
   
   # Create windows  
   # Exposures
@@ -297,7 +299,8 @@ if(!deap_flags$is_EFEMERIS){
   
   # Create windows  
   # Exposures
-  dt_exposures_temp[, start_window := as.IDate(as.Date(rx_date) - lookback_period)]
+  if(deap_flags$is_EFEMERIS)  dt_exposures_temp[, start_window := as.IDate(as.Date(rx_date) - lookback_period)]
+  if(deap_flags$is_FIN_REG)   dt_exposures_temp[, start_window := as.IDate(as.Date(rx_date) %m-% lookback_period)]
   dt_exposures_temp[, end_window := rx_date - 1]
   
   # Comorbidities

@@ -26,7 +26,7 @@ files_exposures <- files_exposures[!(gsub(paste0("^", pop_prefix, "_|_algo_med\\
 files_altmeds <- list.files(file.path(paths$D4_dir, "1.2_altmeds"))
 
 # Prevalence counts 
-if (!deap_flags$is_EFEMERIS) {
+if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG) {
   files_discontinued_episodes <- files_discontinued_episodes[grepl(paste0("^", pop_prefix, "_"), files_discontinued_episodes)] # picks either F or M
   if(pop_prefix=="PC") files_discontinued_episodes <- files_discontinued_episodes[!grepl("PC_HOSP", files_discontinued_episodes)] #BIFAP
   
@@ -73,7 +73,7 @@ for(episode in seq_along(files_discontinued_episodes)){
     # Load exposure prescriptions
     dt_exposures <- as.data.table(readRDS(file.path(paths$D3_dir, "exposure", files_exposures[exposure])))
     
-    if(!deap_flags$is_EFEMERIS){
+    if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG) {
       
       # Only keep records between entry and exit dates - this used to be done in create subsets. It is not being done there anymore
       dt_exposures <- dt_exposures[rx_date >= entry_date & rx_date <= exit_date]
@@ -149,7 +149,7 @@ for(episode in seq_along(files_discontinued_episodes)){
     # Load altmed
     dt_altmeds <- as.data.table(readRDS(file.path(paths$D4_dir, "1.2_altmeds", files_altmeds[altmed])))
     
-    if(!deap_flags$is_EFEMERIS){
+    if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG) {
       
       # Keep needed cols only 
       dt_altmeds <- dt_altmeds[, .(person_id, code, Varname, rx_date)]
@@ -232,9 +232,11 @@ for (pfx in seq_along(unique_prefixes)) {
   switchers <- rbindlist(lapply(file.path(paths$D3_dir, "tmp", group), function(f) as.data.table(readRDS(f))), use.names = TRUE, fill = TRUE)
   
   # Order by person_id, and episode start and rx date
-  if(!deap_flags$is_EFEMERIS) setorder(switchers, person_id, episode.start, rx_date)
-  if(deap_flags$is_EFEMERIS) setorder(switchers, person_id, pregnancy_id, episode.start, rx_date)
-  
+  if(deap_flags$is_EFEMERIS || deap_flags$is_FIN_REG){
+    setorder(switchers, person_id, pregnancy_id, episode.start, rx_date)
+  } else {
+    setorder(switchers, person_id, episode.start, rx_date)
+  }
   # remove true duplicates
   switchers <- unique(switchers)
   
@@ -250,7 +252,7 @@ for (pfx in seq_along(unique_prefixes)) {
     # Save dataset 
     saveRDS(switchers_data, file.path(paths$D4_dir, "1.2_switching", paste0(unique_prefixes[pfx], "_switcher_data.rds")))
     
-    if (deap_flags$is_EFEMERIS) next
+    if (deap_flags$is_EFEMERIS || deap_flags$is_FIN_REG) next
     
     # keep one switch per episode
     switchers <- switchers[, .SD[1], by = .(person_id, episode.start)]

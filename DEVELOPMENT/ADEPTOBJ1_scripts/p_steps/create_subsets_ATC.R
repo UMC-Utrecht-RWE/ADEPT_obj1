@@ -46,9 +46,7 @@ for (med in seq_along(med_files)) {
   }
   
   # Keep only needed columns
-  dt[, .(person_id, medicinal_product_atc_code, date_dispensing, date_prescription, 
-         meaning_of_drug_record, presc_duration_days, disp_number_medicinal_product, 
-         presc_quantity_per_day, medicinal_product_id)]
+  dt <- dt[, .(person_id, medicinal_product_atc_code, date_dispensing, date_prescription, meaning_of_drug_record, presc_duration_days, disp_number_medicinal_product, presc_quantity_per_day, medicinal_product_id)]
   
   # Rename columns
   setnames(dt, c("meaning_of_drug_record", "medicinal_product_atc_code"), c("meaning", "code"))
@@ -60,7 +58,7 @@ for (med in seq_along(med_files)) {
   dt[, person_id := as.character(person_id)]
   study_population[, person_id := as.character(person_id)]
   
-  if(deap_flags$is_EFEMERIS){
+  if(deap_flags$is_EFEMERIS | deap_flags$is_FIN_REG){
     
     # add interval columns
     study_population[, `:=`(start_window = op_start_date, end_window = op_end_date)]
@@ -82,6 +80,7 @@ for (med in seq_along(med_files)) {
     # clean up helper columns
     dt[, c("start_event", "end_event", "start_window", "end_window") := NULL]
     study_population[,c("start_window", "end_window"):= NULL]
+    
   } else {
     
     # merge dt with study population. Keep only those in study population

@@ -27,7 +27,7 @@ files_counts       <- files_counts[!grepl(exclude, files_counts)]
 # Polytherapy episodes 
 files_polytherapy_episodes <- list.files(file.path(paths$D4_dir, "1.2_polytherapy"), pattern = "\\.rds$")
 
-if(!deap_flags$is_EFEMERIS){
+if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG) {
   files_polytherapy_episodes <- files_polytherapy_episodes[grepl("_F_", files_polytherapy_episodes)] # Females only
   if(pop_prefix == "PC") files_prepregnancy  <- files_prepregnancy[!grepl("PC_HOSP", files_prepregnancy)] #BIFAP
   if(pop_prefix == "PC") files_counts <- files_counts[!grepl("PC_HOSP", files_counts)] #BIFAP
@@ -43,7 +43,7 @@ if (nrow(dt_prepreg) > 0 && nrow(dt_counts) > 0 && nrow(dt_poly) > 0) {
   # All three have rows, so proceed...
   message("All datasets have data, proceeding...")
   
-  if(!deap_flags$is_EFEMERIS){
+  if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG) {
     # drop unneeded columns
     dt_prepreg <- dt_prepreg[, .(person_id, atc_group, episode.start, episode.end, pregnancy_start_date, pregnancy_end_date)]
     dt_poly <- dt_poly[, .(person_id, atc_group, i.atc_group, overlap_start, overlap_end)]
@@ -93,9 +93,11 @@ if (nrow(dt_prepreg) > 0 && nrow(dt_counts) > 0 && nrow(dt_poly) > 0) {
       dt_subset[, preg_year := year(pregnancy_start_date)]
       
       # keep one person per year
-      if(!deap_flags$is_EFEMERIS) dt_subset <- unique(dt_subset, by = c("person_id", "preg_year"))
-      if(deap_flags$is_EFEMERIS)  dt_subset <- unique(dt_subset, by = c("pregnancy_id", "preg_year"))
-      
+      if(deap_flags$is_EFEMERIS || deap_flags$is_FIN_REG) {
+        dt_subset <- unique(dt_subset, by = c("pregnancy_id", "preg_year"))
+      } else {
+        dt_subset <- unique(dt_subset, by = c("person_id", "preg_year"))
+      }
       # count by pregnancy
       poly_counts <- dt_subset[, .(N = .N), by = preg_year]
       

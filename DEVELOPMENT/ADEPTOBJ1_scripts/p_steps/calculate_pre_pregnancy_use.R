@@ -18,7 +18,7 @@ study_years <- seq(year(start_study_date), year(end_study_date))
 # Create template table with all years zeroed
 empty_dt <- data.table(preg_year = study_years)
 
-if(!deap_flags$is_EFEMERIS){
+if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG){
   
   # Keep only files that match population prefix AND contain "_F_" (female patients)
   files_episodes <- files_episodes[grepl(paste0("^", pop_prefix, "_"), files_episodes) & grepl("_F_", files_episodes)]
@@ -140,7 +140,7 @@ if(!deap_flags$is_EFEMERIS){
     }  
   }
 } else {
-  # EFEMERIS
+  # EFEMERIS/FINREG
   # study population is the pregnancies 
   pregnancies <- copy(study_population)
   

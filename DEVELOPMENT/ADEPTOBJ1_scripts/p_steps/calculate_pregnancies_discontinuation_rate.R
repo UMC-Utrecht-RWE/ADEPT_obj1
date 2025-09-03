@@ -33,7 +33,7 @@ if(pop_prefix == "PC") files_counts <- files_counts[!grepl("PC_HOSP", files_coun
 # Discontinued episodes 
 files_discontinued_episodes <- list.files(file.path(paths$D4_dir, "1.2_discontinued"), pattern = "\\.rds$")
 
-if(!deap_flags$is_EFEMERIS){
+if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG) {
   files_discontinued_episodes <- files_discontinued_episodes[grepl("_F_", files_discontinued_episodes)] # Female subpop
   if(pop_prefix=="PC") files_discontinued_episodes <- files_discontinued_episodes[!grepl("PC_HOSP", files_discontinued_episodes)] #BIFAP
 }
@@ -72,8 +72,11 @@ for (trt in seq_along(common_keys)) {
   dt_discont <- readRDS(discont_map[[trt]])
   
   # merge prepregnancy data with discontinuation file
-  if (!deap_flags$is_EFEMERIS) dt <- merge(dt_prepreg[,.(person_id, pregnancy_start_date, pregnancy_end_date, episode.start, episode.end)], dt_discont, by = c("person_id", "episode.start", "episode.end"), all = FALSE)
-  if (deap_flags$is_EFEMERIS)  dt <- merge(dt_prepreg[,.(person_id, pregnancy_id, episode.start, episode.end)], dt_discont, by = c("pregnancy_id", "episode.start", "episode.end"), all = FALSE)
+  if (deap_flags$is_EFEMERIS || deap_flags$is_FIN_REG) {
+    dt <- merge(dt_prepreg[,.(person_id, pregnancy_id, episode.start, episode.end)], dt_discont, by = c("pregnancy_id", "episode.start", "episode.end"), all = FALSE)
+  } else {
+    dt <- merge(dt_prepreg[,.(person_id, pregnancy_start_date, pregnancy_end_date, episode.start, episode.end)], dt_discont, by = c("person_id", "episode.start", "episode.end"), all = FALSE)
+  }
   
   # Print message if no discontinuers found
   if (nrow(dt) == 0) {
@@ -126,9 +129,11 @@ for (trt in seq_along(common_keys)) {
     dt_subset[, preg_year := year(pregnancy_start_date)]
     
     # keep one person per year
-    if(!deap_flags$is_EFEMERIS) dt_subset <- unique(dt_subset, by = c("person_id", "preg_year"))
-    if(deap_flags$is_EFEMERIS)  dt_subset <- unique(dt_subset, by = c("pregnancy_id", "preg_year"))
-    
+    if(deap_flags$is_EFEMERIS || deap_flags$is_FIN_REG) {
+      dt_subset <- unique(dt_subset, by = c("pregnancy_id", "preg_year"))
+    } else {
+      dt_subset <- unique(dt_subset, by = c("person_id", "preg_year"))
+    }
     # count by pregnancy
     discontinuer_counts <- dt_subset[, .(N = .N), by = preg_year]
     

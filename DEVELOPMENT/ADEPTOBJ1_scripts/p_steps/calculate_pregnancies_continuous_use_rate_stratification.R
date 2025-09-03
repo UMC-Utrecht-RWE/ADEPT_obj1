@@ -26,17 +26,12 @@ if (pop_prefix == "PC") files_indication <- files_indication[!grepl("PC_HOSP", b
 dt_indication <- rbindlist(lapply(files_indication, readRDS), use.names = TRUE, fill = TRUE)
 dt_indication <- unique(dt_indication)
 
-# set levels 
-# age groups - until 55 because these are only females 
-age_levels <- c("12-18.99", "19-34.99", "35-54.99", "UNKNOWN")
-
 # indications
 indication_levels <- c("M_RESTLESSLEG_COV", "Ment_ANXIETY_COV", "Ment_BIPOLAR_AESI", "Ment_DEPRESSION_COV", "Ment_SCHIZOPHRENIA_COV",
                        "N_CONVULSION_AESI", "N_EPILEPSY_COV", "N_ESSENTIALTREMOR_AESI", "N_MIGRAINE_COV", "O_NEUROPATHICPAINALG_COV", "UNKNOWN")
 
 # create empty dt year for counts to include all possible combinations
 all_years  <- seq(year(start_study_date), year(end_study_date))
-all_combinations_agegroups   <- CJ(year = all_years, age_group = age_levels, unique = TRUE)
 all_combinations_indications <- CJ(year = all_years, indication = indication_levels, unique = TRUE)
 
 if(length(files_cont_use_episodes)>0){
@@ -52,7 +47,7 @@ if(length(files_cont_use_episodes)>0){
     #<<< INDICATIONS >>>#
     dt_temp <- copy(dt)
     
-    if(!deap_flags$is_EFEMERIS) {
+    if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG) {
       
       # Set Windows 
       dt_temp[, start_window := as.IDate(as.Date(episode.start) %m-% lookback_period)][, end_window := episode.start]
@@ -112,7 +107,8 @@ if(length(files_cont_use_episodes)>0){
     } else {
       
       # Set Windows 
-      dt_temp[, start_window := as.IDate(episode.start) - lookback_period][,start_window:=as.IDate(start_window)]
+      if(deap_flags$is_EFEMERIS) dt_temp[, start_window := as.IDate(episode.start) - lookback_period][,start_window:=as.IDate(start_window)]
+      if(deap_flags$is_FIN_REG) dt_temp[, start_window := as.IDate(as.Date(episode.start) %m-% lookback_period)]
       dt_temp[, end_window := episode.start]
       dt_indication[, start_event := event_date][, end_event := event_date]
       

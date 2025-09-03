@@ -20,7 +20,7 @@ files_counts       <- list.files(file.path(paths$D5_dir, "1.3_pre-pregnancy_use"
 # Switcher episodes 
 files_switcher_episodes <- list.files(file.path(paths$D4_dir, "1.2_switching"), pattern = "\\.rds$")
 
-if(!deap_flags$is_EFEMERIS){
+if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG) {
   files_switcher_episodes <- files_switcher_episodes[grepl("_F_", files_switcher_episodes)] # Female pop
   if(pop_prefix == "PC") files_prepregnancy  <- files_prepregnancy[!grepl("PC_HOSP", files_prepregnancy)] # BIFAP
   if(pop_prefix == "PC") files_counts        <- files_counts[!grepl("PC_HOSP", files_counts)] #BIFAP
@@ -66,8 +66,11 @@ for (trt in seq_along(common_keys)) {
   dt_switch  <- readRDS(switcher_map[[trt]])
   
   # merge prepregnancy data with discontinuation file
-  if (!deap_flags$is_EFEMERIS)  dt <- merge(dt_prepreg[,.(person_id)], dt_switch, by = "person_id", all = FALSE)
-  if (deap_flags$is_EFEMERIS)   dt <- merge(dt_prepreg[,.(pregnancy_id)], dt_switch, by = "pregnancy_id", all = FALSE)
+  if(deap_flags$is_EFEMERIS || deap_flags$is_FIN_REG) {
+    dt <- merge(dt_prepreg[,.(pregnancy_id)], dt_switch, by = "pregnancy_id", all = FALSE)
+  } else {
+    dt <- merge(dt_prepreg[,.(person_id)], dt_switch, by = "person_id", all = FALSE)
+  }
   
   if(nrow(dt)==0) {
     message(red("No switcher records found in pre-pregnancy users for", treatment))
@@ -99,8 +102,11 @@ for (trt in seq_along(common_keys)) {
   dt_subset[, preg_year := year(pregnancy_start_date)]
 
   # keep one person/pregnancy per year
-  if (!deap_flags$is_EFEMERIS) dt_subset <- unique(dt_subset, by = c("person_id", "preg_year"))
-  if (deap_flags$is_EFEMERIS)  dt_subset <- unique(dt_subset, by = c("pregnancy_id", "preg_year"))
+  if (deap_flags$is_EFEMERIS || deap_flags$is_FIN_REG) {
+    dt_subset <- unique(dt_subset, by = c("pregnancy_id", "preg_year"))
+  } else {
+    dt_subset <- unique(dt_subset, by = c("person_id", "preg_year"))
+  } 
   
   # count by pregnancy
   switcher_counts <- dt_subset[, .(N = .N), by = preg_year]

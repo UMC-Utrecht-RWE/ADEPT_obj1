@@ -13,7 +13,7 @@ print("=========================================================================
 # List all altmed files 
 files_altmeds <- list.files(file.path(paths$D3_dir, "alternatives"), pattern = "\\.rds$")
 
-if (!deap_flags$is_EFEMERIS) {
+if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG) {
   
   files_altmeds <- files_altmeds[grepl(paste0("^", pop_prefix, "_"), files_altmeds)]# Filter altmeds for current pop_prefix only
   if(pop_prefix=="PC") files_altmeds <- files_altmeds[!grepl("PC_HOSP", files_altmeds)]# If pop_prefix is PC, then drop any that are PC_HOSP
@@ -35,7 +35,7 @@ for (altmed in seq_along(files_altmeds)) {
   dt <- readRDS(file.path(paths$D3_dir, "alternatives", files_altmeds[altmed]))
   
   # Only keep records between entry and exit dates - this used to be done in create subsets. It is not being done there anymore
-  if(!deap_flags$is_EFEMERIS) dt <- dt[rx_date >= entry_date & rx_date <= exit_date]
+  if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG) dt <- dt[rx_date >= entry_date & rx_date <= exit_date]
   
   # Save data set 
   saveRDS(dt, file.path(paths$D4_dir, "1.2_altmeds", paste0(altmed_name, "_altmed_data.rds")))

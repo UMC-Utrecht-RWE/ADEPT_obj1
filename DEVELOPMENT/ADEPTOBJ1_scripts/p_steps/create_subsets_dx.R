@@ -53,7 +53,7 @@ if(length(event_files)>0){
     dt[, person_id := as.character(person_id), allow.cartesian = TRUE]
     study_population[, person_id := as.character(person_id)]
     
-    if(deap_flags$is_EFEMERIS){
+    if(deap_flags$is_EFEMERIS | deap_flags$is_FIN_REG){
       
       # add interval columns
       study_population[, `:=`(start_window = op_start_date, end_window = op_end_date)]

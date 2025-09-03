@@ -68,8 +68,11 @@ for(episode in seq_along(files_preg_init_episodes)){
   agegroups[, year := year(episode.start)]
   
   # Keep one row per person_id - episode.start - year 
-  if(!deap_flags$is_EFEMERIS) agegroups <- unique(agegroups, by = c("person_id", "episode.start"))
-  if(!deap_flags$is_EFEMERIS) agegroups <- unique(agegroups, by = c("pregnancy_id", "episode.start"))
+  if(deap_flags$is_EFEMERIS || deap_flags$is_FIN_REG) {
+    agegroups <- unique(agegroups, by = c("pregnancy_id", "episode.start"))
+  } else {
+    agegroups <- unique(agegroups, by = c("person_id", "episode.start"))
+    }
   
   # count groups per year
   agegroup_counts <- agegroups[, .N, by = .(year, age_group)]
@@ -98,7 +101,7 @@ for(episode in seq_along(files_preg_init_episodes)){
   #<<< INDICATIONS >>>#
   dt_temp <- copy(dt)
   
-  if(!deap_flags$is_EFEMERIS) {
+  if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG) {
     
     # Set Windows 
     dt_temp[, start_window := as.IDate(as.Date(episode.start) %m-% lookback_period)][, end_window := episode.start]
@@ -157,8 +160,10 @@ for(episode in seq_along(files_preg_init_episodes)){
   } else {
     
     # Set Windows 
-    dt_temp[, start_window := as.IDate(episode.start) - lookback_period][,start_window:=as.IDate(start_window)]
+    if(deap_flags$is_EFEMERIS) dt_temp[, start_window := as.IDate(episode.start) - lookback_period][,start_window:=as.IDate(start_window)]
+    if(deap_flags$is_FIN_REG)  dt_temp[, start_window := as.IDate(as.Date(episode.start) %m-% lookback_period)]
     dt_temp[, end_window := episode.start]
+    
     dt_indication[, start_event := event_date][, end_event := event_date]
     
     # set keys 
