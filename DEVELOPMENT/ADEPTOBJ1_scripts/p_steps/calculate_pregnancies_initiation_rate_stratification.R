@@ -47,25 +47,30 @@ for(episode in seq_along(files_preg_init_episodes)){
   
   # load current episode
   dt <- readRDS(file.path(paths$D4_dir, "1.3_pregnancy_initiation", files_preg_init_episodes[episode]))
+  # rename year column
+  setnames(dt,"preg_year", "year")
+  
+  # prepare denominator
+  denom_counts <- dt[, .(Freq = .N), by = year]
   
   #<<< AGE GROUPS >>>#
   agegroups <- copy(dt)
   
-  agegroups[, birth_date := as.IDate(birth_date)][, episode.start := as.IDate(episode.start)]
+  agegroups[, birth_date := as.IDate(birth_date)][, pregnancy_start_date := as.IDate(pregnancy_start_date)]
   
   # create column - age at episode start 
-  agegroups[, age_at_episode_start := floor(time_length(interval(birth_date, episode.start), unit = "years"))]
+  agegroups[, age_at_pregnancy_start := floor(time_length(interval(birth_date, pregnancy_start_date), unit = "years"))]
   
   # create age groups
-  agegroups[, age_group := fifelse(age_at_episode_start >= 12 & age_at_episode_start < 19, "12-18.99",
-                                   fifelse(age_at_episode_start >= 19 & age_at_episode_start < 35, "19-34.99",
-                                           fifelse(age_at_episode_start >= 35 & age_at_episode_start < 55, "35-54.99",
-                                                   fifelse(age_at_episode_start >= 55 & age_at_episode_start < 75, "55-74.99",
-                                                           fifelse(age_at_episode_start >= 75, "75+", "UNKNOWN")))))]
+  agegroups[, age_group := fifelse(age_at_pregnancy_start >= 12 & age_at_pregnancy_start < 19, "12-18.99",
+                                   fifelse(age_at_pregnancy_start >= 19 & age_at_pregnancy_start < 35, "19-34.99",
+                                           fifelse(age_at_pregnancy_start >= 35 & age_at_pregnancy_start < 55, "35-54.99",
+                                                   fifelse(age_at_pregnancy_start >= 55 & age_at_pregnancy_start < 75, "55-74.99",
+                                                           fifelse(age_at_pregnancy_start >= 75, "75+", "UNKNOWN")))))]
   
   
   # extract year from group by date column - episode.start
-  agegroups[, year := year(episode.start)]
+  agegroups[, year := year(pregnancy_start_date)]
   
   # Keep one row per person_id - episode.start - year 
   if(deap_flags$is_EFEMERIS || deap_flags$is_FIN_REG) {
@@ -83,8 +88,8 @@ for(episode in seq_along(files_preg_init_episodes)){
   # if is.na(N), replace it with 0
   agegroup_counts[is.na(N), N := 0]
   
-  # calculate denominator per year 
-  agegroup_counts[, Freq := sum(N), by = year]
+  # Merge with denominator 
+  agegroup_counts <- merge(agegroup_counts, denom_counts, by = c("year"))
   
   # if is.na(Freq), replace it with 0
   agegroup_counts[is.na(Freq), Freq := 0]
@@ -94,6 +99,22 @@ for(episode in seq_along(files_preg_init_episodes)){
   
   # create a column marking if rate is computable aka TRUE. It will be false if denominator is 0
   agegroup_counts[, rate_computable := Freq > 0]
+  
+  # sanity check
+  # Sum counts per year
+  check_counts <- agegroup_counts[, .(sum_age_groups = sum(N), denominator = unique(Freq)), by = year]
+  
+  # Check for equality
+  check_counts[, match := sum_age_groups == denominator]
+  
+  # Stop if any mismatch
+  if (any(!check_counts$match)) {
+    cat("\nError: Mismatch detected between numerator and denominator!\n")
+    print(check_counts[match == FALSE])
+    stop("Age Group counts do not add up to denominator for at least one year!")
+  } else {
+    message(blue("All age group counts match the denominator for every year"))
+  }
   
   # save counts
   saveRDS(agegroup_counts, file.path(paths$D5_dir, "1.3_pregnancy_initiation", "stratified", paste0(sub("_initiation_rates.*$", "", files_preg_init_episodes[episode]), "_initiation_rates_in_pregnancy_agegroup_counts.rds")))
@@ -106,6 +127,9 @@ for(episode in seq_along(files_preg_init_episodes)){
     # Set Windows 
     dt_temp[, start_window := as.IDate(as.Date(episode.start) %m-% lookback_period)][, end_window := episode.start]
     dt_indication[, start_event := event_date][, end_event := event_date]
+    
+    # change column event_definition in any rows with O_NEUROPATHICPAIN_COV or O_FIBROMYALGIA_AESI to algorithm name O_NEUROPATHICPAINALG_COV
+    dt_indication[event_definition== "O_NEUROPATHICPAIN_COV" | event_definition=="O_FIBROMYALGIA_AESI", event_definition:="O_NEUROPATHICPAINALG_COV"]
     
     # set keys 
     setkey(dt_temp, person_id, start_window, end_window)
@@ -120,8 +144,8 @@ for(episode in seq_along(files_preg_init_episodes)){
     )
     
     # drop unnecessary columns
-    indications <- indications[, .SD, .SDcols = c("person_id", "pregnancy_id" , "event_date", "code",  "event_definition", "episode.start", "i.code", "atc_group", 
-                                                  "sex_at_instance_creation", "birth_date", "start_follow_up", "end_follow_up", "entry_date", "exit_date")]
+    indications <- indications[,.(person_id, pregnancy_id, event_date, code, event_definition, episode.start, i.code, atc_group, sex_at_instance_creation,
+                                  birth_date, start_follow_up, end_follow_up, entry_date, exit_date, pregnancy_start_date)]
     
     # calculate difference in days between episode start and event date of indication 
     indications[, diff_days := as.numeric(difftime(episode.start, event_date, units = "days"))]
@@ -148,14 +172,14 @@ for(episode in seq_along(files_preg_init_episodes)){
           row
         }
       },
-      by = .(person_id, episode.start)
+      by = .(person_id, pregnancy_start_date)
     ]
     
     # extract year from group by date column - episode.start
-    indications[, year := year(episode.start)]
+    indications[, year := year(pregnancy_start_date)]
     
     # Keep one row per person_id - episode.start
-    indications <- unique(indications, by = c("person_id", "episode.start"))
+    indications <- unique(indications, by = c("person_id", "pregnancy_start_date"))
     
   } else {
     
@@ -165,6 +189,9 @@ for(episode in seq_along(files_preg_init_episodes)){
     dt_temp[, end_window := episode.start]
     
     dt_indication[, start_event := event_date][, end_event := event_date]
+    
+    # change column event_definition in any rows with O_NEUROPATHICPAIN_COV or O_FIBROMYALGIA_AESI to algorithm name O_NEUROPATHICPAINALG_COV
+    dt_indication[event_definition== "O_NEUROPATHICPAIN_COV" | event_definition=="O_FIBROMYALGIA_AESI", event_definition:="O_NEUROPATHICPAINALG_COV"]
     
     # set keys 
     setkey(dt_temp, pregnancy_id, start_window, end_window)
@@ -179,8 +206,8 @@ for(episode in seq_along(files_preg_init_episodes)){
     )
     
     # drop unnecessary columns
-    indications <- indications[, .SD, .SDcols = c("person_id", "pregnancy_id" , "event_date", "code",  "event_definition", "episode.start", "i.code", "atc_group", 
-                                                  "sex_at_instance_creation", "birth_date", "start_follow_up", "end_follow_up")]
+    indications <- indications[,.(person_id, pregnancy_id, event_date, code, event_definition, episode.start, i.code, atc_group, sex_at_instance_creation,
+                                  birth_date, start_follow_up, end_follow_up, entry_date, exit_date, pregnancy_start_date)]
     
     # calculate difference in days between episode start and event date of indication 
     indications[, diff_days := as.numeric(difftime(episode.start, event_date, units = "days"))]
@@ -207,14 +234,14 @@ for(episode in seq_along(files_preg_init_episodes)){
           row
         }
       },
-      by = .(pregnancy_id, episode.start)
+      by = .(pregnancy_id)
     ]
     
     # extract year from group by date column - episode.start
-    indications[, year := year(episode.start)]
+    indications[, year := year(pregnancy_start_date)]
     
     # Keep one row per person_id - episode.start
-    indications <- unique(indications, by = c("pregnancy_id", "episode.start"))
+    indications <- unique(indications, by = c("pregnancy_id"))
   }
 
 
@@ -228,8 +255,8 @@ for(episode in seq_along(files_preg_init_episodes)){
   # if is.na(N), replace it with 0
   indication_counts[is.na(N), N := 0]
   
-  # calculate denominator per year 
-  indication_counts[, Freq := sum(N), by = year]
+  # Merge with denominator 
+  indication_counts <- merge(indication_counts, denom_counts, by = c("year"))
   
   # if is.na(Freq), replace it with 0
   indication_counts[is.na(Freq), Freq := 0]
@@ -242,6 +269,22 @@ for(episode in seq_along(files_preg_init_episodes)){
   
   # save counts
   saveRDS(indication_counts, file.path(paths$D5_dir, "1.3_pregnancy_initiation", "stratified", paste0(sub("_initiation_rates.*$", "", files_preg_init_episodes[episode]), "_initiation_rates_in_pregnancy_indication_counts.rds")))
-}
+
+  # Sum counts per year
+  check_counts <- indication_counts[, .(sum_indications = sum(N), denominator = unique(Freq)), by = year]
+  
+  # Check for equality
+  check_counts[, match := sum_indications == denominator]
+  
+  # Stop if any mismatch
+  if (any(!check_counts$match)) {
+    cat("\nError: Mismatch detected between numerator and denominator!\n")
+    print(check_counts[match == FALSE])
+    stop("Indication counts do not add up to denominator for at least one year!")
+  } else {
+    message(blue("All indication counts match the denominator for every year"))
+  }
+  
+  }
 
 

@@ -1,7 +1,7 @@
 ###############################################################################################################################################################################
 # <<< Sub-objective 1.1: Incidence rate >>> 
 # Measure: Annual incidence rate of ASM use
-# Numerator: Number of individuals with ≥1 treatment episode of an ASM within a calendar year and without an overlapping treatment episode during the 1-year look-back period
+# Numerator: Number of individuals with ???1 treatment episode of an ASM within a calendar year and without an overlapping treatment episode during the 1-year look-back period
 # Denominator: Total number of person-time in that calendar year in the data source
 # Stratification by: Individual drug substance, drug sub-groups, age groups, indication, calendar year, data source
 
@@ -75,6 +75,9 @@ for(episode in seq_along(files_incidence_episodes)){
   # load current episode
   dt <- readRDS(file.path(paths$D4_dir, "1.1_incidence", files_incidence_episodes[episode]))
   
+  # prepare denominator
+  denom_counts <- dt[, .(Freq = .N), by = year]
+
   #<<< AGE GROUPS >>>#
   
   if (grepl("DP_ANTIEPINEW|DP_ANTIEPIOLD|DP_BENZOANTIEPILEPTIC|DP_GABAPENTINOIDS", files_incidence_episodes[episode])) {
@@ -110,8 +113,8 @@ for(episode in seq_along(files_incidence_episodes)){
     # if is.na(N), replace it with 0
     agegroup_counts[is.na(N), N := 0]
     
-    # calculate denominator per year 
-    agegroup_counts[, Freq := sum(N), by = year]
+    # Merge with denominator 
+    agegroup_counts <- merge(agegroup_counts, denom_counts, by = c("year"))
     
     # if is.na(Freq), replace it with 0
     agegroup_counts[is.na(Freq), Freq := 0]
@@ -121,6 +124,22 @@ for(episode in seq_along(files_incidence_episodes)){
     
     # create a column marking if rate is computable aka TRUE. It will be false if denominator is 0
     agegroup_counts[, rate_computable := Freq > 0]
+    
+    # sanity check
+    # Sum counts per year
+    check_counts <- agegroup_counts[, .(sum_age_groups = sum(N), denominator = unique(Freq)), by = year]
+    
+    # Check for equality
+    check_counts[, match := sum_age_groups == denominator]
+    
+    # Stop if any mismatch
+    if (any(!check_counts$match)) {
+      cat("\nError: Mismatch detected between numerator and denominator!\n")
+      print(check_counts[match == FALSE])
+      stop("Age Group counts do not add up to denominator for at least one year!")
+    } else {
+      message(blue("All age group counts match the denominator for every year"))
+    }
     
     # save counts
     saveRDS(agegroup_counts, file.path(paths$D5_dir, "1.1_incidence", "stratified", paste0(gsub("_incidence_data\\.rds$", "_incidence_agegroup_counts.rds", files_incidence_episodes[episode]))))
@@ -137,6 +156,9 @@ for(episode in seq_along(files_incidence_episodes)){
   # indication data
   dt_indication[, start_event := as.IDate(event_date)]
   dt_indication[, end_event := as.IDate(event_date)]
+  
+  # change column event_definition in any rows with O_NEUROPATHICPAIN_COV or O_FIBROMYALGIA_AESI to algorithm name O_NEUROPATHICPAINALG_COV
+  dt_indication[event_definition== "O_NEUROPATHICPAIN_COV" | event_definition=="O_FIBROMYALGIA_AESI", event_definition:="O_NEUROPATHICPAINALG_COV"]
   
   # set keys 
   setkey(dt_temp, person_id, start_window, end_window)
@@ -197,8 +219,8 @@ for(episode in seq_along(files_incidence_episodes)){
   # if is.na(N), replace it with 0
   indication_counts[is.na(N), N := 0]
   
-  # calculate denominator per year 
-  indication_counts[, Freq := sum(N), by = year]
+  # Merge with denominator 
+  indication_counts <- merge(indication_counts, denom_counts, by = c("year"))
   
   # if is.na(Freq), replace it with 0
   indication_counts[is.na(Freq), Freq := 0]
@@ -208,9 +230,22 @@ for(episode in seq_along(files_incidence_episodes)){
   
   # create a column marking if rate is computable aka TRUE. It will be false if denominator is 0
   indication_counts[, rate_computable := Freq > 0]
-  
+
   # save counts
   saveRDS(indication_counts, file.path(paths$D5_dir, "1.1_incidence", "stratified", paste0(gsub("_incidence_data\\.rds$", "_incidence_indication_counts.rds", files_incidence_episodes[episode]))))
   
+  # Sum counts per year
+  check_counts <- indication_counts[, .(sum_indications = sum(N), denominator = unique(Freq)), by = year]
+  
+  # Check for equality
+  check_counts[, match := sum_indications == denominator]
+  
+  # Stop if any mismatch
+  if (any(!check_counts$match)) {
+    cat("\nError: Mismatch detected between numerator and denominator!\n")
+    print(check_counts[match == FALSE])
+    stop("Indication counts do not add up to denominator for at least one year!")
+  } else {
+    message(blue("All indication counts match the denominator for every year"))
+  }
 }
-

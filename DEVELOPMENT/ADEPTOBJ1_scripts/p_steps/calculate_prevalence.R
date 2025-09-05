@@ -35,6 +35,9 @@ for (episode in seq_along(files_episodes)) {
   # Remove duplicates
   dt <- unique(dt, by = c("person_id", "episode.start", "episode.end"))
 
+  # Remove any episodes that end before episode start
+  dt <- dt[episode.end > start_follow_up,]
+  
   # Order episodes by person & start date
   setorder(dt, person_id, episode.start)
   
@@ -51,7 +54,7 @@ for (episode in seq_along(files_episodes)) {
                       repeated
                     }, by = .(person_id, episode.start)]
   
-  # Remove prevalence that falls outside start and end follow up
+  # Remove any rows where year of episode is not between start and end follow up years 
   dt_expanded <- dt_expanded[year >= year(start_follow_up) & year <= year(end_follow_up),]
   
   if(nrow(dt_expanded)>0){

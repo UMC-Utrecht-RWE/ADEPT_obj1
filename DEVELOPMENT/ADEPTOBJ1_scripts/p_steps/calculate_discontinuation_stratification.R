@@ -40,6 +40,9 @@ for(episode in seq_along(files_discontinued_episodes)){
   # load current episode
   dt <- readRDS(file.path(paths$D4_dir, "1.2_discontinued", files_discontinued_episodes[episode]))
   
+  # prepare denominator
+  denom_counts <- dt[, .(Freq = .N), by = year]
+  
   #<<< AGE GROUPS >>>#
   # convert dates to IDate 
   agegroups <- copy(dt)
@@ -72,8 +75,8 @@ for(episode in seq_along(files_discontinued_episodes)){
   # if is.na(N), replace it with 0
   agegroup_counts[is.na(N), N := 0]
   
-  # calculate denominator per year 
-  agegroup_counts[, Freq := sum(N), by = year]
+  # Merge with denominator 
+  agegroup_counts <- merge(agegroup_counts, denom_counts, by = c("year"))
   
   # if is.na(Freq), replace it with 0
   agegroup_counts[is.na(Freq), Freq := 0]
@@ -83,6 +86,22 @@ for(episode in seq_along(files_discontinued_episodes)){
   
   # create a column marking if rate is computable aka TRUE. It will be false if denominator is 0
   agegroup_counts[, rate_computable := Freq > 0]
+  
+  # sanity check
+  # Sum counts per year
+  check_counts <- agegroup_counts[, .(sum_age_groups = sum(N), denominator = unique(Freq)), by = year]
+  
+  # Check for equality
+  check_counts[, match := sum_age_groups == denominator]
+  
+  # Stop if any mismatch
+  if (any(!check_counts$match)) {
+    cat("\nError: Mismatch detected between numerator and denominator!\n")
+    print(check_counts[match == FALSE])
+    stop("Age Group counts do not add up to denominator for at least one year!")
+  } else {
+    message(blue("All age group counts match the denominator for every year"))
+  }
   
   # save counts
   saveRDS(agegroup_counts, file.path(paths$D5_dir, "1.2_discontinued", "stratified", paste0(gsub("_discontinued_data\\.rds$", "_discontinued_agegroup_counts.rds", files_discontinued_episodes[episode]))))

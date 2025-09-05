@@ -61,9 +61,7 @@ for (episode in seq_along(files_episodes)) {
       next
     }
     
-    # Save discontinued data if present
-    if (nrow(discontinuers) > 0) saveRDS(discontinuers, file.path(paths$D4_dir, "1.2_discontinued", paste0(gsub("_treatment_episode\\.rds$", "", files_episodes[episode]), "_discontinued_data.rds")))
-      
+        
   } else {
     
     # Remove duplicates
@@ -139,6 +137,10 @@ for (episode in seq_along(files_episodes)) {
       
       # rename columns
       setnames(discontinued_all, "N", "n_treated")
+      
+      # Save discontinued data
+      if (nrow(discontinuers) > 0) saveRDS(discontinuers, file.path(paths$D4_dir, "1.2_discontinued", paste0(gsub("_treatment_episode\\.rds$", "", files_episodes[episode]), "_discontinued_data.rds")))
+      
       # Save results 
       saveRDS(discontinued_all, file.path(paths$D5_dir, "1.2_discontinued", paste0(gsub("_treatment_episode\\.rds$", "", files_episodes[episode]), "_discontinued_counts.rds")))
       

@@ -38,11 +38,21 @@ if(length(files_cont_use_episodes)>0){
   # loop over episodes
   for(episode in seq_along(files_cont_use_episodes)){
     
+    file_name <- sub("_continuous.*\\.rds$", "", basename(files_cont_use_episodes[episode]))
+    
     # print message
-    message("Processing: ", sub("_continuous_use_rate_data\\.rds$", "", files_cont_use_episodes[episode]))
+    message("Processing: ", file_name)
     
     # load current episode
     dt <- readRDS(file.path(paths$D4_dir, "1.3_pregnancy_continuous", files_cont_use_episodes[episode]))
+    
+    #rename preg_year to year
+    setnames(dt, "preg_year", "year")
+    
+    # prepare denominator
+    denom_counts <- dt[, .(Freq = .N), by = year]
+    
+    pregnancies[pregnancy_id %in% preg_ids_allt, .N, by = preg_year]
     
     #<<< INDICATIONS >>>#
     dt_temp <- copy(dt)
@@ -52,6 +62,9 @@ if(length(files_cont_use_episodes)>0){
       # Set Windows 
       dt_temp[, start_window := as.IDate(as.Date(episode.start) %m-% lookback_period)][, end_window := episode.start]
       dt_indication[, start_event := event_date][, end_event := event_date]
+      
+      # change column event_definition in any rows with O_NEUROPATHICPAIN_COV or O_FIBROMYALGIA_AESI to algorithm name O_NEUROPATHICPAINALG_COV
+      dt_indication[event_definition== "O_NEUROPATHICPAIN_COV" | event_definition=="O_FIBROMYALGIA_AESI", event_definition:="O_NEUROPATHICPAINALG_COV"]
       
       # set keys 
       setkey(dt_temp, person_id, start_window, end_window)
@@ -66,10 +79,8 @@ if(length(files_cont_use_episodes)>0){
       )
       
       # drop unnecessary columns
-      indications <- indications[, .SD, .SDcols = c("person_id", "event_date", "code",  "event_definition", "episode.start", "i.code", "atc_group", 
-                                                    "sex_at_instance_creation", "birth_date", "start_follow_up", "end_follow_up", "entry_date", "exit_date")]
-      
-      
+      indications<-indications[,.(person_id, pregnancy_id, event_date,code,event_definition, episode.start,i.code, atc_group, sex_at_instance_creation, birth_date, start_follow_up, end_follow_up, entry_date, exit_date, pregnancy_start_date)]
+
       # calculate difference in days between episode start and event date of indication 
       indications[, diff_days := as.numeric(difftime(episode.start, event_date, units = "days"))]
       
@@ -95,14 +106,14 @@ if(length(files_cont_use_episodes)>0){
             row
           }
         },
-        by = .(person_id, episode.start)
+        by = .(person_id, pregnancy_start_date)
       ]
       
       # extract year from group by date column - episode.start
-      indications[, year := year(episode.start)]
+      indications[, year := year(pregnancy_start_date)]
       
       # Keep one row per person_id - episode.start
-      indications <- unique(indications, by = c("person_id", "episode.start"))
+      indications <- unique(indications, by = c("person_id", "pregnancy_start_date"))
       
     } else {
       
@@ -112,6 +123,10 @@ if(length(files_cont_use_episodes)>0){
       dt_temp[, end_window := episode.start]
       dt_indication[, start_event := event_date][, end_event := event_date]
       
+      # change column event_definition in any rows with O_NEUROPATHICPAIN_COV or O_FIBROMYALGIA_AESI to algorithm name O_NEUROPATHICPAINALG_COV
+      dt_indication[event_definition== "O_NEUROPATHICPAIN_COV" | event_definition=="O_FIBROMYALGIA_AESI", event_definition:="O_NEUROPATHICPAINALG_COV"]
+      
+  
       # set keys 
       setkey(dt_temp, pregnancy_id, start_window, end_window)
       setkey(dt_indication, pregnancy_id, start_event, end_event)
@@ -125,8 +140,7 @@ if(length(files_cont_use_episodes)>0){
       )
       
       # drop unnecessary columns
-      indications <- indications[, .SD, .SDcols = c("person_id", "pregnancy_id","event_date", "code",  "event_definition", "episode.start", "i.code", "atc_group", 
-                                                    "sex_at_instance_creation", "birth_date", "start_follow_up", "end_follow_up")]
+      indications<-indications[,.(person_id, pregnancy_id, event_date,code,event_definition, episode.start,i.code, atc_group, sex_at_instance_creation, birth_date, start_follow_up, end_follow_up, entry_date, exit_date, pregnancy_start_date)]
       
       # calculate difference in days between episode start and event date of indication 
       indications[, diff_days := as.numeric(difftime(episode.start, event_date, units = "days"))]
@@ -173,8 +187,8 @@ if(length(files_cont_use_episodes)>0){
     # if is.na(N), replace it with 0
     indication_counts[is.na(N), N := 0]
     
-    # calculate denominator per year 
-    indication_counts[, Freq := sum(N), by = year]
+    # Merge with denominator 
+    indication_counts <- merge(indication_counts, denom_counts, by = c("year"))
     
     # if is.na(Freq), replace it with 0
     indication_counts[is.na(Freq), Freq := 0]
@@ -186,8 +200,24 @@ if(length(files_cont_use_episodes)>0){
     indication_counts[, rate_computable := Freq > 0]
     
     # save counts
-    saveRDS(indication_counts, file.path(paths$D5_dir, "1.3_pregnancy_continuous", "stratified", paste0(sub("_continuous_rates.*$", "", files_cont_use_episodes[episode]), "_continuous_use_rates_in_pregnancy_indication_counts.rds")))
-  }
+    saveRDS(indication_counts, file.path(paths$D5_dir, "1.3_pregnancy_continuous", "stratified", paste0(file_name, "_continuous_use_rates_in_pregnancy_indication_counts.rds")))
+  
+    # Sum counts per year
+    check_counts <- indication_counts[, .(sum_indications = sum(N), denominator = unique(Freq)), by = year]
+    
+    # Check for equality
+    check_counts[, match := sum_indications == denominator]
+    
+    # Stop if any mismatch
+    if (any(!check_counts$match)) {
+      cat("\nError: Mismatch detected between numerator and denominator!\n")
+      print(check_counts[match == FALSE])
+      stop("Indication counts do not add up to denominator for at least one year!")
+    } else {
+      message(blue("All indication counts match the denominator for every year"))
+    }
+    
+    }
   
 } else {
   

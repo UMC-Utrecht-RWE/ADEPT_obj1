@@ -137,6 +137,15 @@ if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG){
   # Make unique by person_id, and indication
   indication_in_lookback <- unique(indication_in_lookback, by = c("person_id", "indication_group"))
   
+  # All users in denominator
+  all_users <- unique(dt_exposures_temp$person_id)
+  
+  # Users already matched to an indication group
+  matched_users <- unique(indication_in_lookback$person_id)
+  
+  # Users with no indication in lookback
+  no_indication_users <- setdiff(all_users, matched_users)
+  
   # Count unique people with each indication
   indication_counts <- indication_in_lookback[, .(indication_counts = uniqueN(person_id)), by = indication_group]
   

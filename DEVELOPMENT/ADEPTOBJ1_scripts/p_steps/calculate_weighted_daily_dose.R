@@ -35,6 +35,30 @@
 # Stratification by: Individual drug substance, calendar year, data source
 
 ###############################################################################################################################################################################
+# FOR RUNNING INDEPENDENTLY OF OTHER OBJECTIVE #
+# In the to_run.R file, please first run the all lines up (and including) sourcing the set_flags.R file 
+### source(file.path(thisdir, "p_steps", "set_flags.R"), local = TRUE) ###
+
+# Define root folder 
+if (!exists("root_dir")) root_dir <- thisdir
+
+# Assign names to paths 
+paths <- list(
+  D3_dir = file.path(root_dir, "D3_study_variables"),
+  D4_dir = file.path(root_dir, "D4_analytic_datasets"),
+  D5_dir = file.path(root_dir, "D5_results")
+)
+
+# Run to set DEAP flags
+source(file.path(thisdir, "p_steps", "set_flags.R"), local = TRUE)
+# Load packages
+source(file.path(thisdir, "p_steps", "packages.R"), local = TRUE)
+# Set study parameters
+source(file.path(thisdir, "p_steps", "study_parameters.R"), local = TRUE)
+# Set population prefix value
+pop_prefix <- "ALL"
+
+#######################################################################################################
 # List of ATCs of interest
 target_atcs <- c("N02BF01","N03AA02","N03AE01","N03AF01","N03AG01", "N03AX09","N03AX11","N03AX14")
 

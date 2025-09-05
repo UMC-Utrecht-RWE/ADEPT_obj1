@@ -69,7 +69,7 @@ for (trt in seq_along(common_keys)) {
   if(deap_flags$is_EFEMERIS || deap_flags$is_FIN_REG) {
     dt <- merge(dt_prepreg[,.(pregnancy_id)], dt_switch, by = "pregnancy_id", all = FALSE)
   } else {
-    dt <- merge(dt_prepreg[,.(person_id)], dt_switch, by = "person_id", all = FALSE)
+    dt <- merge(dt_prepreg[,.(person_id, pregnancy_start_date, pregnancy_end_date)], dt_switch, by = "person_id", all = FALSE)
   }
   
   if(nrow(dt)==0) {

@@ -35,6 +35,11 @@ if(length(files_polytherapy_episodes)>0){
   
   # Remove true duplicates
   dt<-unique(dt)
+  setnames(dt, "preg_year", "year")
+  
+  # prepare denominator
+  denom_counts <- dt[, .(Freq = .N), by = year]
+  
   dt_indication<-unique(dt_indication)
   
   # Set indication levels 
@@ -57,6 +62,9 @@ if(length(files_polytherapy_episodes)>0){
     dt_temp[, start_window := as.IDate(as.Date(overlap_start) %m-% lookback_period)]
     dt_temp[, end_window := overlap_start]
     dt_indication[, start_event := event_date][, end_event := event_date]
+    
+    # change column event_definition in any rows with O_NEUROPATHICPAIN_COV or O_FIBROMYALGIA_AESI to algorithm name O_NEUROPATHICPAINALG_COV
+    dt_indication[event_definition== "O_NEUROPATHICPAIN_COV" | event_definition=="O_FIBROMYALGIA_AESI", event_definition:="O_NEUROPATHICPAINALG_COV"]
     
     # set keys 
     setkey(dt_temp, person_id, start_window, end_window)
@@ -95,7 +103,7 @@ if(length(files_polytherapy_episodes)>0){
           row
         }
       },
-      by = .(person_id, overlap_start)
+      by = .(person_id, pregnancy_start_date)
     ]
     
     # extract year from group by date column - episode.start
@@ -113,6 +121,9 @@ if(length(files_polytherapy_episodes)>0){
     dt_temp[, start_window := overlap_start - lookback_period][,start_window:=as.IDate(start_window)]
     dt_temp[, end_window := overlap_start]
     dt_indication[, start_event := event_date][, end_event := event_date]
+    
+    # change column event_definition in any rows with O_NEUROPATHICPAIN_COV or O_FIBROMYALGIA_AESI to algorithm name O_NEUROPATHICPAINALG_COV
+    dt_indication[event_definition== "O_NEUROPATHICPAIN_COV" | event_definition=="O_FIBROMYALGIA_AESI", event_definition:="O_NEUROPATHICPAINALG_COV"]
     
     # set keys 
     setkey(dt_temp, pregnancy_id, start_window, end_window)
@@ -151,12 +162,12 @@ if(length(files_polytherapy_episodes)>0){
           row
         }
       },
-      by = .(pregnancy_id, overlap_start)
+      by = .(pregnancy_id)
     ]
     
     
     # extract year from group by date column - episode.start
-    indications[, year := year(overlap_start)]
+    indications[, year := year(pregnancy_start_date)]
     
     # Keep one row per person_id - episode.start
     indications <- unique(indications, by = c("pregnancy_id", "overlap_start"))
@@ -172,8 +183,8 @@ if(length(files_polytherapy_episodes)>0){
   # if is.na(N), replace it with 0
   indication_counts[is.na(N), N := 0]
   
-  # calculate denominator per year 
-  indication_counts[, Freq := sum(N), by = year]
+  # Merge with denominator 
+  indication_counts <- merge(indication_counts, denom_counts, by = c("year"))
   
   # if is.na(Freq), replace it with 0
   indication_counts[is.na(Freq), Freq := 0]
@@ -186,6 +197,21 @@ if(length(files_polytherapy_episodes)>0){
   
   # save counts
   saveRDS(indication_counts, file.path(paths$D5_dir, "1.4_pregnancy_polytherapy", "stratified", paste0(pop_prefix, "_polytherapy_in_pregnancy_indication_counts.rds")))
+  
+  # Sum counts per year
+  check_counts <- indication_counts[, .(sum_indications = sum(N), denominator = unique(Freq)), by = year]
+  
+  # Check for equality
+  check_counts[, match := sum_indications == denominator]
+  
+  # Stop if any mismatch
+  if (any(!check_counts$match)) {
+    cat("\nError: Mismatch detected between numerator and denominator!\n")
+    print(check_counts[match == FALSE])
+    stop("Indication counts do not add up to denominator for at least one year!")
+  } else {
+    message(blue("All indication counts match the denominator for every year"))
+  }
   
 } else {
   

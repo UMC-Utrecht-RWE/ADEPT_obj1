@@ -60,6 +60,9 @@ for(episode in seq_along(files_prevalence_episodes)){
   # load current episode
   dt <- readRDS(file.path(paths$D4_dir, "1.1_prevalence", files_prevalence_episodes[episode]))
   
+  # prepare denominator
+  denom_counts <- dt[, .(Freq = .N), by = year]
+  
   #<<< AGE GROUPS >>>#
   if (grepl("DP_ANTIEPINEW|DP_ANTIEPIOLD|DP_BENZOANTIEPILEPTIC|DP_GABAPENTINOIDS", files_prevalence_episodes[episode])) {
     
@@ -93,8 +96,8 @@ for(episode in seq_along(files_prevalence_episodes)){
     # if is.na(N), replace it with 0
     agegroup_counts[is.na(N), N := 0]
     
-    # calculate denominator per year 
-    agegroup_counts[, Freq := sum(N), by = year]
+    # Merge with denominator 
+    agegroup_counts <- merge(agegroup_counts, denom_counts, by = c("year"))
     
     # if is.na(Freq), replace it with 0
     agegroup_counts[is.na(Freq), Freq := 0]
@@ -104,6 +107,22 @@ for(episode in seq_along(files_prevalence_episodes)){
     
     # create a column marking if rate is computable aka TRUE. It will be false if denominator is 0
     agegroup_counts[, rate_computable := Freq > 0]
+    
+    # sanity check
+    # Sum counts per year
+    check_counts <- agegroup_counts[, .(sum_age_groups = sum(N), denominator = unique(Freq)), by = year]
+    
+    # Check for equality
+    check_counts[, match := sum_age_groups == denominator]
+    
+    # Stop if any mismatch
+    if (any(!check_counts$match)) {
+      cat("\nError: Mismatch detected between numerator and denominator!\n")
+      print(check_counts[match == FALSE])
+      stop("Age Group counts do not add up to denominator for at least one year!")
+    } else {
+      message(blue("All age group counts match the denominator for every year"))
+    }
     
     # save counts
     saveRDS(agegroup_counts, file.path(paths$D5_dir, "1.1_prevalence", "stratified", paste0(gsub("_prevalence_data\\.rds$", "_prevalence_agegroup_counts.rds", files_prevalence_episodes[episode]))))
@@ -120,6 +139,9 @@ for(episode in seq_along(files_prevalence_episodes)){
   dt_indication[, start_event := as.IDate(event_date)]
   dt_indication[, end_event   := as.IDate(event_date)]
   
+  # change column event_definition in any rows with O_NEUROPATHICPAIN_COV or O_FIBROMYALGIA_AESI to algorithm name O_NEUROPATHICPAINALG_COV
+  dt_indication[event_definition== "O_NEUROPATHICPAIN_COV" | event_definition=="O_FIBROMYALGIA_AESI", event_definition:="O_NEUROPATHICPAINALG_COV"]
+  
   # set keys 
   setkey(dt_temp, person_id, start_window, end_window)
   setkey(dt_indication, person_id, start_event, end_event)
@@ -135,7 +157,7 @@ for(episode in seq_along(files_prevalence_episodes)){
   # drop unnecessary columns
   indications <- indications[, .SD, .SDcols = c("person_id", "event_date", "code",  "event_definition", "episode.start", "episode.end", "i.code", "atc_group",
                                                 "sex_at_instance_creation", "birth_date", "start_follow_up", "end_follow_up", "entry_date", "exit_date",
-                                                "start_year", "end_year")]
+                                                "start_year", "end_year", "year")]
   
   # calculate difference in days between episode start and event date of indication 
   indications[, diff_days := as.numeric(difftime(episode.start, event_date, units = "days"))]
@@ -162,30 +184,17 @@ for(episode in seq_along(files_prevalence_episodes)){
         row
       }
     },
-    by = .(person_id, episode.start)
+    by = .(person_id, year)
   ]
   
   # order dataset by person id and episode start
-  setorder(indications, person_id, episode.start)
-  
-  # expand dataset to get all prevalence years
-  indications_expanded <- indications[, 
-                                      { 
-                                        years    <- seq(year(episode.start), year(episode.end))
-                                        repeated <- .SD[rep(1L, length(years))]
-                                        repeated[, year := years]
-                                        repeated
-                                      }, by = .(person_id, episode.start)]
-  
-  
-  # Remove prevalence that falls outside start and end follow up
-  indications_expanded <- indications_expanded[year >= year(start_follow_up) & year <= year(end_follow_up),]
+  setorder(indications, person_id, year)
   
   # Keep only unique person_id - episode.start - year combinations
-  indications_expanded <- unique(indications_expanded, by = c("person_id", "episode.start", "year"))
+  indications <- unique(indications, by = c("person_id", "year"))
   
   # count groups per year
-  indication_counts <- indications_expanded[, .N, by = .(year, indication)]
+  indication_counts <- indications[, .N, by = .(year, indication)]
   
   # merge counts with empty dt
   indication_counts <- merge(all_combinations_indications, indication_counts, by = c("year", "indication"), all.x = TRUE)
@@ -193,8 +202,8 @@ for(episode in seq_along(files_prevalence_episodes)){
   # if is.na(N), replace it with 0
   indication_counts[is.na(N), N := 0]
   
-  # calculate denominator per year 
-  indication_counts[, Freq := sum(N), by = year]
+  # Merge with denominator 
+  indication_counts <- merge(indication_counts, denom_counts, by = c("year"))
   
   # if is.na(Freq), replace it with 0
   indication_counts[is.na(Freq), Freq := 0]
@@ -207,7 +216,20 @@ for(episode in seq_along(files_prevalence_episodes)){
   
   # save counts
   saveRDS(indication_counts, file.path(paths$D5_dir, "1.1_prevalence", "stratified", paste0(gsub("_prevalence_data\\.rds$", "_prevalence_indication_counts.rds", files_prevalence_episodes[episode]))))
+  # Sum counts per year
+  check_counts <- indication_counts[, .(sum_indications = sum(N), denominator = unique(Freq)), by = year]
   
+  # Check for equality
+  check_counts[, match := sum_indications == denominator]
+  
+  # Stop if any mismatch
+  if (any(!check_counts$match)) {
+    cat("\nError: Mismatch detected between numerator and denominator!\n")
+    print(check_counts[match == FALSE])
+    stop("Indication counts do not add up to denominator for at least one year!")
+  } else {
+    message(blue("All indication counts match the denominator for every year"))
+  }
 }
 
 

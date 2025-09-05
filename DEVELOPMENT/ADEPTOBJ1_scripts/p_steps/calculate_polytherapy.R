@@ -110,7 +110,7 @@ for (epi1 in seq_along(files_episodes)){
     overlaps[, overlap_end   := pmin(window_end, i.window_end)]
     overlaps[, overlap_days  := as.numeric(overlap_end - overlap_start) + 1]
     
-    # Filter ≥182 days and same calendar year
+    # Filter for 182 days 
     overlaps <- overlaps[overlap_days >= 182]
     
     # Overlap should be between start and end fu
@@ -147,13 +147,13 @@ if(length(files_overlaps)>0){
   # Assign year(s) to each overlap start
   all_overlaps[,year:= year(overlap_start)]
   
-  # Save dataset 
-  saveRDS(all_overlaps, file.path(paths$D4_dir, "1.2_polytherapy", paste0(pop_prefix, "_polytherapy_data.rds")))
-  
-  if(deap_flags$is_EFEMERIS || deap_flags$is_FIN_REG) next
-  
   # Keep only one row per person per year
   all_overlaps_unique <- unique(all_overlaps, by = c("person_id", "year"))
+  
+  # Save dataset 
+  saveRDS(all_overlaps_unique, file.path(paths$D4_dir, "1.2_polytherapy", paste0(pop_prefix, "_polytherapy_data.rds")))
+  
+  if(deap_flags$is_EFEMERIS || deap_flags$is_FIN_REG) next
   
   # Count unique individuals per year
   overall_counts <- all_overlaps_unique[, .N, by = year]
