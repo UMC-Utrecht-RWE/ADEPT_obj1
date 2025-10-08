@@ -138,9 +138,11 @@ for (trt in seq_along(common_keys)) {
     discontinuer_counts <- dt_subset[, .(N = .N), by = preg_year]
     
     # prepare denominator
+    
+    # TODO 
     dt_counts_copy <- copy(dt_counts)
-    dt_counts_copy[, c("n_total", "rate", "rate_computable") := NULL]
-    setnames(dt_counts_copy, "n_treated", "n_total")
+    dt_counts_copy[, c("n_treated", "rate", "rate_computable") := NULL]
+    # setnames(dt_counts_copy, "n_treated", "n_total")
     
     # merge numerator and denominator
     discontinued_all <- merge(discontinuer_counts, dt_counts_copy, by = "preg_year", all.y = TRUE)

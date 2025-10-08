@@ -74,30 +74,16 @@ for(i in 1:nrow(SCHEME_04)){
   print(paste0("Set start_follow up date and end follow_up_date ",SCHEME_04[["subpopulations"]][i]))
   
   # Set start and end follow up dates 
-  if(deap_flags$is_EFEMERIS || deap_flags$is_FIN_REG){
-    # start fu is the same as op_start_date
-    SOURCE[, start_follow_up := pmax(op_start_date, entry_date)]
-    SOURCE[, end_follow_up   := pmin(op_end_date, exit_date, na.rm = TRUE)]
-    
-  } else {
-    # create columns start and end follow up
-    SOURCE[, start_follow_up := add_with_rollback(as.Date(entry_date), lookback_period)]
-    SOURCE[, end_follow_up   := exit_date]
-  }
+  SOURCE[, start_follow_up := add_with_rollback(as.Date(entry_date), lookback_period)]
+  SOURCE[, end_follow_up   := exit_date]
   
+  # Create a copy of source population to create study population
   study_population <- copy(SOURCE)
-  # # attrition
-  # before <- nrow(study_population)
+  
   # keep rows only if start_follow_up is before end_follow_up
   study_population <- study_population[start_follow_up < end_follow_up ,]
-  # 
-  # after <- nrow(study_population)
   
-  # flow_chart_check_lookback[[paste0("End_look_back_period_after_end_follow_up_",SCHEME_04[["subpopulations"]][i])]]$step <- "04_CreateStudyPopulation"
-  # flow_chart_check_lookback[[paste0("End_look_back_period_after_end_follow_up_",SCHEME_04[["subpopulations"]][i])]]$population <- SCHEME_04[["subpopulations"]][i]
-  # flow_chart_check_lookback[[paste0("End_look_back_period_after_end_follow_up_",SCHEME_04[["subpopulations"]][i])]]$before <- before
-  # flow_chart_check_lookback[[paste0("End_look_back_period_after_end_follow_up_",SCHEME_04[["subpopulations"]][i])]]$after <- after
-  
+  # Print message
   print(paste0("Calculate age at start and end follow up ",SCHEME_04[["subpopulations"]][i]))
   
   # create columns for age at start_follow_up and age_end_follow_up
@@ -116,7 +102,7 @@ for(i in 1:nrow(SCHEME_04)){
 } 
 
 flow_chart_source_to_study_combined <- rbindlist(flow_chart_source_to_study_list, use.names = TRUE, fill = TRUE)
+
+# save files 
 saveRDS(flow_chart_source_to_study_combined, file = file.path(paths$D5_dir, "flowcharts", "source_to_study_flowchart.rds"))
 
-# saveRDS(flow_chart_check_lookback, file = file.path(paths$D5_dir, "flowcharts", "flow_chart_check_lookback.rds"))
-# saveRDS(SCHEME_04, file = file.path(paths$D5_dir, "flowcharts","scheme_04.rds"))

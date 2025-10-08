@@ -96,7 +96,7 @@ for (med in seq_along(med_files)) {
   
   # For each ATC code, subset matching rows and append to codes_list
   for (current_code in names(ATC_codelist)) {
-    
+
     # print message
     message("looking for: ", current_code)
     # Check for match_type
@@ -133,6 +133,9 @@ for (med in seq_along(med_files)) {
   }
 }
 
+
+
+#################################################
 # Save unmatched codes
 fwrite(unmatched_log, file.path(paths$D5_dir, paste0(pop_prefix, "_unmatched_ATC_codes.csv")))
 

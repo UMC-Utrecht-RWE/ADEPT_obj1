@@ -66,4 +66,4 @@ PERSONS[,age_start_study := floor(time_length(interval(birth_date, start_study_d
 saveRDS(PERSONS, file = file.path(paths$D3_dir, "source_population", "persons.rds"))
 
 # Check for duplicate person_id entries and stop if any found
-if(!deap_flags$is_EFEMERIS) {if(any(duplicated(PERSONS[["person_id"]]))) stop("Duplicates in person table")} 
+if(any(duplicated(PERSONS[["person_id"]]))) stop("Duplicates in person table") 

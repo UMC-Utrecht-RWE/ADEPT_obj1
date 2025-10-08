@@ -137,8 +137,6 @@ if(sum(length(actual_tables$EVENTS),
 
 
 # Check for presence of subpopulations
-
-
 # Load Metadata file
 METADATA <- fread(list.files(CDM_dir, pattern = "^METADATA", full.names = TRUE))
 

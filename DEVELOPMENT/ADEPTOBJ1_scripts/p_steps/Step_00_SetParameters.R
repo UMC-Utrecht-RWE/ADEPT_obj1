@@ -25,41 +25,23 @@ SelectionCriteria <- list(
   death_date_incomplete = expression(!(is.na(year_of_death) & (!is.na(day_of_death) | !is.na(month_of_death)))),
   
   # Year of death is not greater than year of birth and is less than current year 
-  year_of_death_greater_than_year_of_birth = expression(is.na(year_of_death) | (year_of_death >= year_of_birth & year_of_death <= as.numeric(format(Sys.Date(), "%Y"))))
+  year_of_death_greater_than_year_of_birth = expression(is.na(year_of_death) | (year_of_death >= year_of_birth & year_of_death <= as.numeric(format(Sys.Date(), "%Y")))),
+  
+  # All females and males who turn 12 before end_study_date
+  persons_younger_than_12_before_end_study_date_and_op_end_date = expression((date_min < end_study_date) & (date_min < op_end_date)),
+  
+  # All females who are below 55 at start_study_date + all males
+  women_older_than_55_before_start_study_date_and_op_start_date = expression(sex_at_instance_creation == "M" | ((date_max > start_study_date) & (date_max > op_start_date))),
+  
+  # Number of individuals within the source population with at least one year of available data in the data source.
+  less_than_one_year_between_entry_and_exit = expression(time_length(interval(entry_date, exit_date), "days") >= time_length(lookback_period, "days")),
+  
+  # Observation Period should overlaps study period 
+  no_overlap_observation_period_with_study_period = expression(op_start_date <= end_study_date & op_end_date >= start_study_date) 
   
 )
-  
-# DEAP specific criteria
-if(deap_flags$is_EFEMERIS || deap_flags$is_FIN_REG){
-  
-  # Persons who turn 12 before end_study_date
-  SelectionCriteria$persons_younger_than_12_before_end_study_date_and_op_end_date = expression((date_min < end_study_date) & (date_min < op_end_date))
-  
-  # All males and women who are below 56 at start_study_date 
-  SelectionCriteria$women_older_than_55_before_start_study_date_and_op_start_date = expression((date_max > start_study_date) & (date_max > op_start_date))
-  
-  # Observation Period should overlaps study period 
-  SelectionCriteria$no_overlap_observation_period_with_study_period = expression(op_start_date <= end_study_date & op_end_date >= start_study_date)   
-  
-  # Keeps full observation periods only as these are pregnancies
-  # SelectionCriteria$pregnancies_that_start_before_start_fup <- expression(op_start_date >= start_follow_up)
-  
 
-} else {
-  
-  
-  # Persons who turn 12 before end_study_date
-  SelectionCriteria$persons_younger_than_12_before_end_study_date_and_op_end_date = expression((date_min < end_study_date) & (date_min < op_end_date))
-  
-  # All males and women who are below 56 at start_study_date 
-  SelectionCriteria$women_older_than_55_before_start_study_date_and_op_start_date = expression(sex_at_instance_creation == "M" | ((date_max > start_study_date) & (date_max > op_start_date)))
-      
-  # Number of individuals within the source population with at least one year of available data in the data source.
-  SelectionCriteria$less_than_one_year_between_entry_and_exit = expression(time_length(interval(entry_date, exit_date), "days") >= time_length(lookback_period, "days"))
-  
-  # Observation Period should overlaps study period 
-  SelectionCriteria$no_overlap_observation_period_with_study_period = expression(op_start_date <= end_study_date & op_end_date >= start_study_date)                                                                
-}
+
 
 # Load Metadata table 
 METADATA <- fread(file.path(CDM_dir, list.files(CDM_dir, pattern = "^METADATA")))

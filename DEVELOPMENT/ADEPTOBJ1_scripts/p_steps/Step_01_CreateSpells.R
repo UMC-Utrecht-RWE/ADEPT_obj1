@@ -14,9 +14,6 @@ print('Import and append observation periods files')
 # Load Observation Spells 
 OBSERVATION_PERIODS <- as.data.table(rbindlist(lapply(list.files(CDM_dir, pattern = "^OBSERVATION_PERIODS", full.names = TRUE), fread), use.names = TRUE, fill = TRUE))
 
-# If EFEMERIS, filter person_id starting with "M" as these are mothers 
-if (deap_flags$is_EFEMERIS) OBSERVATION_PERIODS <- OBSERVATION_PERIODS[grepl("^M", person_id)]
-
 # Label for initial step in flowchart
 step0 <- "original data" 
 
@@ -276,13 +273,9 @@ if (SUBP) {
   # Print message
   print("select most recent Observation Period")
   
-  # keep only the row with the maximum num_spell unless EFEMERIS or FIN REG where we keep all observation periods 
-  if (any(unlist(deap_flags[c("is_BIFAP", "is_CPRD", "is_NOR_REG", "is_PHARMO", "is_SIDIAP", "is_VAL_PAD", "is_VID")]))) {
-    
-    OBSERVATION_PERIODS1 <- OBSERVATION_PERIODS1[, temp := lapply(.SD, max), by = c("person_id"), .SDcols = "num_spell"][temp == num_spell, ][, temp := NULL]
-    
-  }
-
+  # keep only the row with the maximum num_spell 
+  OBSERVATION_PERIODS1 <- OBSERVATION_PERIODS1[, temp := lapply(.SD, max), by = c("person_id"), .SDcols = "num_spell"][temp == num_spell, ][, temp := NULL]
+  
   # Count rows in Observation Periods1 after keeping max spell only
   select_most_recent <- nrow(OBSERVATION_PERIODS1)
   

@@ -1,13 +1,30 @@
 ###############################################################################################################################################################################
 # <<< Sub-objective 1.2: Polytherapy rate >>> 
 # Measure: Annual polytherapy rate of ASM
-# Numerator: The number of individuals who use ≥2 distinct ASMs in a calendar year with ≥182 days overlap between the treatment episodes 
+# Numerator: The number of individuals who use a distinct ASMs in a calendar year with ≥182 days overlap between the treatment episodes 
 # Denominator: Total number of study population in that calendar year in the data source
 # Stratification by: Age groups, indication, calendar year, data source
 
 # Pending: Stratification by age groups
 ###############################################################################################################################################################################
+#########################################
+#TODO TEMPORARY ADDITION
+# Define root folder 
+if (!exists("root_dir")) root_dir <- thisdir
 
+# Assign names to paths 
+paths <- list(
+  D3_dir = file.path(root_dir, "D3_study_variables"),
+  D4_dir = file.path(root_dir, "D4_analytic_datasets"),
+  D5_dir = file.path(root_dir, "D5_results")
+)
+
+# Load packages
+source(file.path(thisdir, "p_steps", "packages.R"), local = TRUE)
+
+pop_prefix<-"ALL"
+
+################################################
 print("================================================================================")
 print("========================= CALCULATE POYTHERAPY =================================")
 print("================================================================================")
@@ -27,6 +44,7 @@ if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG) {
   denominator <- readRDS(file.path(paths$D3_dir, "denominator", paste0(pop_prefix, "_denominator.rds")))
 }
 
+pair_results <- list()
 
 for (epi1 in seq_along(files_episodes)){
   
@@ -44,33 +62,33 @@ for (epi1 in seq_along(files_episodes)){
     dt2 <- as.data.table(readRDS(file.path(paths$D3_dir, "tx_episodes", files_episodes[epi2])))
     
     if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG) {
-    # Remove duplicates
-    dt1 <- unique(dt1, by = c("person_id", "episode.start"))
-    dt2 <- unique(dt2, by = c("person_id", "episode.start"))
-    
-    # Drop unnecessary columns 
-    dt1[,c("episode.ID", "end.episode.gap.days", "episode.duration"):= NULL]
-    dt2[,c("episode.ID", "end.episode.gap.days", "episode.duration"):= NULL]
-    
-    # Create window start and window end columns - periods of overlap
-    dt1[, window_start := episode.start][, window_end := episode.end]
-    dt2[, window_start := episode.start][, window_end := episode.end]
-    
-    # Keep only overlapping person_ids
-    common_ids <- intersect(dt1[, unique(person_id)], dt2[, unique(person_id)])
-    
-    if (length(common_ids) == 0) {
-      message(red(paste("No Polytherapy found between:", name_epi1, "and", name_epi2)))
-      next
-    }
-    
-    dt1_sub <- dt1[person_id %in% common_ids]
-    dt2_sub <- dt2[person_id %in% common_ids]
-    
-    # Set keys
-    setkey(dt1_sub, person_id, window_start, window_end)
-    setkey(dt2_sub, person_id, window_start, window_end)
-    
+      # Remove duplicates
+      dt1 <- unique(dt1, by = c("person_id", "episode.start"))
+      dt2 <- unique(dt2, by = c("person_id", "episode.start"))
+      
+      # Drop unnecessary columns 
+      dt1[,c("episode.ID", "end.episode.gap.days", "episode.duration"):= NULL]
+      dt2[,c("episode.ID", "end.episode.gap.days", "episode.duration"):= NULL]
+      
+      # Create window start and window end columns - periods of overlap
+      dt1[, window_start := episode.start][, window_end := episode.end]
+      dt2[, window_start := episode.start][, window_end := episode.end]
+      
+      # Keep only overlapping person_ids
+      common_ids <- intersect(dt1[, unique(person_id)], dt2[, unique(person_id)])
+      
+      if (length(common_ids) == 0) {
+        message(red(paste("No Polytherapy found between:", name_epi1, "and", name_epi2)))
+        next
+      }
+      
+      dt1_sub <- dt1[person_id %in% common_ids]
+      dt2_sub <- dt2[person_id %in% common_ids]
+      
+      # Set keys
+      setkey(dt1_sub, person_id, window_start, window_end)
+      setkey(dt2_sub, person_id, window_start, window_end)
+      
     } else {
       
       # Remove duplicates
@@ -110,24 +128,45 @@ for (epi1 in seq_along(files_episodes)){
     overlaps[, overlap_end   := pmin(window_end, i.window_end)]
     overlaps[, overlap_days  := as.numeric(overlap_end - overlap_start) + 1]
     
+    if(!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG) {
     # Filter for 182 days 
     overlaps <- overlaps[overlap_days >= 182]
     
+    #TODO
     # Overlap should be between start and end fu
     overlaps <- overlaps[overlap_start >= start_follow_up & overlap_start <= end_follow_up & overlap_end >= start_follow_up & overlap_end <= end_follow_up]
+    } else {
+      # Filter for 182 days 
+      overlaps <- overlaps[overlap_days >= 90]
+    }
     
     if(nrow(overlaps)==0){
       message(red(paste("No Polytherapy found between:", name_epi1, "and", name_epi2)))
       next
     }
-      
+    
     message("Polytherapy found between: ", name_epi1, " and ", name_epi2)
+    
+    
+    # Save pair result
+    pair_results[[length(pair_results)+1]] <- data.table(
+      file1 = name_epi1,
+      file2 = name_epi2,
+      polytherapy_found = TRUE,
+      n_overlaps = nrow(overlaps)
+    )
+    
     # Save overlapping data in temp folder 
     saveRDS(overlaps, file = file.path(paths$D3_dir, "tmp", paste0(name_epi1, "_to_", name_epi2, ".rds")))
     
   }
 }
 
+#TODO TESTING  
+# Combine results into one table
+pair_results_dt <- rbindlist(pair_results, use.names = TRUE, fill = TRUE)
+# Save to CSV for easy review
+fwrite(pair_results_dt, file.path(paths$D5_dir, "1.2_polytherapy", paste0(pop_prefix, "_pairwise_polytherapy_summary.csv")))
 
 
 ### Read back all files in temp folder 
@@ -153,38 +192,39 @@ if(length(files_overlaps)>0){
   # Save dataset 
   saveRDS(all_overlaps_unique, file.path(paths$D4_dir, "1.2_polytherapy", paste0(pop_prefix, "_polytherapy_data.rds")))
   
-  if(deap_flags$is_EFEMERIS || deap_flags$is_FIN_REG) next
-  
-  # Count unique individuals per year
-  overall_counts <- all_overlaps_unique[, .N, by = year]
-
-  # Merge with denominator
-  overlap_all <- merge(overall_counts, denominator, by = "year", all.y = TRUE)
-  
-  # Handle missing numerator values
-  overlap_all[is.na(N), N := 0]
-
-  # Compute polytherapy rate per 1000 persons
-  overlap_all[, rate := round(1000 * N / Freq, 3)]
-  overlap_all[N == 0 & Freq == 0, rate := 0]
-  
-  # Set warnings if Numerator > than Denominator or if Denominator is 0 and Numerator is >0
-  if (nrow(overlap_all[N > Freq]) > 0) warning(red("Warning: Some numerator values exceed denominator."))
-  if (nrow(overlap_all[Freq == 0 & N != 0]) > 0) warning(red("Warning: Denominator zero with non-zero numerator."))
-
-  # Save data where odd values 
-  if(nrow(overlap_all[N > Freq])>0) fwrite(overlap_all[N > Freq], file.path(paths$D5_dir, "1.2_polytherapy",  "polytherapy_num_gt_denominator.csv"))
-  if(nrow(overlap_all[Freq == 0 & N != 0])>0) fwrite(overlap_all[Freq == 0 & N != 0], file.path(paths$D5_dir, "1.2_polytherapy", "polytherapy_denominator_zero_numerator_nonzero.csv"))
-  
-  # Create column marking if rate is computable 
-  overlap_all[, rate_computable := Freq > 0]
-  
-  # Rename columns 
-  setnames(overlap_all, c("N", "Freq"), c("n_treated", "n_total"))
-  
-  # Save results
-  saveRDS(overlap_all, file.path(paths$D5_dir, "1.2_polytherapy", paste0(pop_prefix, "_OVERALL_polytherapy_counts.rds")))
-  
-  # Clean out tmp folder
-  if(length(list.files(file.path(paths$D3_dir, "tmp"), full.names = TRUE)) > 0) unlink(list.files(file.path(paths$D3_dir, "tmp"), full.names = TRUE))
+  if(!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG) {
+    
+    # Count unique individuals per year
+    overall_counts <- all_overlaps_unique[, .N, by = year]
+    
+    # Merge with denominator
+    overlap_all <- merge(overall_counts, denominator, by = "year", all.y = TRUE)
+    
+    # Handle missing numerator values
+    overlap_all[is.na(N), N := 0]
+    
+    # Compute polytherapy rate per 1000 persons
+    overlap_all[, rate := round(1000 * N / Freq, 3)]
+    overlap_all[N == 0 & Freq == 0, rate := 0]
+    
+    # Set warnings if Numerator > than Denominator or if Denominator is 0 and Numerator is >0
+    if (nrow(overlap_all[N > Freq]) > 0) warning(red("Warning: Some numerator values exceed denominator."))
+    if (nrow(overlap_all[Freq == 0 & N != 0]) > 0) warning(red("Warning: Denominator zero with non-zero numerator."))
+    
+    # Save data where odd values 
+    if(nrow(overlap_all[N > Freq])>0) fwrite(overlap_all[N > Freq], file.path(paths$D5_dir, "1.2_polytherapy",  "polytherapy_num_gt_denominator.csv"))
+    if(nrow(overlap_all[Freq == 0 & N != 0])>0) fwrite(overlap_all[Freq == 0 & N != 0], file.path(paths$D5_dir, "1.2_polytherapy", "polytherapy_denominator_zero_numerator_nonzero.csv"))
+    
+    # Create column marking if rate is computable 
+    overlap_all[, rate_computable := Freq > 0]
+    
+    # Rename columns 
+    setnames(overlap_all, c("N", "Freq"), c("n_treated", "n_total"))
+    
+    # Save results
+    saveRDS(overlap_all, file.path(paths$D5_dir, "1.2_polytherapy", paste0(pop_prefix, "_OVERALL_polytherapy_counts.rds")))
+    
+    # Clean out tmp folder
+    if(length(list.files(file.path(paths$D3_dir, "tmp"), full.names = TRUE)) > 0) unlink(list.files(file.path(paths$D3_dir, "tmp"), full.names = TRUE))
+  }
 }

@@ -18,9 +18,14 @@ age_min <- 12
 age_max <- 54 
 
 # look back period - default is 365
+# ALL OTHER DEAPS
 lookback_period <- years(1)
+# EFEMERIS
 if (deap_flags$is_EFEMERIS) lookback_period <- 3*30.4375-14  # 2.5 months
-if (deap_flags$is_FIN_REG)  lookback_period <- months(3)    # 3 months
+# FINLAND
+if (deap_flags$is_FIN_REG)  lookback_period <- months(3)     # 3 months
+
+
 
 
 

@@ -132,9 +132,9 @@ if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG) {
     
     # Keep only if no episode (end) in the lookback period  
     dt <- dt[((pregnancy_start_date - prior_episode_end) > lookback_period) | (is.na(prior_episode_end))]
-    
+    #TODO
     # Keep pregnancies only if start is between start and end follow up
-    dt <- dt[pregnancy_start_date >= start_follow_up & pregnancy_start_date <= end_follow_up, ]
+    #dt <- dt[pregnancy_start_date >= start_follow_up & pregnancy_start_date <= end_follow_up, ]
     
     # Keep episodes only if they start after pregnancy
     dt <- dt[episode.start >= pregnancy_start_date & episode.start <= pregnancy_end_date, ]
@@ -177,7 +177,7 @@ if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG) {
       setnames(initiation_rate_all, c("N", "Freq"), c("n_treated", "n_total"))
       
       # Save files
-      saveRDS(dt_all, file = file.path(paths$D4_dir, "1.3_pregnancy_initiation", paste0(treatment_name, "_initiation_rates_in_pregnancy_data.rds")))
+      saveRDS(dt, file = file.path(paths$D4_dir, "1.3_pregnancy_initiation", paste0(treatment_name, "_initiation_rates_in_pregnancy_data.rds")))
       saveRDS(initiation_rate_all, file = file.path(paths$D5_dir, "1.3_pregnancy_initiation", paste0(treatment_name, "_initiation_rates_in_pregnancy_counts.rds")))
       
     } else {
