@@ -71,7 +71,6 @@ for(episode in seq_along(files_incidence_episodes)){
   # print message
   message("Processing: ", gsub("_incidence_data\\.rds$", "", files_incidence_episodes[episode]))
   
-  
   # load current episode
   dt <- readRDS(file.path(paths$D4_dir, "1.1_incidence", files_incidence_episodes[episode]))
   
@@ -151,11 +150,11 @@ for(episode in seq_along(files_incidence_episodes)){
   dt_temp <- copy(dt)
   
   dt_temp[, start_window := as.IDate(as.Date(episode.start) %m-% lookback_period)]
-  dt_temp[, end_window := as.IDate(episode.start)]
+  dt_temp[, end_window   := as.IDate(episode.start)]
   
   # indication data
   dt_indication[, start_event := as.IDate(event_date)]
-  dt_indication[, end_event := as.IDate(event_date)]
+  dt_indication[, end_event   := as.IDate(event_date)]
   
   # change column event_definition in any rows with O_NEUROPATHICPAIN_COV or O_FIBROMYALGIA_AESI to algorithm name O_NEUROPATHICPAINALG_COV
   dt_indication[event_definition== "O_NEUROPATHICPAIN_COV" | event_definition=="O_FIBROMYALGIA_AESI", event_definition:="O_NEUROPATHICPAINALG_COV"]
