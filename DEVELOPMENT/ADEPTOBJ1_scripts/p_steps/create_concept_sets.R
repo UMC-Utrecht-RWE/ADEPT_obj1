@@ -111,7 +111,7 @@ alt_with_atc <- merge(
 # Deduplicate
 alt_with_atc <- unique(alt_with_atc)
 
-# Warn if some didn’t match
+# Warn if some didn't match
 unmatched_alt <- unique(alt_with_atc[is.na(`ATC codes`), Varname])
 if (length(unmatched_alt) > 0) {
   message("No matching drug codes found for components: ", paste(unmatched_alt, collapse = ", "))

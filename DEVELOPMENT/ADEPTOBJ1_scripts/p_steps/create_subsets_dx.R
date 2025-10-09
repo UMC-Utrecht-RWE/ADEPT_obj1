@@ -75,6 +75,7 @@ if(length(event_files)>0){
       # clean up helper columns
       dt[, c("start_event", "end_event", "start_window", "end_window") := NULL]
       study_population[,c("start_window", "end_window"):= NULL]
+      
     } else {
       
       # merge dt with study population. Keep only those in study population

@@ -158,11 +158,21 @@ if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG){
 } else {
   
   # Create windows  
-  if(deap_flags$is_EFEMERIS) dt_exposures_temp[, start_window := as.IDate(as.Date(rx_date) - lookback_period)]
-  if(deap_flags$is_FIN_REG)  dt_exposures_temp[, start_window := as.IDate(as.Date(rx_date) %m-% lookback_period)]
+  if(deap_flags$is_EFEMERIS) {
+    dt_exposures_temp[, start_window := as.IDate(as.Date(pregnancy_start_date))]
+    dt_exposures_temp[, end_window   := as.IDate(as.Date(pregnancy_end_date))]
+    dt_indication[, start_event := event_date]
+    dt_indication[, end_event   := event_date]
+  }
   
-  dt_exposures_temp[, end_window := rx_date - 1]
-  dt_indication[, start_event := event_date][, end_event := event_date]
+  #TODO Finland
+  if(deap_flags$is_FIN_REG){
+    dt_exposures_temp[, start_window := as.IDate(as.Date(rx_date) %m-% lookback_period)]
+    dt_exposures_temp[, end_window   := rx_date - 1]
+    dt_indication[, start_event := event_date]
+    dt_indication[, end_event   := event_date]
+  }
+ 
   # rename columns
   setnames(dt_exposures_temp,c("code", "rx_date"), c("exposure_ATC", "exposure_rx_date"))
   
@@ -307,14 +317,25 @@ if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG){
 } else {
   
   # Create windows  
-  # Exposures
-  if(deap_flags$is_EFEMERIS)  dt_exposures_temp[, start_window := as.IDate(as.Date(rx_date) - lookback_period)]
-  if(deap_flags$is_FIN_REG)   dt_exposures_temp[, start_window := as.IDate(as.Date(rx_date) %m-% lookback_period)]
-  dt_exposures_temp[, end_window := rx_date - 1]
+  if(deap_flags$is_EFEMERIS)  { 
+    dt_exposures_temp[, start_window := as.IDate(op_start_date)]
+    dt_exposures_temp[, end_window   := as.IDate(pregnancy_end_date)]
+    dt_comorbidity_dx[, start_event := event_date]
+    dt_comorbidity_dx[, end_event   := event_date]
+    dt_comorbidity_meds[, start_event := rx_date]
+    dt_comorbidity_meds[, end_event   := rx_date]
+  }
   
-  # Comorbidities
-  dt_comorbidity_dx[, start_event := event_date][, end_event := event_date]
-  dt_comorbidity_meds[, start_event := rx_date][, end_event := rx_date]
+  #TODO FINLAND
+  if(deap_flags$is_FIN_REG) {
+    dt_exposures_temp[, start_window := as.IDate(as.Date(rx_date) %m-% lookback_period)]
+    dt_exposures_temp[, end_window := rx_date - 1]
+    dt_comorbidity_dx[, start_event := event_date]
+    dt_comorbidity_dx[, end_event   := event_date]
+    dt_comorbidity_meds[, start_event := rx_date]
+    dt_comorbidity_meds[, end_event   := rx_date]
+    
+  }  
   
   # rename columns
   setnames(dt_exposures_temp,c("code", "rx_date"), c("exposure_ATC", "exposure_rx_date"))
