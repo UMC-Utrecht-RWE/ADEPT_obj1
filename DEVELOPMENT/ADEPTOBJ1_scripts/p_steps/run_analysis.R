@@ -99,7 +99,7 @@ for(pop in seq_along(populations)){
     # Find Polytherapy
     source(file.path(thisdir, "p_steps", "calculate_polytherapy.R"), local = TRUE)
     
-    # Find Polytherapy
+    # Find Polytherapy - stratification
     source(file.path(thisdir, "p_steps", "calculate_polytherapy_indications.R"), local = TRUE)
     
     # Baseline Tables

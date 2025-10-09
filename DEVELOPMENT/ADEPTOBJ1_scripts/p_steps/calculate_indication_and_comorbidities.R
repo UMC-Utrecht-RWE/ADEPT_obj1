@@ -435,6 +435,7 @@ age_group_19_34.99_count <- sum(dt_exposures_temp$age_group == "19-34.99", na.rm
 age_group_35_54.99_count <- sum(dt_exposures_temp$age_group == "35-54.99", na.rm = TRUE)
 age_group_55_74.99_count <- sum(dt_exposures_temp$age_group == "55-74.99", na.rm = TRUE)
 age_group_above_75_count <- sum(dt_exposures_temp$age_group == "75+", na.rm = TRUE)
+age_group_outside_range_count  <- sum(is.na(dt_exposures_temp$age_group)) # CHECK 
 
 # Calculates percentages
 age_group_12_18.99_perc <- (age_group_12_18.99_count/nrow(dt_exposures_temp)) * 100
@@ -443,7 +444,6 @@ age_group_35_54.99_perc <- (age_group_35_54.99_count/nrow(dt_exposures_temp)) * 
 age_group_55_74.99_perc <- (age_group_55_74.99_count/nrow(dt_exposures_temp)) * 100
 age_group_above_75_perc <- (age_group_above_75_count/nrow(dt_exposures_temp)) * 100
 
-# Create Baseline Table 
 # Create Baseline Table 
 names <- c("Follow-up, years - median",
            "Follow-up, years - IQR",
@@ -464,7 +464,8 @@ names <- c("Follow-up, years - median",
            "age_group_55_74.99_count",
            "age_group_55_74.99_perc",
            "age_group_above_75_count", 
-           "age_group_above_75_perc")
+           "age_group_above_75_perc", 
+           "age_group_outside_range_count")
 
 values<-c(as.character(round(fu_median,2)),
           as.character(round(fu_IQR,2)),
@@ -485,7 +486,8 @@ values<-c(as.character(round(fu_median,2)),
           as.character(age_group_55_74.99_count),
           as.character(round(age_group_55_74.99_perc,2)),
           as.character(age_group_above_75_count),
-          as.character(round(age_group_above_75_perc,2))
+          as.character(round(age_group_above_75_perc,2)), 
+          as.character(round(age_group_outside_range_count))
 )
 
 # Join names and values 
