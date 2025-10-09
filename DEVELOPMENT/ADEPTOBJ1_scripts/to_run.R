@@ -1,6 +1,8 @@
 # Clear all objects from current R environment to start with a clean workspace
 rm(list = ls())
 
+#TODO - Test 
+
 # Check if 'rstudioapi' package is installed; if not, install it, then load package
 if (!require(rstudioapi)) install.packages("rstudioapi")
 
