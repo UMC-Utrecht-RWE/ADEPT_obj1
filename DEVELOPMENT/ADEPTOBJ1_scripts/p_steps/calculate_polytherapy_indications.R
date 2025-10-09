@@ -1,7 +1,7 @@
 ###############################################################################################################################################################################
 # <<< Sub-objective 1.2: Polytherapy rate >>> 
 # Measure: Annual polytherapy rate of ASM
-# Numerator: The number of individuals who use ≥2 distinct ASMs in a calendar year with ≥182 days overlap between the treatment episodes 
+# Numerator: The number of individuals who use distinct ASMs in a calendar year with 182 days overlap between the treatment episodes 
 # Denominator: Total number of study population in that calendar year in the data source
 # Stratification by: indication, calendar year, data source
 
@@ -14,63 +14,78 @@ print("=========================================================================
 # <<< POLYTHERAPY FILES >>>
 # get list of polytherapy files 
 files_polytherapy_episodes <- list.files(file.path(paths$D4_dir, "1.2_polytherapy"), pattern = "\\.rds$")
+
 # filter for pop_prefix
 files_polytherapy_episodes <- files_polytherapy_episodes[grepl(paste0("^", pop_prefix, "_"), files_polytherapy_episodes)]
-# if pop_prefix is PC, then drop any that are PC_HOSP
-if(pop_prefix=="PC") files_polytherapy_episodes <- files_polytherapy_episodes[!grepl("PC_HOSP", files_polytherapy_episodes)]
-# read in file 
+
+# read in polytherapy file 
 dt <- rbindlist(lapply(file.path(paths$D4_dir, "1.2_polytherapy", files_polytherapy_episodes), readRDS), use.names = TRUE, fill = TRUE)
-# Remove duplicates 
-dt <- unique(dt)
-# prepare denominator
+
+# keep only records where overlap is greater than 182 days
+dt <- dt[overlap_days >= 182,]
+
+# Overlap should be between start and end fu
+dt <- dt[overlap_start >= start_follow_up & overlap_start <= end_follow_up & overlap_end >= start_follow_up & overlap_end <= end_follow_up]
+
+# Ensure overlap dates are IDate
+dt[, `:=`(overlap_start = as.IDate(overlap_start), overlap_end = as.IDate(overlap_end))]
+
+# create column year for year of overlap
+dt[,year:= year(overlap_start)]
+
+# Sort by person id and overlap start
+setorder(dt, person_id, overlap_start)
+
+# Keep only one row per person per year
+dt <- unique(dt, by = c("person_id", "year"))
+
+# prepare denominator 
 denom_counts <- dt[, .(Freq = .N), by = year]
 
-if(nrow(dt)>0){
-  
-  # <<< INDICATION FILES >>>
-  # list all files in the indication folder
-  files_indication <- list.files(file.path(paths$D3_dir, "indication"), pattern = "\\.rds$", full.names = TRUE)
-  # filter for pop_prefix
-  files_indication <- files_indication[grepl(paste0("^", pop_prefix, "_"), basename(files_indication))]
-  # if pop_prefix is PC, then drop any that are PC_HOSP
-  if (pop_prefix == "PC") files_indication <- files_indication[!grepl("PC_HOSP", basename(files_indication))]
-  # load and bind all indications into one dataset
-  dt_indication <- rbindlist(lapply(files_indication, readRDS), use.names = TRUE, fill = TRUE)
-  # remove any true duplicates
-  dt_indication <- unique(dt_indication)
-  
-  
-  # create a folder for stratified counts
-  dir.create(file.path(paths$D5_dir, "1.2_polytherapy", "stratified"), showWarnings = FALSE, recursive = TRUE)
-  
-  # set stratification levels 
-  # indications
-  indication_levels <- c("M_RESTLESSLEG_COV", "Ment_ANXIETY_COV", "Ment_BIPOLAR_AESI", "Ment_DEPRESSION_COV", "Ment_SCHIZOPHRENIA_COV",
-                         "N_CONVULSION_AESI", "N_EPILEPSY_COV", "N_ESSENTIALTREMOR_AESI", "N_MIGRAINE_COV", "O_NEUROPATHICPAINALG_COV", "UNKNOWN")
-  
-  # create empty dt year for counts to include all possible combinations
-  all_years  <- seq(year(start_study_date), year(end_study_date))
-  all_combinations_indications <- CJ(year = all_years, indication = indication_levels, unique = TRUE)
-  
+# <<< INDICATION FILES >>>
+# get list of indication files 
+files_indication <- list.files(file.path(paths$D3_dir, "indication"), pattern = "\\.rds$", full.names = TRUE)
+
+# filter for pop_prefix
+files_indication <- files_indication[grepl(paste0("^", pop_prefix, "_"), basename(files_indication))]
+
+# read and bind indication files
+dt_indication <- rbindlist(lapply(files_indication, readRDS), use.names = TRUE, fill = TRUE)
+
+# remove any true duplicates
+dt_indication <- unique(dt_indication)
+
+# create a folder for stratified counts
+dir.create(file.path(paths$D5_dir, "1.2_polytherapy", "stratified"), showWarnings = FALSE, recursive = TRUE)
+
+# set stratification levels 
+# indications
+indication_levels <- c("M_RESTLESSLEG_COV", "Ment_ANXIETY_COV", "Ment_BIPOLAR_AESI", "Ment_DEPRESSION_COV", "Ment_SCHIZOPHRENIA_COV",
+                       "N_CONVULSION_AESI", "N_EPILEPSY_COV", "N_ESSENTIALTREMOR_AESI", "N_MIGRAINE_COV", "O_NEUROPATHICPAINALG_COV", "UNKNOWN")
+
+# create empty dt year for counts to include all possible combinations
+all_years  <- seq(year(start_study_date), year(end_study_date))
+all_combinations_indications <- CJ(year = all_years, indication = indication_levels, unique = TRUE)
+
+
+if(nrow(dt)>0){ 
   
   #<<< PREPARE DATA FOR FOVERLAPS >>>  
-  dt_temp <- copy(dt)
-  dt_temp <- dt_temp[, .(person_id, atc_group, episode.start, episode.end, i.atc_group, i.episode.start, i.episode.end, overlap_start, overlap_end, overlap_days, start_follow_up, end_follow_up, year)] 
-  setnames(dt_temp,c("atc_group", "episode.start", "episode.end", "i.atc_group", "i.episode.start", "i.episode.end"), c("atc_group1", "episode.start1", "episode.end1", "atc_group2", "episode.start2", "episode.end2"))          
+  # poly files
+  dt <- dt[, .(person_id, atc_group, episode.start, episode.end, i.atc_group, i.episode.start, i.episode.end, overlap_start, overlap_end, overlap_days, start_follow_up, end_follow_up, year)] 
+  setnames(dt, c("atc_group", "episode.start", "episode.end", "i.atc_group", "i.episode.start", "i.episode.end"), c("atc_group1", "episode.start1", "episode.end1", "atc_group2", "episode.start2", "episode.end2"))          
+  # set windows 
+  dt[, start_window := as.IDate(as.Date(overlap_start) %m-% lookback_period)][, end_window := overlap_start]
   
-  dt_temp[, start_window := as.IDate(as.Date(overlap_start) %m-% lookback_period)]
-  dt_temp[, end_window := overlap_start]
-  
-  # Drop unnecessary columns
+  # indication files 
   dt_indication <- dt_indication[, .(person_id, event_date, event_definition)] 
-  # indication data
+  # set windows
   dt_indication[, start_event := event_date][, end_event := event_date]
-  
   # change column event_definition in any rows with O_NEUROPATHICPAIN_COV or O_FIBROMYALGIA_AESI to algorithm name O_NEUROPATHICPAINALG_COV
   dt_indication[event_definition== "O_NEUROPATHICPAIN_COV" | event_definition=="O_FIBROMYALGIA_AESI", event_definition:="O_NEUROPATHICPAINALG_COV"]
   
   # set keys 
-  setkey(dt_temp, person_id, start_window, end_window)
+  setkey(dt, person_id, start_window, end_window)
   setkey(dt_indication, person_id, start_event, end_event)
   
   # perform overlap join 
@@ -108,7 +123,8 @@ if(nrow(dt)>0){
     },
     by = .(person_id, overlap_start)
   ]
-
+  
+  # counts
   # Keep one row per person_id - overlap.start
   indications <- unique(indications, by = c("person_id", "overlap_start"))
   
@@ -135,23 +151,51 @@ if(nrow(dt)>0){
   
   # save counts
   saveRDS(indication_counts, file.path(paths$D5_dir, "1.2_polytherapy", "stratified", paste0(pop_prefix, "_polytherapy_indication_counts.rds")))
+  
+  # sanity check
+  # Sum counts per year
+  check_counts <- indication_counts[, .(sum_indications = sum(N), denominator = unique(Freq)), by = year]
+  
+  # Check for equality
+  check_counts[, match := sum_indications == denominator]
+  
+  # Stop if any mismatch
+  if (any(!check_counts$match)) {
+    cat("\nError: Mismatch detected between numerator and denominator!\n")
+    print(check_counts[match == FALSE])
+    stop("Indication counts do not add up to denominator for at least one year!")
+  } else {
+    message(blue("All indication counts match the denominator for every year"))
+  }
+  
 } else {
+  
   message(red("There are no polytherapy files to stratify by indication"))
+  
 }
 
-# Sum counts per year
-check_counts <- indication_counts[, .(sum_indications = sum(N), denominator = unique(Freq)), by = year]
 
-# Check for equality
-check_counts[, match := sum_indications == denominator]
 
-# Stop if any mismatch
-if (any(!check_counts$match)) {
-  cat("\nError: Mismatch detected between numerator and denominator!\n")
-  print(check_counts[match == FALSE])
-  stop("Indication counts do not add up to denominator for at least one year!")
-} else {
-  message(blue("All indication counts match the denominator for every year"))
-}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
