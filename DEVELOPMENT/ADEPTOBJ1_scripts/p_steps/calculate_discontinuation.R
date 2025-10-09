@@ -15,7 +15,6 @@ print("=========================================================================
 files_episodes <- list.files(file.path(paths$D3_dir, "tx_episodes"), pattern = "\\.rds$")
 
 if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG) {
-  
   files_episodes <- files_episodes[grepl(paste0("^", pop_prefix, "_"), files_episodes)] # only current pop_prefix
   if(pop_prefix=="PC") files_episodes <- files_episodes[!grepl("PC_HOSP", files_episodes)] # BIFAP
   # Prevalence files
@@ -38,13 +37,13 @@ for (episode in seq_along(files_episodes)) {
   if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG) {
     
     # Remove duplicates
-    dt <- unique(dt, by = c("person_id", "episode.start", "episode.end", "start_follow_up", "end_follow_up"))
+    dt <- unique(dt, by = c("person_id", "episode.start", "episode.end"))
     
     # Order episodes by person & start date
-    setorder(dt, person_id, start_follow_up, episode.start)
+    setorder(dt, person_id, episode.start)
     
     # Get next episode start date
-    dt[, next_start := shift(episode.start, type = "lead"), by = .(person_id, start_follow_up)]
+    dt[, next_start := shift(episode.start, type = "lead"), by = .(person_id)]
     
     # Flag discontinuation events
     dt[, discontinuer_flag := fifelse(is.na(next_start), (exit_date - episode.end >= 120), (next_start - episode.end >= 120))]
