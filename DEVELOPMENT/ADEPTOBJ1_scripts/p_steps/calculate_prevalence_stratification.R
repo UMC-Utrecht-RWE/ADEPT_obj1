@@ -1,7 +1,7 @@
 ###############################################################################################################################################################################
 # <<< Sub-objective 1.1: Prevalence rate >>> 
 # Measure: Annual prevalence rate of ASM use
-# Numerator: Number of individuals with ≥1 treatment episode of an ASM within a calendar year 
+# Numerator: Number of individuals with any treatment episode of an ASM within a calendar year 
 # Denominator: Total number of individuals in that calendar year in the data source
 # Stratification by: Individual drug substance, drug sub-groups, age groups, indication, calendar year, data source
 
@@ -184,14 +184,14 @@ for(episode in seq_along(files_prevalence_episodes)){
         row
       }
     },
-    by = .(person_id, year)
+    by = .(person_id, episode.start, year)
   ]
   
   # order dataset by person id and episode start
-  setorder(indications, person_id, year)
+  setorder(indications, person_id, episode.start, year)
   
   # Keep only unique person_id - episode.start - year combinations
-  indications <- unique(indications, by = c("person_id", "year"))
+  indications <- unique(indications, by = c("person_id", "episode.start", "year"))
   
   # count groups per year
   indication_counts <- indications[, .N, by = .(year, indication)]
@@ -216,6 +216,7 @@ for(episode in seq_along(files_prevalence_episodes)){
   
   # save counts
   saveRDS(indication_counts, file.path(paths$D5_dir, "1.1_prevalence", "stratified", paste0(gsub("_prevalence_data\\.rds$", "_prevalence_indication_counts.rds", files_prevalence_episodes[episode]))))
+  
   # Sum counts per year
   check_counts <- indication_counts[, .(sum_indications = sum(N), denominator = unique(Freq)), by = year]
   

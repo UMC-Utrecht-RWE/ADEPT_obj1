@@ -1,7 +1,7 @@
 ###############################################################################################################################################################################
 # <<< Sub-objective 1.1: Prevalence rate >>> 
 # Measure: Annual prevalence rate of ASM use
-# Numerator: Number of individuals with ≥1 treatment episode of an ASM within a calendar year 
+# Numerator: Number of individuals with any treatment episode of an ASM within a calendar year 
 # Denominator: Total number of individuals in that calendar year in the data source
 # Stratification by: Individual drug substance, drug sub-groups, age groups, indication, calendar year, data source
 
