@@ -1,7 +1,7 @@
 ###############################################################################################################################################################################
 # <<< Sub-objective 1.2: Polytherapy rate >>> 
 # Measure: Annual polytherapy rate of ASM
-# Numerator: The number of individuals who use a distinct ASMs in a calendar year with 182 days overlap between the treatment episodes 
+# Numerator: The number of individuals who use a distinct ASMs in a calendar year with >= 182 days overlap between the treatment episodes 
 # Denominator: Total number of study population in that calendar year in the data source
 # Stratification by: Indication, calendar year, data source
 
@@ -168,6 +168,9 @@ if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG) {
   
   # Assign year to each overlap start
   all_overlaps[,year:= year(overlap_start)]
+  
+  # Sort by person id and overlap start
+  setorder(all_overlaps, person_id, overlap_start)
   
   # Keep only one row per person per year
   all_overlaps_unique <- unique(all_overlaps, by = c("person_id", "year"))

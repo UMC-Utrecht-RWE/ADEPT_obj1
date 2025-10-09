@@ -1,7 +1,7 @@
 ###############################################################################################################################################################################
 # <<< Sub-objective 1.2: Polytherapy rate >>> 
 # Measure: Annual polytherapy rate of ASM
-# Numerator: The number of individuals who use distinct ASMs in a calendar year with 182 days overlap between the treatment episodes 
+# Numerator: The number of individuals who use distinct ASMs in a calendar year with >=182 days overlap between the treatment episodes 
 # Denominator: Total number of study population in that calendar year in the data source
 # Stratification by: indication, calendar year, data source
 
@@ -81,6 +81,7 @@ if(nrow(dt)>0){
   dt_indication <- dt_indication[, .(person_id, event_date, event_definition)] 
   # set windows
   dt_indication[, start_event := event_date][, end_event := event_date]
+  
   # change column event_definition in any rows with O_NEUROPATHICPAIN_COV or O_FIBROMYALGIA_AESI to algorithm name O_NEUROPATHICPAINALG_COV
   dt_indication[event_definition== "O_NEUROPATHICPAIN_COV" | event_definition=="O_FIBROMYALGIA_AESI", event_definition:="O_NEUROPATHICPAINALG_COV"]
   
@@ -89,7 +90,7 @@ if(nrow(dt)>0){
   setkey(dt_indication, person_id, start_event, end_event)
   
   # perform overlap join 
-  indications <- foverlaps(dt_temp, 
+  indications <- foverlaps(dt, 
                            dt_indication, 
                            by.x = c("person_id", "start_window", "end_window"),
                            by.y = c("person_id", "start_event", "end_event"), 
