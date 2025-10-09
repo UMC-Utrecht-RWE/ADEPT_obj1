@@ -1,7 +1,7 @@
 ###############################################################################################################################################################################
 # <<< Sub-objective 1.2: Treatment duration >>> 
 # Measure: Annual treatment duration mean & median of ASM
-# Calculation: Mean, median, minimum, maximum, interquartile range, and SD (in days) of treatment episodes for all individuals with ≥1 treatment episode of an ASM within a calendar year in the data source
+# Calculation: Mean, median, minimum, maximum, interquartile range, and SD (in months) of treatment episodes for all individuals with ≥1 treatment episode of an ASM within a calendar year in the data source
 # Stratification by: Individual drugs, calendar year, data source
 
 ###############################################################################################################################################################################
@@ -39,7 +39,7 @@ for (episode in seq_along(files_episodes)) {
   
   # Convert dates to IDate
   dt[, episode.start := as.IDate(episode.start)]
-  dt[, episode.end := as.IDate(episode.end)]
+  dt[, episode.end   := as.IDate(episode.end)]
   
   # Filter and trim to follow-up period
   dt <- dt[!(episode.end < start_follow_up | episode.start > end_follow_up),]
@@ -53,16 +53,21 @@ for (episode in seq_along(files_episodes)) {
     dt[, total_months := (as.numeric(episode.end - episode.start) + 1) / 30.44]
     
     # Calculate overall treatment stats
-    overall_stats <- dt[, .(
-      drug           = episode_name,
-      n_persons      = uniqueN(person_id),
-      mean_months    = mean(total_months, na.rm = TRUE),
-      median_months  = median(total_months, na.rm = TRUE),
-      min_months     = min(total_months, na.rm = TRUE),
-      max_months     = max(total_months, na.rm = TRUE),
-      iqr_months     = IQR(total_months, na.rm = TRUE),
-      sd_months      = sd(total_months, na.rm = TRUE)
-    )]
+    overall_stats <- dt[, {
+      q <- quantile(total_months, probs = c(0.25, 0.75), na.rm = TRUE)
+      .(
+        drug           = episode_name,
+        n_persons      = uniqueN(person_id),
+        mean_months    = mean(total_months, na.rm = TRUE),
+        median_months  = median(total_months, na.rm = TRUE),
+        min_months     = min(total_months, na.rm = TRUE),
+        max_months     = max(total_months, na.rm = TRUE),
+        iqr_months     = IQR(total_months, na.rm = TRUE),
+        p25_months     = q[1],
+        p75_months     = q[2],
+        sd_months      = sd(total_months, na.rm = TRUE)
+      )
+    }]
     
     # Append to summary list
     all_drug_stats[[episode_name]] <- overall_stats
