@@ -1,7 +1,7 @@
 ###############################################################################################################################################################################
 # <<< Sub-objective 1.2: Switching rate >>> 
 # Measure: Annual switching rate from one ASM to another ASM or to an alternative medication
-# Numerator: Total number of individuals who have ≥1 treatment episode for a specific ASM and discontinued, with ≥1 treatment episode for a different ASM or alternative medication, during the last treatment episode of the ASM or within the discontinuation period of the ASM in each calendar year
+# Numerator: Total number of individuals who have any treatment episode for a specific ASM and discontinued, with any treatment episode for a different ASM or alternative medication, during the last treatment episode of the ASM or within the discontinuation period of the ASM in each calendar year
 # Denominator: The number of prevalent ASM users in that calendar year in the data source 
 # Stratification by: Individual drug substance, calendar year, data source
 
@@ -173,6 +173,7 @@ for(episode in seq_along(files_discontinued_episodes)){
       setkey(dt_altmeds, pregnancy_id, window_start, window_end)
       setkey(dt_discontinued, pregnancy_id, window_start, window_end)  
     }
+    
     ############################################################
     # Find overlaps within 120 days after discontinuation
     switchers <- foverlaps(dt_altmeds, dt_discontinued, type = "within", nomatch = 0)
