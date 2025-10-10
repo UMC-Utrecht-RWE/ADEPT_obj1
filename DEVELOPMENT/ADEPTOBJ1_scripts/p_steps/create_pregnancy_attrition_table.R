@@ -40,10 +40,16 @@ if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG){
   # Exclude pregnancies that  do not have at least a year of lookback -> pregnancy start needs to be equal or after startfu
   # Get Pregnancies with at least a year of lookback - pregnancy start needs to be equal or after startfu
   #<<< flow chart >>> #
-  no_info_12_mnths_before_pregnancy_start <- uniqueN(pregnancies[pregnancy_start_date < start_follow_up,]$person_id)
+  pregnancies_wo_12_mnths_before_pregnart_start <- pregnancies[pregnancy_start_date < start_follow_up,]
+  no_info_12_mnths_before_pregnancy_start <- uniqueN(pregnancies_wo_12_mnths_before_pregnart_start$person_id)
+    
   # Exclude records where no lookback of at least a year
   pregnancies <- pregnancies[pregnancy_start_date >= start_follow_up,]
 
+  # Population with pregnancy and at least 12 months of fu
+  unique_pregnant_persons_in_study_population_with_at_least_12_mnths_fu <- uniqueN(pregnancies$person_id)
+  unique_pregnancies_in_study_population_with_at_least_12_mnths_fu <- uniqueN(pregnancies$pregnancy_id)
+  
   # Merge with dt_exposure to get pregnancy persons with rx a year before pregnancy start or within pregnancy
   pregnancies <- merge(pregnancies, dt_exposures[, .(person_id, code, rx_date)], by = "person_id", allow.cartesian = TRUE)
   # prescriptions that occur within 1 year of pregnancy start or during pregnancy
@@ -52,7 +58,7 @@ if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG){
   #<<< flow chart >>> #
   pregnant_persons_with_ASM_use <- uniqueN(pregnancies$person_id)
   pregnancies_with_ASM_use <- uniqueN(pregnancies$pregnancy_id)
-  pregnant_persons_with_no_ASM_use <- unique_pregnant_persons_in_study_population - pregnant_persons_with_ASM_use
+  pregnant_persons_with_no_ASM_use <- unique_pregnant_persons_in_study_population_with_at_least_12_mnths_fu - pregnant_persons_with_ASM_use
   
   flow_data <- data.table(
     step = c(
@@ -61,6 +67,8 @@ if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG){
       "unique_pregnant_persons_in_study_population",
       "unique_pregnancies_in_study_population",
       "no_info_12_mnths_before_pregnancy_start",
+      "unique_pregnant_persons_in_study_population_with_at_least_12_mnths_fu",
+      "unique_pregnancies_in_study_population_with_at_least_12_mnths_fu",
       "pregnant_persons_with_no_ASM_use",
       "pregnant_persons_with_ASM_use",
       "pregnancies_with_ASM_use"
@@ -71,6 +79,8 @@ if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG){
       unique_pregnant_persons_in_study_population,
       unique_pregnancies_in_study_population,
       no_info_12_mnths_before_pregnancy_start,
+      unique_pregnant_persons_in_study_population_with_at_least_12_mnths_fu,
+      unique_pregnancies_in_study_population_with_at_least_12_mnths_fu,
       pregnant_persons_with_no_ASM_use,
       pregnant_persons_with_ASM_use,
       pregnancies_with_ASM_use
