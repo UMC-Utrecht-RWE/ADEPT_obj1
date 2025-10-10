@@ -1,7 +1,3 @@
-# Takes into account subpopulations 
-# Runs individual p_steps for each subpopulation
-# Result: If SUBP -> TRUE then each folder will contain (if present) results coming from all indicated subpops. Resulting files are prefixed with the name of the subpop
-
 # Loads study population/populations 
 populations <- list.files(file.path(paths$D3_dir, "study_population"))
 

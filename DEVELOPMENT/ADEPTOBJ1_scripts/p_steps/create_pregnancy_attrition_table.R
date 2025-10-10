@@ -15,9 +15,6 @@ dt_exposures <- unique(dt_exposures) # remove true duplicates
 
 if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG){
   
-  # << Total population (base cohort) >> #
-  total_population_base_cohort <- uniqueN(study_population$person_id)
-  
   # Load pregnancies file
   load(file.path(preg_dir, "D3_pregnancy_final.RData"))
   pregnancies <- as.data.table(D3_pregnancy_final)
@@ -26,26 +23,30 @@ if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG){
   pregnancies <- unique(pregnancies)
   
   # Convert pregnancy dates to IDate
-  pregnancies[, pregnancy_start_date := as.IDate(pregnancy_start_date)]
-  pregnancies[, pregnancy_end_date   := as.IDate(pregnancy_end_date)]
-  
+  pregnancies[, pregnancy_start_date := as.IDate(pregnancy_start_date)][, pregnancy_end_date   := as.IDate(pregnancy_end_date)]
+
   # Merge pregnancies with study population to get start and end follow up. We want to keep only pregnancy starts within this period
   pregnancies <- merge(pregnancies, study_population[, .(person_id, start_follow_up, end_follow_up, entry_date, exit_date)], by = "person_id", allow.cartesian = TRUE)
   
   #<<< flow chart >>> #
+  # Total population (base cohort)
+  total_population_base_cohort <- uniqueN(study_population$person_id)
+  # Population without pregnancy
   female_study_population_without_pregnancy <- uniqueN(study_population$person_id) - uniqueN(pregnancies$person_id)
-  no_info_12_mnths_before_pregnancy_start <- uniqueN(pregnancies[pregnancy_start_date < start_follow_up,]$person_id)
-  
-  # Get Pregnancies with at least a year of lookback - pregnancy start needs to be equal or after startfu
-  pregnancies <- pregnancies[pregnancy_start_date >= start_follow_up,]
-  
-  #<<< flow chart >>> #
+  # Population with pregnancy
   unique_pregnant_persons_in_study_population <- uniqueN(pregnancies$person_id)
   unique_pregnancies_in_study_population <- uniqueN(pregnancies$pregnancy_id)
   
+  # Exclude pregnancies that  do not have at least a year of lookback -> pregnancy start needs to be equal or after startfu
+  # Get Pregnancies with at least a year of lookback - pregnancy start needs to be equal or after startfu
+  #<<< flow chart >>> #
+  no_info_12_mnths_before_pregnancy_start <- uniqueN(pregnancies[pregnancy_start_date < start_follow_up,]$person_id)
+  # Exclude records where no lookback of at least a year
+  pregnancies <- pregnancies[pregnancy_start_date >= start_follow_up,]
+
   # Merge with dt_exposure to get pregnancy persons with rx a year before pregnancy start or within pregnancy
   pregnancies <- merge(pregnancies, dt_exposures[, .(person_id, code, rx_date)], by = "person_id", allow.cartesian = TRUE)
-  # filter for pregnancies that occur within 1 year of pregnancy start or during pregnancy
+  # prescriptions that occur within 1 year of pregnancy start or during pregnancy
   pregnancies <- pregnancies[rx_date >=as.IDate(as.Date(pregnancy_start_date) - lookback_period) & rx_date<pregnancy_end_date]
   
   #<<< flow chart >>> #
@@ -57,9 +58,9 @@ if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG){
     step = c(
       "total_FEMALE_study_population_base_cohort",
       "female_study_population_without_pregnancy",
-      "no_info_12_mnths_before_pregnancy_start",
       "unique_pregnant_persons_in_study_population",
       "unique_pregnancies_in_study_population",
+      "no_info_12_mnths_before_pregnancy_start",
       "pregnant_persons_with_no_ASM_use",
       "pregnant_persons_with_ASM_use",
       "pregnancies_with_ASM_use"
@@ -67,9 +68,9 @@ if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG){
     count = c(
       total_population_base_cohort,
       female_study_population_without_pregnancy, 
-      no_info_12_mnths_before_pregnancy_start,
       unique_pregnant_persons_in_study_population,
       unique_pregnancies_in_study_population,
+      no_info_12_mnths_before_pregnancy_start,
       pregnant_persons_with_no_ASM_use,
       pregnant_persons_with_ASM_use,
       pregnancies_with_ASM_use
@@ -81,6 +82,7 @@ if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG){
   
 } else {
   
+  # For EFEMERIS and FINLAND
   #<<< flow chart >>> #
   unique_pregnant_persons_in_study_population <- uniqueN(study_population$person_id)
   unique_pregnancies_in_study_population      <- uniqueN(study_population$pregnancy_id)
