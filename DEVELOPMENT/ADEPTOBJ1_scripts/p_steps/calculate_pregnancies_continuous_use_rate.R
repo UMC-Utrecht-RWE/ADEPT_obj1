@@ -13,7 +13,6 @@ print("=========================================================================
 
 # List all episodes of pre pregnancy use 
 files_episodes <- list.files(file.path(paths$D4_dir, "1.3_pre-pregnancy_use"))
-if(pop_prefix == "PC") files_episodes <- files_episodes[!grepl("PC_HOSP", files_episodes)] #BIFAP
 
 # Loop through each treatment episode file
 for (episode in seq_along(files_episodes)) {
