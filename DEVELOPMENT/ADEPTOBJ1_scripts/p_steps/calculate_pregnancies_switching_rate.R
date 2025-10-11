@@ -17,21 +17,16 @@ print("=========================================================================
 # Pre-pregnancy data and counts 
 files_prepregnancy <- list.files(file.path(paths$D4_dir, "1.3_pre-pregnancy_use"))
 files_counts       <- list.files(file.path(paths$D5_dir, "1.3_pre-pregnancy_use"))
+
 # Switcher episodes 
 files_switcher_episodes <- list.files(file.path(paths$D4_dir, "1.2_switching"), pattern = "\\.rds$")
-
-if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG) {
-  files_switcher_episodes <- files_switcher_episodes[grepl("_F_", files_switcher_episodes)] # Female pop
-  if(pop_prefix == "PC") files_prepregnancy  <- files_prepregnancy[!grepl("PC_HOSP", files_prepregnancy)] # BIFAP
-  if(pop_prefix == "PC") files_counts        <- files_counts[!grepl("PC_HOSP", files_counts)] #BIFAP
-  if(pop_prefix=="PC") files_switcher_episodes <- files_switcher_episodes[!grepl("PC_HOSP", files_switcher_episodes)] #BIFAP
-}
+if(!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG) files_switcher_episodes <- files_switcher_episodes[grepl("_F_", files_switcher_episodes)]
 
 # Create Maps 
 # Set Function
 get_treatment_key <- function(x, suffix) gsub(suffix, "", x)
 
-# Prepregnancy keys 
+# Pre-pregnancy keys 
 prepreg_keys <- get_treatment_key(files_prepregnancy, "_pre_pregnancy_data.rds")
 prepreg_map  <- setNames(file.path(paths$D4_dir, "1.3_pre-pregnancy_use", files_prepregnancy), prepreg_keys)
 
@@ -39,7 +34,7 @@ prepreg_map  <- setNames(file.path(paths$D4_dir, "1.3_pre-pregnancy_use", files_
 counts_keys <- get_treatment_key(files_counts, "_pre_pregnancy_counts.rds")
 counts_map  <- setNames(file.path(paths$D5_dir, "1.3_pre-pregnancy_use", files_counts), counts_keys)
 
-# Discontinued keys
+# Switcher keys
 switcher_keys <- get_treatment_key(files_switcher_episodes, "_switcher_data.rds")
 switcher_map  <- setNames(file.path(paths$D4_dir, "1.2_switching", files_switcher_episodes), switcher_keys)
 
@@ -49,30 +44,22 @@ prepreg_map  <- prepreg_map[common_keys]
 counts_map   <- counts_map[common_keys]
 switcher_map <- switcher_map[common_keys]
 
-
 for (trt in seq_along(common_keys)) {
   
   # get treatment name 
   treatment <- common_keys[trt]
-  
-  # If none of the file found, skip
-  if (!file.exists(prepreg_map[[trt]]) ||
-      !file.exists(counts_map[[trt]]) ||
-      !file.exists(switcher_map[[trt]])) next
-  
+
   # read in the files
   dt_prepreg <- readRDS(prepreg_map[[trt]])
   dt_counts  <- readRDS(counts_map[[trt]])
   dt_switch  <- readRDS(switcher_map[[trt]])
   
-  # merge prepregnancy data with discontinuation file
-  if(deap_flags$is_EFEMERIS || deap_flags$is_FIN_REG) {
-    dt <- merge(dt_prepreg[,.(pregnancy_id)], dt_switch, by = "pregnancy_id", all = FALSE)
-  } else {
-    dt <- merge(dt_prepreg[,.(person_id, pregnancy_start_date, pregnancy_end_date)], dt_switch, by = "person_id", all = FALSE)
-  }
+  # merge pre-pregnancy data with switcher file
+  if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG) dt <- merge(dt_prepreg[,.(person_id, pregnancy_id, pregnancy_start_date, pregnancy_end_date, episode.start, episode.end, preg_year)], dt_switch, by = c("person_id", "episode.start", "episode.end"), all = FALSE)
+  if (deap_flags$is_EFEMERIS || deap_flags$is_FIN_REG)   dt <- merge(dt_prepreg[,.(person_id, pregnancy_id, pregnancy_start_date, pregnancy_end_date, episode.start, episode.end, preg_year)], dt_switch, by = c("pregnancy_id", "episode.start", "episode.end"), all = FALSE)
   
-  if(nrow(dt)==0) {
+  # Print message if no discontinuers found
+  if (nrow(dt) == 0) {
     message(red("No switcher records found in pre-pregnancy users for", treatment))
     next
   }
@@ -81,15 +68,13 @@ for (trt in seq_along(common_keys)) {
   message(blue("Switcher records found in pre-pregnancy users for", treatment))
   
   # convert dates to IDate
-  date_cols <- c("pregnancy_start_date", "pregnancy_end_date", "rx_date")
-  dt[, (date_cols) := lapply(.SD, as.IDate), .SDcols = date_cols]
-
-  # create subset 
-  # pre-pregnancy users switched to a different ASM or alternative medication during the pregnancy period
-  # rx_date is the switch date
+  dt[, pregnancy_start_date := as.IDate(pregnancy_start_date)][, pregnancy_end_date := as.IDate(pregnancy_end_date)]
+  dt[, rx_date := as.IDate(rx_date)]
+  
+  # check if switch occured during pregnancy period (rx_date is the switch date)
   dt_subset <- dt[rx_date >= pregnancy_start_date & rx_date <= pregnancy_end_date,]
 
-  # check if any rows 
+  # check if switchers were found
   if (nrow(dt_subset) == 0) {
     message("Skipping ", treatment, ": no switchers found during pregnancy")
     next
@@ -98,24 +83,17 @@ for (trt in seq_along(common_keys)) {
   # print message
   message("Processing " , treatment)
 
-  # assign year to count in 
-  dt_subset[, preg_year := year(pregnancy_start_date)]
-
-  # keep one person/pregnancy per year
-  if (deap_flags$is_EFEMERIS || deap_flags$is_FIN_REG) {
-    dt_subset <- unique(dt_subset, by = c("pregnancy_id", "preg_year"))
-  } else {
-    dt_subset <- unique(dt_subset, by = c("person_id", "preg_year"))
-  } 
+  # keep one person per year
+  dt_subset <- unique(dt_subset, by= c("pregnancy_id", "preg_year"))
   
   # count by pregnancy
   switcher_counts <- dt_subset[, .(N = .N), by = preg_year]
     
   # prepare denominator
   dt_counts_copy <- copy(dt_counts)
-  dt_counts_copy[, c("n_total", "rate", "rate_computable") := NULL]
+  dt_counts_copy <- dt_counts_copy[, .(preg_year, n_treated)]
   setnames(dt_counts_copy, "n_treated", "n_total")
-    
+  
   # merge numerator and denominator
   switcher_all <- merge(switcher_counts, dt_counts_copy, by = "preg_year", all.y = TRUE)
   switcher_all[is.na(N), N := 0]
