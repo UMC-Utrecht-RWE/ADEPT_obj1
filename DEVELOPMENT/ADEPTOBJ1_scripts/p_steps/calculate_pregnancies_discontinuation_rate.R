@@ -26,23 +26,15 @@ print("=========================================================================
 files_prepregnancy <- list.files(file.path(paths$D4_dir, "1.3_pre-pregnancy_use"))
 files_counts       <- list.files(file.path(paths$D5_dir, "1.3_pre-pregnancy_use"))
 
-# filter for BIFAP subpops
-if(pop_prefix == "PC") files_prepregnancy  <- files_prepregnancy[!grepl("PC_HOSP", files_prepregnancy)]
-if(pop_prefix == "PC") files_counts <- files_counts[!grepl("PC_HOSP", files_counts)]
-
 # Discontinued episodes 
 files_discontinued_episodes <- list.files(file.path(paths$D4_dir, "1.2_discontinued"), pattern = "\\.rds$")
-
-if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG) {
-  files_discontinued_episodes <- files_discontinued_episodes[grepl("_F_", files_discontinued_episodes)] # Female subpop
-  if(pop_prefix=="PC") files_discontinued_episodes <- files_discontinued_episodes[!grepl("PC_HOSP", files_discontinued_episodes)] #BIFAP
-}
+if(!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG) files_discontinued_episodes <- files_discontinued_episodes[grepl("_F_", files_discontinued_episodes)]
 
 # Create maps
 # Set function 
 get_treatment_key <- function(x, suffix) gsub(suffix, "", x)
 
-# Prepreg keys 
+# Pre-pregnancy keys 
 prepreg_keys <- get_treatment_key(files_prepregnancy, "_pre_pregnancy_data.rds")
 prepreg_map  <- setNames(file.path(paths$D4_dir, "1.3_pre-pregnancy_use", files_prepregnancy), prepreg_keys)
 
@@ -54,12 +46,11 @@ counts_map  <- setNames(file.path(paths$D5_dir, "1.3_pre-pregnancy_use", files_c
 discont_keys <- get_treatment_key(files_discontinued_episodes, "_discontinued_data.rds")
 discont_map  <- setNames(file.path(paths$D4_dir, "1.2_discontinued", files_discontinued_episodes), discont_keys)
 
-# 4. Keep only keys that exist in all three
+# Keep only records that exist in all three
 common_keys <- Reduce(intersect, list(prepreg_keys, counts_keys, discont_keys))
 prepreg_map <- prepreg_map[common_keys]
 counts_map  <- counts_map[common_keys]
 discont_map <- discont_map[common_keys]
-
 
 for (trt in seq_along(common_keys)) {
   
@@ -71,14 +62,11 @@ for (trt in seq_along(common_keys)) {
   dt_counts  <- readRDS(counts_map[[trt]])
   dt_discont <- readRDS(discont_map[[trt]])
   
-  # merge prepregnancy data with discontinuation file
-  if (deap_flags$is_EFEMERIS || deap_flags$is_FIN_REG) {
-    dt <- merge(dt_prepreg[,.(person_id, pregnancy_id, episode.start, episode.end)], dt_discont, by = c("pregnancy_id", "episode.start", "episode.end"), all = FALSE)
-  } else {
-    dt <- merge(dt_prepreg[,.(person_id, pregnancy_start_date, pregnancy_end_date, episode.start, episode.end)], dt_discont, by = c("person_id", "episode.start", "episode.end"), all = FALSE)
-  }
+  # merge pre-pregnancy data with discontinuation file
+  if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG) dt <- merge(dt_prepreg[,.(person_id, pregnancy_id, pregnancy_start_date, pregnancy_end_date, episode.start, episode.end, preg_year)], dt_discont, by = c("person_id", "episode.start", "episode.end"), all = FALSE)
+  if (deap_flags$is_EFEMERIS || deap_flags$is_FIN_REG)   dt <- merge(dt_prepreg[,.(person_id, pregnancy_id, pregnancy_start_date, pregnancy_end_date, episode.start, episode.end, preg_year)], dt_discont, by = c("pregnancy_id", "episode.start", "episode.end"), all = FALSE)
   
-  # Print message if no discontinuers found
+   # Print message if no discontinuers found
   if (nrow(dt) == 0) {
     message(red("No discontinued records found in pre-pregnancy users for", treatment))
     next
@@ -88,8 +76,8 @@ for (trt in seq_along(common_keys)) {
   message(blue("Discontinued records found in pre-pregnancy users for", treatment))
   
   # convert dates to IDate
-  date_cols <- c("pregnancy_start_date", "pregnancy_end_date", "episode.start", "episode.end")
-  dt[, (date_cols) := lapply(.SD, as.IDate), .SDcols = date_cols]
+  dt[, pregnancy_start_date := as.IDate(pregnancy_start_date)][, pregnancy_end_date := as.IDate(pregnancy_end_date)]
+  dt[, episode.start := as.IDate(episode.start)][, episode.end:= as.IDate(episode.end)]
   
   # add trimester windows
   dt[, t1_start := pregnancy_start_date]
@@ -106,7 +94,6 @@ for (trt in seq_along(common_keys)) {
   dt_t1 <- dt[!is.na(t1_start) & !is.na(t1_end) & episode.end >= t1_start & episode.end < t1_end]
   # Trimester 2 discontinuation: only if T2 exists
   dt_t2 <- dt[!is.na(t2_start) & !is.na(t2_end) & episode.end >= t2_start & episode.end < t2_end]
-  
   
   # create list of subsets
   discont_list <- list(before = dt_before, t1 = dt_t1, t2 = dt_t2)
@@ -125,24 +112,16 @@ for (trt in seq_along(common_keys)) {
     # print message
     message(sprintf("Processing %s - %s", treatment, names(discont_list)[dt]))
     
-    # assign year to count in 
-    dt_subset[, preg_year := year(pregnancy_start_date)]
-    
     # keep one person per year
-    if(deap_flags$is_EFEMERIS || deap_flags$is_FIN_REG) {
-      dt_subset <- unique(dt_subset, by = c("pregnancy_id", "preg_year"))
-    } else {
-      dt_subset <- unique(dt_subset, by = c("person_id", "preg_year"))
-    }
+    dt_subset <- unique(dt_subset, by= c("pregnancy_id", "preg_year"))
+    
     # count by pregnancy
     discontinuer_counts <- dt_subset[, .(N = .N), by = preg_year]
     
     # prepare denominator
-    
-    # TODO 
     dt_counts_copy <- copy(dt_counts)
-    dt_counts_copy[, c("n_treated", "rate", "rate_computable") := NULL]
-    # setnames(dt_counts_copy, "n_treated", "n_total")
+    dt_counts_copy <- dt_counts_copy[, .(preg_year, n_treated)]
+    setnames(dt_counts_copy, "n_treated", "n_total")
     
     # merge numerator and denominator
     discontinued_all <- merge(discontinuer_counts, dt_counts_copy, by = "preg_year", all.y = TRUE)
@@ -162,6 +141,7 @@ for (trt in seq_along(common_keys)) {
     
     # add rate computable column
     discontinued_all[, rate_computable := n_total > 0]
+    
     # rename columns 
     setnames(discontinued_all, "N", "n_treated")
     
