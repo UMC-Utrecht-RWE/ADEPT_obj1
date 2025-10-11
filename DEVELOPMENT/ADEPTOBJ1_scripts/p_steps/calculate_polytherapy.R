@@ -120,8 +120,8 @@ for (epi1 in seq_along(files_episodes)){
       }
       
     } else {
-      # EFEMERIS AND FIN_REG - we only need this for obj 1.4, where there needs to be an overlap of 90 days with pregnancy 
-      if (nrow(overlaps[overlap_days >= 90, ]) == 0) {
+      # EFEMERIS AND FIN_REG - we only need this for obj 1.4, where there needs to be an overlap of 3 months with pregnancy 
+      if (nrow(overlaps[overlap_days >= 91, ]) == 0) {
         message(red(paste("No Polytherapy found between:", name_epi1, "and", name_epi2)))
         next
       } else {
@@ -146,6 +146,12 @@ if(length(files_overlaps)>0){
   # Read and combine all pairwise overlap files
   all_overlaps <- as.data.table(rbindlist(lapply(file.path(paths$D3_dir, "tmp", files_overlaps), readRDS), use.names = TRUE, fill = TRUE))
   
+  # Ensure overlap dates are IDate
+  all_overlaps[, `:=`(overlap_start = as.IDate(overlap_start), overlap_end = as.IDate(overlap_end))]
+  
+  # Assign year to each overlap start
+  all_overlaps[,year:= year(overlap_start)]
+  
   # This saves all overlaps regardless of length of overlap - this will be used in obj 1.4
   saveRDS(all_overlaps, file.path(paths$D4_dir, "1.2_polytherapy", paste0(pop_prefix, "_polytherapy_data.rds")))
   
@@ -157,17 +163,11 @@ if(length(files_overlaps)>0){
 # COUNTS
 if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG) {
   
-  # Since we are no longer filtering in the previous part, we need to do it here!
-  all_overlaps <- all_overlaps[overlap_days >= 182,]
-  
   # Overlap should be between start and end fu
   all_overlaps <- all_overlaps[overlap_start >= start_follow_up & overlap_start <= end_follow_up & overlap_end >= start_follow_up & overlap_end <= end_follow_up]
   
-  # Ensure overlap dates are IDate
-  all_overlaps[, `:=`(overlap_start = as.IDate(overlap_start), overlap_end = as.IDate(overlap_end))]
-  
-  # Assign year to each overlap start
-  all_overlaps[,year:= year(overlap_start)]
+  # Since we are no longer filtering in the previous part, we need to do it here!
+  all_overlaps <- all_overlaps[overlap_days >= 182,]
   
   # Sort by person id and overlap start
   setorder(all_overlaps, person_id, overlap_start)

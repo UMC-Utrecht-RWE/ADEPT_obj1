@@ -40,7 +40,7 @@ for(pop in seq_along(populations)){
 
   # Polytherapy during pregnancy
   source(file.path(thisdir, "p_steps", "calculate_pregnancies_polytherapy_rate.R"), local = TRUE)
-  
+
   #Polytherapy during pregnancy - stratification
   source(file.path(thisdir, "p_steps", "calculate_pregnancies_polytherapy_rate_stratification.R"), local = TRUE)
 
