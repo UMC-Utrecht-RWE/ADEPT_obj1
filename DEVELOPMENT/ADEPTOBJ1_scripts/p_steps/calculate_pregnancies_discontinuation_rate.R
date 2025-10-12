@@ -86,7 +86,7 @@ for (trt in seq_along(common_keys)) {
   dt[, t2_end   := fifelse(!is.na(t2_start), pmin(pregnancy_start_date + 180, pregnancy_end_date), as.IDate(NA))]
   dt[, t3_start := fifelse(pregnancy_end_date >= pregnancy_start_date + 181, pregnancy_start_date + 181, as.IDate(NA))]
   dt[, t3_end   := fifelse(!is.na(t3_start), pregnancy_end_date, as.IDate(NA))]
-  
+
   # create subsets
   # Pre-pregnancy: episode ends before pregnancy starts
   dt_before <- dt[episode.end < pregnancy_start_date]

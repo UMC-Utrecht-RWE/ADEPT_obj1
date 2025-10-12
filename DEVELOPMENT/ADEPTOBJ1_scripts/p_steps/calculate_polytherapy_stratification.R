@@ -45,26 +45,17 @@ all_combinations_indications <- CJ(year = study_years, indication = indication_l
 # Load and bind all polytherapy files
 dt <- rbindlist(lapply(file.path(paths$D4_dir, "1.2_polytherapy", files_polytherapy_episodes), readRDS), use.names = TRUE, fill = TRUE)
 
-# clean polytherapy dataset 
+# Overlap should be between start and end fu
+dt <- dt[overlap_start >= start_follow_up & overlap_start <= end_follow_up & overlap_end >= start_follow_up & overlap_end <= end_follow_up]
+
 # keep records where overlap is greater or equal to 182 days
 dt <- dt[overlap_days >= 182,]
 
-if(!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG){
-  
-  # Sort by person id and overlap start
-  setorder(dt, person_id, overlap_start)
-  
-  # Keep only one row per person per year
-  dt <- unique(dt, by = c("person_id", "year"))
-  
-} else {
-  
-  # Sort by person id and overlap start
-  setorder(dt, pregnancy_id, overlap_start)
-  
-  # Keep only one row per person per year
-  dt <- unique(dt, by = c("pregnancy_id", "year"))
-}
+# Sort by person id and overlap start
+setorder(dt, person_id, overlap_start)
+
+# Keep only one row per person per year
+dt <- unique(dt, by = c("person_id", "year"))
 
 # prepare denominator
 denom_counts <- dt[, .(Freq = .N), by = year]
@@ -122,7 +113,7 @@ indications <- indications[
 
 # Keep one row per person_id - overlap.start
 indications <- unique(indications, by = c("person_id", "overlap_start"))
- 
+
 # count groups per year
 indication_counts <- indications[, .N, by = .(year, indication)]
 
@@ -133,7 +124,7 @@ indication_counts <- merge(all_combinations_indications, indication_counts, by =
 indication_counts[is.na(N), N := 0]
 
 # merge with denominator
-indication_counts <- merge(indication_counts, denom_counts, by = c("year"))
+indication_counts <- merge(indication_counts, denom_counts, by = c("year"), all.x = TRUE)
 
 # if is.na(Freq), replace it with 0
 indication_counts[is.na(Freq), Freq := 0]

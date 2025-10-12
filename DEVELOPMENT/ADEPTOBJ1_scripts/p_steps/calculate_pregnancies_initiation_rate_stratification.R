@@ -88,7 +88,7 @@ for(episode in seq_along(files_preg_init_episodes)){
   agegroup_counts[is.na(N), N := 0]
   
   # merge with denominator
-  agegroup_counts <- merge(agegroup_counts, denom_counts, by = c("preg_year"))
+  agegroup_counts <- merge(agegroup_counts, denom_counts, by = c("preg_year"), all.x = TRUE)
   
   # if is.na(Freq), replace it with 0
   agegroup_counts[is.na(Freq), Freq := 0]
@@ -202,7 +202,7 @@ for(episode in seq_along(files_preg_init_episodes)){
   indication_counts[is.na(N), N := 0]
   
   # merge with denominator
-  indication_counts <- merge(indication_counts, denom_counts, by = c("preg_year"))
+  indication_counts <- merge(indication_counts, denom_counts, by = c("preg_year"), all.x = TRUE)
   
   # if is.na(Freq), replace it with 0
   indication_counts[is.na(Freq), Freq := 0]
@@ -228,7 +228,7 @@ for(episode in seq_along(files_preg_init_episodes)){
   } else {
     message(blue("All indication counts match the denominator for every year"))
   }
-  
+
   # save counts
   saveRDS(indication_counts, file.path(paths$D5_dir, "1.3_pregnancy_initiation", "stratified", paste0(file_name, "_initiation_rates_in_pregnancy_indication_counts.rds")))
   

@@ -137,7 +137,7 @@ indication_counts <- merge(all_combinations_indications, indication_counts, by =
 indication_counts[is.na(N), N := 0]
 
 # merge with denominator
-indication_counts <- merge(indication_counts, denom_counts, by = c("preg_year"))
+indication_counts <- merge(indication_counts, denom_counts, by = c("preg_year"), all.x = TRUE)
 
 # if is.na(Freq), replace it with 0
 indication_counts[is.na(Freq), Freq := 0]

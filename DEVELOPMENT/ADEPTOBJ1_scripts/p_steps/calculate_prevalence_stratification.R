@@ -95,7 +95,7 @@ for(episode in seq_along(files_prevalence_episodes)){
     agegroup_counts[is.na(N), N := 0]
     
     # merge with denominator
-    agegroup_counts <- merge(agegroup_counts, denom_counts, by = c("year"))
+    agegroup_counts <- merge(agegroup_counts, denom_counts, by = c("year"), all.x = TRUE)
     
     # if is.na(Freq), replace it with 0
     agegroup_counts[is.na(Freq), Freq := 0]
@@ -193,7 +193,7 @@ for(episode in seq_along(files_prevalence_episodes)){
   indication_counts[is.na(N), N := 0]
   
   # merge with denominator
-  indication_counts <- merge(indication_counts, denom_counts, by = c("year"))
+  indication_counts <- merge(indication_counts, denom_counts, by = c("year"), all.x = TRUE)
   
   # if is.na(Freq), replace it with 0
   indication_counts[is.na(Freq), Freq := 0]
