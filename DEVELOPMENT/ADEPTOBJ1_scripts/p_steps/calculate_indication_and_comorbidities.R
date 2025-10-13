@@ -9,17 +9,19 @@ dir.create(file.path(paths$D5_dir, "baseline_tables","comorbidity_counts"), show
 # List all exposure files excluding subgroups 
 exclude <- c("DP_ANTIEPINEW", "DP_ANTIEPIOLD", "DP_BENZOANTIEPILEPTIC", "DP_GABAPENTINOIDS") # subgroups for exclusion
 files_exposures <- list.files(file.path(paths$D3_dir, "exposure"), pattern = "\\.rds$", full.names = FALSE) #list files in exposure folder
-files_exposures <- files_exposures[grepl(paste0("^", pop_prefix, "_"), files_exposures)] # keeo files of current pop prefix
+files_exposures <- files_exposures[grepl(paste0("^", pop_prefix, "_"), files_exposures)] # keep files of current pop prefix
 files_exposures <- files_exposures[!grepl(paste(exclude, collapse = "|"), files_exposures)] # Exclude subgroups
 
 # Create dataset with all exposure medications
 dt_exposures <- as.data.table(rbindlist(lapply(file.path(paths$D3_dir, "exposure", files_exposures), readRDS),fill = TRUE)) # read and bind datasets
-dt_exposures <- unique(dt_exposures) # remove true duplicates 
-
-# keep only prescriptions between start and end fu
-dt_exposures <- dt_exposures[rx_date>=start_follow_up & rx_date<=end_follow_up,]
 
 if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG){
+  
+  # remove duplicates by person id/pregnancy id, code and rx date
+  dt_exposures <- unique(dt_exposures, by = c("person_id","code", "rx_date"))
+  
+  # keep only prescriptions between start and end fu
+  dt_exposures <- dt_exposures[rx_date>=start_follow_up & rx_date<=end_follow_up,]
   
   #<<< For Flow chart >>>## 
   total_population_base_cohort  <- uniqueN(study_population$person_id) #total population (base cohort)
@@ -51,6 +53,9 @@ if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG){
   
 } else {
 
+  # remove duplicates by person id/pregnancy id, code and rx date
+  dt_exposures <- unique(dt_exposures, by = c("pregnancy_id", "code", "rx_date"))
+  
   #<<< For Flow chart >>>#
   total_pregnancies_base_cohort <- uniqueN(study_population$pregnancy_id) # base cohort
   nr_unique_pregnancies_with_rx_between_startfu_and_endfu    <- uniqueN(dt_exposures$pregnancy_id)
@@ -102,6 +107,7 @@ if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG){
   # Exposures
   dt_exposures_temp[, start_window := as.IDate(as.Date(rx_date) %m-% lookback_period)]
   dt_exposures_temp[, end_window := rx_date - 1]
+  
   # Indications 
   dt_indication[, start_event := event_date][, end_event := event_date]
   
@@ -157,8 +163,9 @@ if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG){
   
   # Create windows  
   if(deap_flags$is_EFEMERIS) {
-    dt_exposures_temp[, start_window := as.IDate(as.Date(pregnancy_start_date))]
-    dt_exposures_temp[, end_window   := as.IDate(as.Date(pregnancy_end_date))]
+    dt_exposures_temp[, start_window := as.IDate(as.Date(op_start_date))]
+    dt_exposures_temp[, end_window   := as.IDate(as.Date(op_end_date))]
+    
     dt_indication[, start_event := event_date]
     dt_indication[, end_event   := event_date]
   }
@@ -167,6 +174,7 @@ if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG){
   if(deap_flags$is_FIN_REG){
     dt_exposures_temp[, start_window := as.IDate(as.Date(rx_date) %m-% lookback_period)]
     dt_exposures_temp[, end_window   := rx_date - 1]
+    
     dt_indication[, start_event := event_date]
     dt_indication[, end_event   := event_date]
   }
@@ -316,9 +324,11 @@ if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG){
   # Create windows  
   if(deap_flags$is_EFEMERIS)  { 
     dt_exposures_temp[, start_window := as.IDate(op_start_date)]
-    dt_exposures_temp[, end_window   := as.IDate(pregnancy_end_date)]
+    dt_exposures_temp[, end_window   := as.IDate(op_end_date)]
+    
     dt_comorbidity_dx[, start_event := event_date]
     dt_comorbidity_dx[, end_event   := event_date]
+    
     dt_comorbidity_meds[, start_event := rx_date]
     dt_comorbidity_meds[, end_event   := rx_date]
   }
@@ -327,8 +337,10 @@ if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG){
   if(deap_flags$is_FIN_REG) {
     dt_exposures_temp[, start_window := as.IDate(as.Date(rx_date) %m-% lookback_period)]
     dt_exposures_temp[, end_window := rx_date - 1]
+    
     dt_comorbidity_dx[, start_event := event_date]
     dt_comorbidity_dx[, end_event   := event_date]
+    
     dt_comorbidity_meds[, start_event := rx_date]
     dt_comorbidity_meds[, end_event   := rx_date]
     

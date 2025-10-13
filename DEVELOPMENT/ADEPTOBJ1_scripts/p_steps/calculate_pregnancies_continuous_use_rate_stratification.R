@@ -64,7 +64,7 @@ for(episode in seq_along(files_cont_use_episodes)){
   # continuous use rate file
   #TODO - NEED TO CHECK WITH FINLAND WHAT THEY WANT TO DO WITH THE INDICATIONS
   if(!deap_flags$is_EFEMERIS) dt_temp[, start_window := as.IDate(as.Date(episode.start) %m-% lookback_period)][, end_window := episode.start]
-  if(deap_flags$is_EFEMERIS)  dt_temp[, start_window := as.IDate(as.Date(pregnancy_start_date))][, end_window := as.IDate(as.Date(pregnancy_end_date))]
+  if(deap_flags$is_EFEMERIS)  dt_temp[, start_window := as.IDate(as.Date(op_start_date))][, end_window := as.IDate(as.Date(op_end_date))]
   
   # indication file 
   dt_indication[, start_event := event_date][, end_event := event_date]
