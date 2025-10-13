@@ -12,9 +12,6 @@ files_exposures <- list.files(file.path(paths$D3_dir, "exposure"))
 # Filter exposures for current pop_prefix only
 files_exposures <- files_exposures[grepl(paste0("^", pop_prefix, "_"), files_exposures)]
 
-# If pop_prefix is PC, then drop any that are PC_HOSP
-if(pop_prefix=="PC") files_exposures <- files_exposures[!grepl("PC_HOSP", files_exposures)]
-
 # For each one, create treatment episodes and save in treatment episodes folder with the same name + suffix treatment_episode
 for (exposure in seq_along(files_exposures)) {
   

@@ -11,7 +11,6 @@ exclude <- c("DP_ANTIEPINEW", "DP_ANTIEPIOLD", "DP_BENZOANTIEPILEPTIC", "DP_GABA
 files_exposures <- list.files(file.path(paths$D3_dir, "exposure"), pattern = "\\.rds$", full.names = FALSE) #list files in exposure folder
 files_exposures <- files_exposures[grepl(paste0("^", pop_prefix, "_"), files_exposures)] # keeo files of current pop prefix
 files_exposures <- files_exposures[!grepl(paste(exclude, collapse = "|"), files_exposures)] # Exclude subgroups
-if (pop_prefix == "PC") files_exposures <- files_exposures[!grepl("PC_HOSP", files_exposures)] #BIFAP
 
 # Create dataset with all exposure medications
 dt_exposures <- as.data.table(rbindlist(lapply(file.path(paths$D3_dir, "exposure", files_exposures), readRDS),fill = TRUE)) # read and bind datasets
@@ -89,7 +88,6 @@ if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG){
 files_indication <- list.files(file.path(paths$D3_dir, "indication"), pattern = "\\.rds$", full.names = FALSE) #list files in indications folder
 files_indication <- files_indication[grepl(paste0("^", pop_prefix, "_"), files_indication)] # keeo files of current pop prefix
 files_indication <- files_indication[!grepl(paste(exclude, collapse = "|"), files_indication)] # Exclude subgroups
-if (pop_prefix == "PC") files_indication <- files_indication[!grepl("PC_HOSP", files_indication)] #BIFAP
 
 # Create dataset with all indications
 dt_indication <- as.data.table(rbindlist(lapply(file.path(paths$D3_dir, "indication", files_indication), readRDS),fill = TRUE)) # read and bind datasets
@@ -221,7 +219,6 @@ if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG){
 files_comorbidities <- list.files(file.path(paths$D3_dir, "cov"), pattern = "\\.rds$", full.names = FALSE) #list files in comorbidity folder
 files_comorbidities <- files_comorbidities[grepl(paste0("^", pop_prefix, "_"), files_comorbidities)] # keeo files of current pop prefix
 files_comorbidities <- files_comorbidities[!grepl(paste(exclude, collapse = "|"), files_comorbidities)] # Exclude subgroups
-if (pop_prefix == "PC") files_comorbidities <- files_comorbidities[!grepl("PC_HOSP", files_comorbidities)] #BIFAP
 
 # Create dataset with all comorbidities - ATC codes and Dx codes in separate datasets
 dt_comorbidity_meds <- as.data.table(rbindlist(lapply(file.path(paths$D3_dir, "cov", files_comorbidities[grepl("_med\\.rds$", files_comorbidities)]), readRDS), use.names = TRUE, fill = TRUE))

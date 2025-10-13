@@ -16,8 +16,7 @@ files_altmeds <- list.files(file.path(paths$D3_dir, "alternatives"), pattern = "
 if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG) {
   
   files_altmeds <- files_altmeds[grepl(paste0("^", pop_prefix, "_"), files_altmeds)]# Filter altmeds for current pop_prefix only
-  if(pop_prefix=="PC") files_altmeds <- files_altmeds[!grepl("PC_HOSP", files_altmeds)]# If pop_prefix is PC, then drop any that are PC_HOSP
-  
+ 
   # Load denominator file 
   denominator <- readRDS(file.path(paths$D3_dir, "denominator", paste0(pop_prefix, "_denominator.rds")))
 }

@@ -17,9 +17,6 @@ files_episodes <- list.files(file.path(paths$D3_dir, "tx_episodes"), pattern = "
 # Filter exposures for current pop_prefix only
 files_episodes <- files_episodes[grepl(paste0("^", pop_prefix, "_"), files_episodes)]
 
-# If pop_prefix is PC, then drop any that are PC_HOSP
-if(pop_prefix=="PC") files_episodes <- files_episodes[!grepl("PC_HOSP", files_episodes)]
-
 # Load denominator file
 denominator <- readRDS(file.path(paths$D3_dir, "denominator", paste0(pop_prefix, "_denominator.rds")))
 

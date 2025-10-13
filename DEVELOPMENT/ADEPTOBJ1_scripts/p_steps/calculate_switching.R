@@ -28,19 +28,15 @@ files_altmeds <- list.files(file.path(paths$D4_dir, "1.2_altmeds"))
 # Prevalence counts 
 if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG) {
   files_discontinued_episodes <- files_discontinued_episodes[grepl(paste0("^", pop_prefix, "_"), files_discontinued_episodes)] # picks either F or M
-  if(pop_prefix=="PC") files_discontinued_episodes <- files_discontinued_episodes[!grepl("PC_HOSP", files_discontinued_episodes)] #BIFAP
-  
+
   files_exposures <- files_exposures[grepl(paste0("^", pop_prefix, "_"), files_exposures)] # picks either F or M
-  if(pop_prefix=="PC") files_exposures <- files_exposures[!grepl("PC_HOSP", files_exposures)] #BIFAP
-  
+
   # Filter exposures for current pop_prefix only
   files_altmeds <- files_altmeds[grepl(paste0("^", pop_prefix, "_"), files_altmeds)]  #picks either F or M
-  if(pop_prefix=="PC") files_altmeds <- files_altmeds[!grepl("PC_HOSP", files_altmeds)] # BIFAP
   
   # Prevalence counts 
   files_prevalence_counts <- list.files(file.path(paths$D5_dir, "1.1_prevalence"), pattern = "\\.rds$")
   files_prevalence_counts <- files_prevalence_counts[grepl(paste0("^", pop_prefix, "_"), files_prevalence_counts)]  #picks either F or M
-  if(pop_prefix=="PC") files_prevalence_counts <- files_prevalence_counts[!grepl("PC_HOSP", files_prevalence_counts)] #BIFAP
   files_prevalence_counts <- files_prevalence_counts[!(gsub(paste0("^", pop_prefix, "_|_prevalence_counts\\.rds$"), "", files_prevalence_counts) %in% exclude)] #exclude subgroups
 }
 

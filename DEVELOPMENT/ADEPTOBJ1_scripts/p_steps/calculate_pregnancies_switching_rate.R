@@ -58,7 +58,7 @@ for (trt in seq_along(common_keys)) {
   if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG) dt <- merge(dt_prepreg[,.(person_id, pregnancy_id, pregnancy_start_date, pregnancy_end_date, episode.start, episode.end, preg_year)], dt_switch, by = c("person_id", "episode.start", "episode.end"), all = FALSE)
   if (deap_flags$is_EFEMERIS || deap_flags$is_FIN_REG)   dt <- merge(dt_prepreg[,.(person_id, pregnancy_id, pregnancy_start_date, pregnancy_end_date, episode.start, episode.end, preg_year)], dt_switch, by = c("pregnancy_id", "episode.start", "episode.end"), all = FALSE)
   
-  # Print message if no discontinuers found
+  # Print message if no switchers found
   if (nrow(dt) == 0) {
     message(red("No switcher records found in pre-pregnancy users for", treatment))
     next

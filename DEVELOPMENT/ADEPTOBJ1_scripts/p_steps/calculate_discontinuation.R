@@ -16,11 +16,9 @@ files_episodes <- list.files(file.path(paths$D3_dir, "tx_episodes"), pattern = "
 
 if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG) {
   files_episodes <- files_episodes[grepl(paste0("^", pop_prefix, "_"), files_episodes)] # only current pop_prefix
-  if(pop_prefix=="PC") files_episodes <- files_episodes[!grepl("PC_HOSP", files_episodes)] # BIFAP
   # Prevalence files
   files_prevalence_counts <- list.files(file.path(paths$D5_dir, "1.1_prevalence"), pattern = "\\.rds$")
   files_prevalence_counts <- files_prevalence_counts[grepl(paste0("^", pop_prefix, "_"), files_prevalence_counts)]# only current pop_prefix
-  if(pop_prefix=="PC") files_prevalence_counts <- files_prevalence_counts[!grepl("PC_HOSP", files_prevalence_counts)] #BIFAP
 }
 
 # Loop through each treatment episode file
