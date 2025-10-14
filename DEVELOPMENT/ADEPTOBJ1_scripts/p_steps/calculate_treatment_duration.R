@@ -40,8 +40,6 @@ for (episode in seq_along(files_episodes)) {
   
   # Filter and trim to follow-up period
   dt <- dt[!(episode.end < start_follow_up | episode.start > end_follow_up),]
-  dt[episode.start < start_follow_up, episode.start := start_follow_up]
-  dt[episode.end > end_follow_up, episode.end := end_follow_up]
   dt <- dt[episode.end >= episode.start,]  # drop invalid records
 
   if (nrow(dt) > 0) {
