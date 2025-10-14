@@ -157,7 +157,8 @@ if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG) {
       initiation_rate_all[is.na(N), N := 0][is.na(Freq), Freq := 0]
 
       # Calculate rates
-      initiation_rate_all[, rate := round(1000 * N / Freq, 3)][N == 0 & Freq == 0, rate := 0]
+      initiation_rate_all[, rate := round(1000 * N / Freq, 3)]
+      initiation_rate_all[N == 0 & Freq == 0, rate := 0]
 
       # Create column marking if rate is computable
       initiation_rate_all[, rate_computable := Freq > 0]
