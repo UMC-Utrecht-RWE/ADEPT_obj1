@@ -166,41 +166,86 @@ if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG) {
   all_overlaps <- all_overlaps[overlap_start >= start_follow_up & overlap_start <= end_follow_up & overlap_end >= start_follow_up & overlap_end <= end_follow_up]
   
   # Since we are no longer filtering in the previous part, we need to do it here!
-  all_overlaps <- all_overlaps[overlap_days >= 182,]
+  all_overlaps_182 <- all_overlaps[overlap_days >= 182,]
   
   # Sort by person id and overlap start
-  setorder(all_overlaps, person_id, overlap_start)
+  setorder(all_overlaps_182, person_id, overlap_start)
   
   # Keep only one row per person per year
-  all_overlaps_unique <- unique(all_overlaps, by = c("person_id", "year"))
+  all_overlaps_unique_182 <- unique(all_overlaps_182, by = c("person_id", "year"))
   
   # Count unique individuals per year
-  overall_counts <- all_overlaps_unique[, .N, by = year]
+  overall_counts_182 <- all_overlaps_unique_182[, .N, by = year]
   
   # Merge with denominator
-  overlap_all <- merge(overall_counts, denominator, by = "year", all.y = TRUE)
+  overlap_all_182 <- merge(overall_counts_182, denominator, by = "year", all.y = TRUE)
   
   # Handle missing numerator values
-  overlap_all[is.na(N), N := 0]
+  overlap_all_182[is.na(N), N := 0]
   
   # Compute polytherapy rate per 1000 persons
-  overlap_all[, rate := round(1000 * N / Freq, 3)]
-  overlap_all[N == 0 & Freq == 0, rate := 0]
+  overlap_all_182[, rate := round(1000 * N / Freq, 3)]
+  overlap_all_182[N == 0 & Freq == 0, rate := 0]
   
   # Set warnings if Numerator > than Denominator or if Denominator is 0 and Numerator is >0
-  if (nrow(overlap_all[N > Freq]) > 0) warning(red("Warning: Some numerator values exceed denominator."))
-  if (nrow(overlap_all[Freq == 0 & N != 0]) > 0) warning(red("Warning: Denominator zero with non-zero numerator."))
+  if (nrow(overlap_all_182[N > Freq]) > 0) warning(red("Warning: Some numerator values exceed denominator."))
+  if (nrow(overlap_all_182[Freq == 0 & N != 0]) > 0) warning(red("Warning: Denominator zero with non-zero numerator."))
   
   # Save data where odd values 
-  if(nrow(overlap_all[N > Freq])>0) fwrite(overlap_all[N > Freq], file.path(paths$D5_dir, "1.2_polytherapy",  "polytherapy_num_gt_denominator.csv"))
-  if(nrow(overlap_all[Freq == 0 & N != 0])>0) fwrite(overlap_all[Freq == 0 & N != 0], file.path(paths$D5_dir, "1.2_polytherapy", "polytherapy_denominator_zero_numerator_nonzero.csv"))
+  if(nrow(overlap_all_182[N > Freq])>0) fwrite(overlap_all[N > Freq], file.path(paths$D5_dir, "1.2_polytherapy",  "polytherapy_num_gt_denominator.csv"))
+  if(nrow(overlap_all_182[Freq == 0 & N != 0])>0) fwrite(overlap_all[Freq == 0 & N != 0], file.path(paths$D5_dir, "1.2_polytherapy", "polytherapy_denominator_zero_numerator_nonzero.csv"))
   
   # Create column marking if rate is computable 
-  overlap_all[, rate_computable := Freq > 0]
+  overlap_all_182[, rate_computable := Freq > 0]
   
   # Rename columns 
-  setnames(overlap_all, c("N", "Freq"), c("n_treated", "n_total"))
+  setnames(overlap_all_182, c("N", "Freq"), c("n_treated", "n_total"))
   
   # Save results
-  saveRDS(overlap_all, file.path(paths$D5_dir, "1.2_polytherapy", paste0(pop_prefix, "_OVERALL_polytherapy_counts.rds")))
+  saveRDS(overlap_all_182, file.path(paths$D5_dir, "1.2_polytherapy", paste0(pop_prefix, "_OVERALL_polytherapy_counts_182.rds")))
+  
+  
+  # Sensitivity analysis overlap of 120 days 
+  
+  # Since we are no longer filtering in the previous part, we need to do it here!
+  all_overlaps_120 <- all_overlaps[overlap_days >= 120,]
+  
+  # Sort by person id and overlap start
+  setorder(all_overlaps_120, person_id, overlap_start)
+  
+  # Keep only one row per person per year
+  all_overlaps_unique_120 <- unique(all_overlaps_120, by = c("person_id", "year"))
+  
+  # Count unique individuals per year
+  overall_counts_120 <- all_overlaps_unique_120[, .N, by = year]
+  
+  # Merge with denominator
+  overlap_all_120 <- merge(overall_counts_120, denominator, by = "year", all.y = TRUE)
+  
+  # Handle missing numerator values
+  overlap_all_120[is.na(N), N := 0]
+  
+  # Compute polytherapy rate per 1000 persons
+  overlap_all_120[, rate := round(1000 * N / Freq, 3)]
+  overlap_all_120[N == 0 & Freq == 0, rate := 0]
+  
+  # Set warnings if Numerator > than Denominator or if Denominator is 0 and Numerator is >0
+  if (nrow(overlap_all_120[N > Freq]) > 0) warning(red("Warning: Some numerator values exceed denominator."))
+  if (nrow(overlap_all_120[Freq == 0 & N != 0]) > 0) warning(red("Warning: Denominator zero with non-zero numerator."))
+  
+  # Save data where odd values 
+  if(nrow(overlap_all_120[N > Freq])>0) fwrite(overlap_all[N > Freq], file.path(paths$D5_dir, "1.2_polytherapy",  "polytherapy_num_gt_denominator.csv"))
+  if(nrow(overlap_all_120[Freq == 0 & N != 0])>0) fwrite(overlap_all[Freq == 0 & N != 0], file.path(paths$D5_dir, "1.2_polytherapy", "polytherapy_denominator_zero_numerator_nonzero.csv"))
+  
+  # Create column marking if rate is computable 
+  overlap_all_120[, rate_computable := Freq > 0]
+  
+  # Rename columns 
+  setnames(overlap_all_120, c("N", "Freq"), c("n_treated", "n_total"))
+  
+  # create folder for stratification counts
+  dir.create(file.path(paths$D5_dir, "1.2_polytherapy", "sensitivity"), showWarnings = FALSE, recursive = TRUE)
+  
+  # Save results
+  saveRDS(overlap_all_120, file.path(paths$D5_dir, "1.2_polytherapy", "sensitivity", paste0(pop_prefix, "_OVERALL_polytherapy_counts_120.rds")))  
 }
