@@ -24,8 +24,12 @@ study_population <- unique(study_population)
 source(file.path(thisdir, "p_steps", "Step_02_PreparePersonsTable.R"), local = TRUE)
 
 # Merge study_population (originally pregnancies) with PERSONS to get birth_date
+PERSONS[,person_id:=as.character(person_id)]
+study_population[,person_id:=as.character(person_id)]
+
 setkey(PERSONS, person_id)
 setkey(study_population, person_id)  
+
 study_population <- merge(study_population, PERSONS[, .(person_id, birth_date)], by = "person_id", all.x = TRUE)
 
 # Set op start and end dates per person 
