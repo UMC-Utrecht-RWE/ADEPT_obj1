@@ -57,16 +57,16 @@ denom_counts <- dt[, .(Freq = .N), by = preg_year]
 # create a copy of dt for indication calculations
 dt_temp <- copy(dt)
 
-# prepare data for foverlaps
-# polytherapy in pregnancy file
-#TODO - NEED TO CHECK WITH FINLAND WHAT THEY WANT TO DO WITH THE INDICATIONS
-if(!deap_flags$is_EFEMERIS) dt_temp[, start_window := as.IDate(as.Date(overlap_start) %m-% lookback_period)][, end_window := overlap_start]
-if(deap_flags$is_EFEMERIS)  dt_temp[, start_window := as.IDate(as.Date(pregnancy_start_date))][, end_window := as.IDate(as.Date(pregnancy_end_date))]
-
-# indication file 
-dt_indication[, start_event := event_date][, end_event := event_date]
-
 if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG) {
+  
+  # prepare data for foverlaps
+  # polytherapy in pregnancy file
+  dt_temp[, start_window := as.IDate(as.Date(overlap_start) %m-% lookback_period)]
+  dt_temp[, end_window := as.IDate(overlap_start)]
+  
+  # indication file 
+  dt_indication[, start_event := as.IDate(event_date)]
+  dt_indication[, end_event := as.IDate(event_date)]
   
   # set keys
   setkey(dt_temp, person_id, start_window, end_window)
@@ -80,7 +80,19 @@ if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG) {
                            nomatch = NA
   )
   
+  # calculate difference in days between episode start and event date of indication
+  indications[, diff_days := as.numeric(difftime(episode.start, event_date, units = "days"))]
+  
 } else {
+  
+  # prepare data for foverlaps
+  # polytherapy in pregnancy file
+  dt_temp[, start_window := as.IDate(op_start_date)]
+  dt_temp[, end_window := as.IDate(op_end_date)]
+  
+  # indication file 
+  dt_indication[, start_event := event_date]
+  dt_indication[, end_event := event_date]
   
   # set keys
   setkey(dt_temp, pregnancy_id, start_window, end_window)
@@ -93,11 +105,9 @@ if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG) {
                            by.y = c("pregnancy_id", "start_event", "end_event"),
                            nomatch = NA
   )
+  # calculate difference in days between episode start and event date of indication
+  indications[, diff_days := abs(as.numeric(difftime(episode.start, event_date, units = "days")))]
 }
-
-# TODO - check if FINLAND will be the same as EFEMERIS calculate difference in days between episode start and event date of indication
-if(!deap_flags$is_EFEMERIS) indications[, diff_days := as.numeric(difftime(episode.start, event_date, units = "days"))]
-if(deap_flags$is_EFEMERIS)  indications[, diff_days := abs(as.numeric(difftime(episode.start, event_date, units = "days")))]
 
 # create column indication:
 # if more than one rx is present, and epilepsy is among them, then priority is epilepsy

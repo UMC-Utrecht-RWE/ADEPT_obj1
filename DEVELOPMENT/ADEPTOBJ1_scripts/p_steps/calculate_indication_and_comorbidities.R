@@ -52,7 +52,7 @@ if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG){
   dt_exposures <- dt_exposures[, .SD[1], by = person_id]
   
 } else {
-
+  
   # remove duplicates by person id/pregnancy id, code and rx date
   dt_exposures <- unique(dt_exposures, by = c("pregnancy_id", "code", "rx_date"))
   
@@ -91,7 +91,7 @@ if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG){
 ########################################################################################################################
 # List all indication files 
 files_indication <- list.files(file.path(paths$D3_dir, "indication"), pattern = "\\.rds$", full.names = FALSE) #list files in indications folder
-files_indication <- files_indication[grepl(paste0("^", pop_prefix, "_"), files_indication)] # keeo files of current pop prefix
+files_indication <- files_indication[grepl(paste0("^", pop_prefix, "_"), files_indication)] # keep files of current pop prefix
 files_indication <- files_indication[!grepl(paste(exclude, collapse = "|"), files_indication)] # Exclude subgroups
 
 # Create dataset with all indications
@@ -106,10 +106,11 @@ if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG){
   # Create windows  
   # Exposures
   dt_exposures_temp[, start_window := as.IDate(as.Date(rx_date) %m-% lookback_period)]
-  dt_exposures_temp[, end_window := rx_date - 1]
+  dt_exposures_temp[, end_window   := rx_date - 1][,end.window := as.IDate(end_window)]
   
   # Indications 
-  dt_indication[, start_event := event_date][, end_event := event_date]
+  dt_indication[, start_event := as.IDate(event_date)]
+  dt_indication[, end_event   := as.IDate(event_date)]
   
   # rename columns
   setnames(dt_exposures_temp,c("code", "rx_date"), c("exposure_ATC", "exposure_rx_date"))
@@ -162,30 +163,19 @@ if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG){
 } else {
   
   # Create windows  
-  if(deap_flags$is_EFEMERIS) {
-    dt_exposures_temp[, start_window := as.IDate(as.Date(op_start_date))]
-    dt_exposures_temp[, end_window   := as.IDate(as.Date(op_end_date))]
-    
-    dt_indication[, start_event := event_date]
-    dt_indication[, end_event   := event_date]
-  }
+  dt_exposures_temp[, start_window := as.IDate(op_start_date)]
+  dt_exposures_temp[, end_window   := as.IDate(op_end_date)]
   
-  #TODO Finland
-  if(deap_flags$is_FIN_REG){
-    dt_exposures_temp[, start_window := as.IDate(as.Date(rx_date) %m-% lookback_period)]
-    dt_exposures_temp[, end_window   := rx_date - 1]
-    
-    dt_indication[, start_event := event_date]
-    dt_indication[, end_event   := event_date]
-  }
- 
+  dt_indication[, start_event := as.IDate(event_date)]
+  dt_indication[, end_event   := as.IDate(event_date)]
+
   # rename columns
   setnames(dt_exposures_temp,c("code", "rx_date"), c("exposure_ATC", "exposure_rx_date"))
   
   # set keys 
   setkey(dt_exposures_temp, pregnancy_id, start_window, end_window)
   setkey(dt_indication, pregnancy_id, start_event, end_event)
- 
+  
   # perform overlap join -dx
   indication_in_lookback <- foverlaps(dt_exposures_temp[,.(person_id, pregnancy_id, exposure_ATC, exposure_rx_date, start_window, end_window)], 
                                       dt_indication[,.(person_id, pregnancy_id, code, event_date, event_definition, start_event, end_event)], 
@@ -225,7 +215,7 @@ if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG){
 ########################################################################################################################
 # List all comorbidity files 
 files_comorbidities <- list.files(file.path(paths$D3_dir, "cov"), pattern = "\\.rds$", full.names = FALSE) #list files in comorbidity folder
-files_comorbidities <- files_comorbidities[grepl(paste0("^", pop_prefix, "_"), files_comorbidities)] # keeo files of current pop prefix
+files_comorbidities <- files_comorbidities[grepl(paste0("^", pop_prefix, "_"), files_comorbidities)] # keep files of current pop prefix
 files_comorbidities <- files_comorbidities[!grepl(paste(exclude, collapse = "|"), files_comorbidities)] # Exclude subgroups
 
 # Create dataset with all comorbidities - ATC codes and Dx codes in separate datasets
@@ -256,16 +246,19 @@ group7 <- c("N_BRAINHYPOXIA_COV")
 group8 <- c("V_HYPERTENSION_COV")
 
 
-if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG){
+if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG){ 
   
   # Create windows  
   # Exposures
   dt_exposures_temp[, start_window := as.IDate(as.Date(rx_date) %m-% lookback_period)]
-  dt_exposures_temp[, end_window := rx_date - 1]
+  dt_exposures_temp[, end_window := rx_date - 1][,end_window := as.IDate(end_window)]
   
   # Comorbidities
-  dt_comorbidity_dx[, start_event := event_date][, end_event := event_date]
-  dt_comorbidity_meds[, start_event := rx_date][, end_event := rx_date]
+  dt_comorbidity_dx[, start_event := as.IDate(event_date)]
+  dt_comorbidity_dx[, end_event := as.IDate(event_date)]
+  
+  dt_comorbidity_meds[, start_event := as.IDate(rx_date)]
+  dt_comorbidity_meds[, end_event := as.IDate(rx_date)]
   
   # rename columns
   setnames(dt_exposures_temp,c("code", "rx_date"), c("exposure_ATC", "exposure_rx_date"))
@@ -319,32 +312,18 @@ if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG){
   
   # save co-morbidity counts in D5
   saveRDS(comorbidity_counts, file.path(paths$D5_dir, "baseline_tables", "comorbidity_counts", paste0(pop_prefix, "_comorbidity_counts.rds")))
+  
 } else {
   
   # Create windows  
-  if(deap_flags$is_EFEMERIS)  { 
-    dt_exposures_temp[, start_window := as.IDate(op_start_date)]
-    dt_exposures_temp[, end_window   := as.IDate(op_end_date)]
-    
-    dt_comorbidity_dx[, start_event := event_date]
-    dt_comorbidity_dx[, end_event   := event_date]
-    
-    dt_comorbidity_meds[, start_event := rx_date]
-    dt_comorbidity_meds[, end_event   := rx_date]
-  }
+  dt_exposures_temp[, start_window := as.IDate(op_start_date)]
+  dt_exposures_temp[, end_window   := as.IDate(op_end_date)]
   
-  #TODO FINLAND
-  if(deap_flags$is_FIN_REG) {
-    dt_exposures_temp[, start_window := as.IDate(as.Date(rx_date) %m-% lookback_period)]
-    dt_exposures_temp[, end_window := rx_date - 1]
-    
-    dt_comorbidity_dx[, start_event := event_date]
-    dt_comorbidity_dx[, end_event   := event_date]
-    
-    dt_comorbidity_meds[, start_event := rx_date]
-    dt_comorbidity_meds[, end_event   := rx_date]
-    
-  }  
+  dt_comorbidity_dx[, start_event := as.IDate(event_date)]
+  dt_comorbidity_dx[, end_event   := as.IDate(event_date)]
+  
+  dt_comorbidity_meds[, start_event := as.IDate(rx_date)]
+  dt_comorbidity_meds[, end_event   := as.IDate(rx_date)]
   
   # rename columns
   setnames(dt_exposures_temp,c("code", "rx_date"), c("exposure_ATC", "exposure_rx_date"))
