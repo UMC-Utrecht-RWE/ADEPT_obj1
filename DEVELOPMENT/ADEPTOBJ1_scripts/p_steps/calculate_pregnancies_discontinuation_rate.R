@@ -64,7 +64,7 @@ for (trt in seq_along(common_keys)) {
   
   # merge pre-pregnancy data with discontinuation file
   if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG) dt <- merge(dt_prepreg[,.(person_id, pregnancy_id, pregnancy_start_date, pregnancy_end_date, episode.start, episode.end, preg_year)], dt_discont, by = c("person_id", "episode.start", "episode.end"), all = FALSE)
-  if (deap_flags$is_EFEMERIS || deap_flags$is_FIN_REG)   dt <- merge(dt_prepreg[,.(person_id, pregnancy_id, pregnancy_start_date, pregnancy_end_date, episode.start, episode.end, preg_year)], dt_discont, by = c("pregnancy_id", "episode.start", "episode.end"), all = FALSE)
+  if (deap_flags$is_EFEMERIS || deap_flags$is_FIN_REG)   dt <- merge(dt_prepreg[,.(pregnancy_id, episode.start, episode.end, preg_year)], dt_discont, by = c("pregnancy_id", "episode.start", "episode.end"), all = FALSE)
   
    # Print message if no discontinuers found
   if (nrow(dt) == 0) {
@@ -128,7 +128,7 @@ for (trt in seq_along(common_keys)) {
     discontinued_all[is.na(N), N := 0]
     
     # calculate rate
-    discontinued_all[, rate := round(1000 * N / n_total, 3)]
+    discontinued_all[, rate := round(100 * N / n_total, 3)]
     discontinued_all[N == 0 & n_total == 0, rate := 0]
     
     # warnings

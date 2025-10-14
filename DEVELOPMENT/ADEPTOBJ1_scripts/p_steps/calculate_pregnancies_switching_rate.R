@@ -56,7 +56,7 @@ for (trt in seq_along(common_keys)) {
   
   # merge pre-pregnancy data with switcher file
   if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG) dt <- merge(dt_prepreg[,.(person_id, pregnancy_id, pregnancy_start_date, pregnancy_end_date, episode.start, episode.end, preg_year)], dt_switch, by = c("person_id", "episode.start", "episode.end"), all = FALSE)
-  if (deap_flags$is_EFEMERIS || deap_flags$is_FIN_REG)   dt <- merge(dt_prepreg[,.(person_id, pregnancy_id, pregnancy_start_date, pregnancy_end_date, episode.start, episode.end, preg_year)], dt_switch, by = c("pregnancy_id", "episode.start", "episode.end"), all = FALSE)
+  if (deap_flags$is_EFEMERIS || deap_flags$is_FIN_REG)   dt <- merge(dt_prepreg[,.(pregnancy_id, episode.start, episode.end, preg_year)], dt_switch, by = c("pregnancy_id", "episode.start", "episode.end"), all = FALSE)
   
   # Print message if no switchers found
   if (nrow(dt) == 0) {
@@ -98,8 +98,8 @@ for (trt in seq_along(common_keys)) {
   switcher_all <- merge(switcher_counts, dt_counts_copy, by = "preg_year", all.y = TRUE)
   switcher_all[is.na(N), N := 0]
   
-  # Calculate switcher as a rate (*1000)
-  switcher_all[, rate := round(1000 * N / n_total, 3)]
+  # Calculate switcher as a rate (*100)
+  switcher_all[, rate := round(100 * N / n_total, 3)]
   switcher_all[N == 0 & n_total == 0, rate := 0]
     
   # warnings
