@@ -145,6 +145,29 @@ if(length(files_overlaps)>0){
   # Read and combine all pairwise overlap files
   all_overlaps <- as.data.table(rbindlist(lapply(file.path(paths$D3_dir, "tmp", files_overlaps), readRDS), use.names = TRUE, fill = TRUE))
   
+  # Drop duplicate cols or cols you no longer need 
+  cols_to_drop <- c(
+    "window_start", "window_end", "i.window_start", "i.window_end",
+    "i.person_id", "i.pregnancy_start_date", "i.pregnancy_end_date",
+    "i.sex_at_instance_creation", "i.birth_date", "i.op_start_date",
+    "i.op_end_date", "i.start_follow_up", "i.end_follow_up",
+    "episode.start", "i.episode.start", "episode.end", "i.episode.end",
+    "code", "i.code"
+
+  )
+  
+  # Drop only those that actually exist in your data.table
+  cols_to_drop <- intersect(cols_to_drop, names(all_overlaps))
+  
+  # Remove them in place
+  all_overlaps[, (cols_to_drop) := NULL]
+  
+  # Drop only those that actually exist in your data.table
+  cols_to_drop <- intersect(cols_to_drop, names(all_overlaps))
+  
+  # Remove them in place
+  all_overlaps[, (cols_to_drop) := NULL]
+  
   # Ensure overlap dates are IDate
   all_overlaps[, `:=`(overlap_start = as.IDate(overlap_start), overlap_end = as.IDate(overlap_end))]
   

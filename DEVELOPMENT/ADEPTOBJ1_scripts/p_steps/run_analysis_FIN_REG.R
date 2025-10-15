@@ -94,7 +94,6 @@ for(pop in seq_along(populations)){
   # Move algorithm inputs to folders
   source(file.path(thisdir, "p_steps", "move_files_to_folders.R"), local = TRUE)
 
-  #TODO - NEEDS TO BE FIXED
   # Comorbidity and Indication Counts
   source(file.path(thisdir, "p_steps", "calculate_indication_and_comorbidities.R"), local = TRUE)
 

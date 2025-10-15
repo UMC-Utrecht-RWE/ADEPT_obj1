@@ -36,8 +36,6 @@ dt_prepreg <- dt_prepreg[, .(person_id, pregnancy_id, atc_group, episode.start, 
 setnames(dt_prepreg, "atc_group", "atc_group_prepreg")
 
 # Polytherapy
-if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG) dt_poly <- dt_poly[, .(person_id, atc_group, i.atc_group, overlap_start, overlap_end, overlap_days, start_follow_up, end_follow_up, year)]
-if (deap_flags$is_EFEMERIS || deap_flags$is_FIN_REG)   dt_poly <- dt_poly[, .(person_id, pregnancy_id, atc_group, i.atc_group, overlap_start, overlap_end, overlap_days, start_follow_up, end_follow_up, year)]
 setnames(dt_poly, c("atc_group", "i.atc_group"), c("atc_group_poly1", "atc_group_poly2"))
 
 # Overlap should be between start and end fu - (not for EFEMERIS or FINLAND)
@@ -56,7 +54,7 @@ if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG) {
   setorder(dt_poly, pregnancy_id, overlap_start)
   dt_poly <- unique(dt_poly, by = c("pregnancy_id", "year"))
   # Merge pre-pregnancy records with polytherapy records to get persons who had polytherapy
-  dt <- merge(dt_prepreg, dt_poly, by = "pregnancy_id", all = FALSE, allow.cartesian = TRUE)
+  dt <- merge(dt_prepreg, dt_poly, by = c("pregnancy_id", "pregnancy_start_date", "pregnancy_end_date"), all = FALSE, allow.cartesian = TRUE)
 }
  
 if (nrow(dt) > 0) {

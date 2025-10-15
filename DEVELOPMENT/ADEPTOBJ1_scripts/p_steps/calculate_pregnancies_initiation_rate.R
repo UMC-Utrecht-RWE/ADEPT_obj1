@@ -128,7 +128,10 @@ if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG) {
     # Criteria: Treatment episode needs to start in pregnancy, and there can be no other treatment episode in the look back period
     # Create a new column with the previous episode.end per pregnancy
     dt_all[, prior_episode_end := shift(episode.end), by = .(pregnancy_id)]
-
+    
+    # convert pregnancy start date to IDate
+    dt_all[,pregnancy_start_date:=as.IDate(pregnancy_start_date)]
+    
     # Keep only if no episode (end) in the look back period
     if(deap_flags$is_FIN_REG)  dt_all <- dt_all[(pregnancy_start_date - prior_episode_end > as.integer(as.duration(months(3)) / ddays(1))) | is.na(prior_episode_end)]
     if(deap_flags$is_EFEMERIS) dt_all <- dt_all[(pregnancy_start_date - prior_episode_end > lookback_period) | is.na(prior_episode_end)]
