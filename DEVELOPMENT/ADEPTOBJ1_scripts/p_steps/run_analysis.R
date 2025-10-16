@@ -10,18 +10,18 @@ source(file.path(thisdir, "p_steps", "info.R"), local = TRUE)
 # Set study parameters
 source(file.path(thisdir, "p_steps", "study_parameters.R"), local = TRUE)
 
-# Create Study Population 
+# Create Study Population
 source(file.path(thisdir, "p_steps", "study_source_population_script.R"), local = TRUE)
 
 # clean up before moving on
 rm(list = grep("actual_tables|CDM_SOURCE|^flow_chart|inputed|METADATA|OBSERVATION|PERSONS|SCHEME|Selection|SOURCE|SPELLS", ls(), value = TRUE, ignore.case = TRUE))
 
-# Loads study population/populations 
+# Loads study population/populations
 populations <- list.files(file.path(paths$D3_dir, "study_population"))
 
 
 # Loops over each subpopulation
-for(pop in seq_along(populations)){
+for (pop in seq_along(populations)){
   
   # Loads study population
   study_population <- readRDS(file.path(paths$D3_dir, "study_population", populations[pop]))
@@ -98,7 +98,7 @@ for(pop in seq_along(populations)){
     
     # Find Polytherapy
     source(file.path(thisdir, "p_steps", "calculate_polytherapy.R"), local = TRUE)
-    
+  
     # Find Polytherapy - stratification
     source(file.path(thisdir, "p_steps", "calculate_polytherapy_stratification.R"), local = TRUE)
     
@@ -110,4 +110,3 @@ for(pop in seq_along(populations)){
 
 # clean up before moving on
 rm(list = grep("agegroup|^age_at|^age_group|age_levels|algo|all_|alt|anti|ATC|attrition|baseline|benzo|bridge|check_counts|code|combined|common|comorbidity|concept|current|denom_counts|denominator|discont|dt|file|final|flow|fu_|gaba|incidence|indication|med|merge|overlap|prev|row|step|study_pop|switcher|treat", ls(), value = TRUE, ignore.case = TRUE))
-

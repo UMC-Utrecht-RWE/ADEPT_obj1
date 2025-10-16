@@ -93,7 +93,7 @@ for(pop in seq_along(populations)){
   source(file.path(thisdir, "p_steps", "move_files_to_folders.R"), local = TRUE)
 
   # Co-morbidity and Indication Counts
-  source(file.path(thisdir, "p_steps", "calculate_indication_and_comorbidities.R"), local = TRUE)
+  # source(file.path(thisdir, "p_steps", "calculate_indication_and_comorbidities.R"), local = TRUE)
 
   # Create Treatment Episodes
   source(file.path(thisdir, "p_steps", "create_treatment_episodes.R"), local = TRUE)
