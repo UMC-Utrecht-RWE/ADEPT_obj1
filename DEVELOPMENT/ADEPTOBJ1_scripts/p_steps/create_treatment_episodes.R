@@ -1,5 +1,5 @@
 #################################################################
-# Create Treatment Episodes - Individual Medicines 
+# Create Treatment Episodes
 #################################################################
 
 print("===============================================================================")
@@ -14,47 +14,34 @@ files_exposures <- files_exposures[grepl(paste0("^", pop_prefix, "_"), files_exp
 
 # For each one, create treatment episodes and save in treatment episodes folder with the same name + suffix treatment_episode
 for (exposure in seq_along(files_exposures)) {
-  
   # Extract ATC group from file name: remove prefix and .rds
   # Remove prefix and either '_algo_med.rds' or '.rds'
   atc_group <- gsub(paste0("^", pop_prefix, "_"), "", gsub("_algo_med\\.rds$|\\.rds$", "", files_exposures[exposure]))
-  
   # Print message
   message("Processing: ", paste0(pop_prefix, "_", atc_group))
-  
   # Read the current file
   dt <- readRDS(file.path(paths$D3_dir, "exposure", files_exposures[exposure]))
-  
-  # Only keep records between entry and exit dates 
+  # Only keep records between entry and exit dates
   if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG) dt <- dt[rx_date >= entry_date & rx_date <= exit_date]
-  
-  # Get assumed durations per DAP 
-  source(file.path(thisdir, "p_steps", "calculate_DAP_specific_assumed_durations.R"), local = TRUE) 
-  
-  # If assumed duration >100, then change it to median 
+  # Get assumed durations per DAP
+  source(file.path(thisdir, "p_steps", "calculate_DAP_specific_assumed_durations.R"), local = TRUE)
+  # If assumed duration >100, then change it to median
   med_val <- median(dt$assumed_duration, na.rm = TRUE)
   dt[assumed_duration > 100, assumed_duration := med_val]
-  
   # Add atc_group column
   dt[, atc_group := atc_group]
-  
   # save the file back so we have assumed duration
   saveRDS(dt, file.path(paths$D3_dir, "exposure", files_exposures[exposure]))
-  
-  
-  if(nrow(dt)>0){
-    
+  if (nrow(dt) > 0) {
     if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG) {
-      
-      dt <- unique(dt, by = c("person_id", "atc_group", "rx_date"))
-      
+      dt <- unique(dt, by = c("person_id", "code", "atc_group", "rx_date"))
       # Create Treatment Episode
       treat_episode <- compute.treatment.episodes(
         data = dt,
         ID.colname = "person_id",
         event.date.colname = "rx_date",
         event.duration.colname = "assumed_duration",
-        medication.class.colname = "atc_group",  
+        medication.class.colname = "atc_group",
         carryover.within.obs.window = TRUE,
         carry.only.for.same.medication = TRUE,
         consider.dosage.change = FALSE,
@@ -75,43 +62,33 @@ for (exposure in seq_along(files_exposures)) {
         suppress.warnings = FALSE,
         return.data.table = TRUE
       )
-      
       # Add the atc_group column to treatment episode
       treat_episode[, atc_group := atc_group]
-      
       # Merge with dt to get unique ATC
       treat_episode <- merge(treat_episode, dt[, .(person_id, rx_date, code)], by.x = c("person_id", "episode.start"), by.y = c("person_id", "rx_date"), all.x = TRUE, allow.cartesian = TRUE)
-      
       # Merge with study population to get start, end follow ups, entry/exit dates
       treat_episode <- merge(treat_episode, study_population[, .(person_id, sex_at_instance_creation, birth_date, start_follow_up, end_follow_up, entry_date, exit_date)], by = "person_id", allow.cartesian = TRUE)
-      
       # Convert date columns to IDate
       treat_episode[, `:=`(episode.start = as.IDate(episode.start), episode.end = as.IDate(episode.end))]
-      
       # Apply episode validity filters
-      treat_episode <- treat_episode[episode.end > entry_date - 90,] 
-      treat_episode <- treat_episode[episode.start < exit_date,] 
-      treat_episode[episode.end > exit_date, episode.end := exit_date] 
-      treat_episode <- treat_episode[episode.end > episode.start,] 
-      
+      treat_episode <- treat_episode[episode.end > entry_date - 90, ]
+      treat_episode <- treat_episode[episode.start < exit_date, ]
+      treat_episode[episode.end > exit_date, episode.end := exit_date]
+      treat_episode <- treat_episode[episode.end > episode.start, ]
       # Remove duplicates
       treat_episode <- unique(treat_episode)
-      
       # Save output if treatment episode has at least one row
-      if(nrow(treat_episode)>0) saveRDS(treat_episode, file = file.path(paths$D3_dir, "tx_episodes", paste0(pop_prefix, "_", atc_group, "_treatment_episode.rds")))
-      
+      if (nrow(treat_episode) > 0) saveRDS(treat_episode, file = file.path(paths$D3_dir, "tx_episodes", paste0(pop_prefix, "_", atc_group, "_treatment_episode.rds")))
     } else {
       # FOR EFEMERIS & FIN REG
       # Create Treatment Episode
-      
-      dt <- unique(dt, by = c("pregnancy_id", "atc_group", "rx_date"))
-      
+      dt <- unique(dt, by = c("pregnancy_id", "code", "atc_group", "rx_date"))
       treat_episode <- compute.treatment.episodes(
         data = dt,
         ID.colname = "pregnancy_id",
         event.date.colname = "rx_date",
         event.duration.colname = "assumed_duration",
-        medication.class.colname = "atc_group",  
+        medication.class.colname = "atc_group",
         carryover.within.obs.window = TRUE,
         carry.only.for.same.medication = TRUE,
         consider.dosage.change = FALSE,
@@ -132,30 +109,21 @@ for (exposure in seq_along(files_exposures)) {
         suppress.warnings = FALSE,
         return.data.table = TRUE
       )
-      
       # Add the atc_group column to treatment episode
       treat_episode[, atc_group := atc_group]
-      
       # Merge with dt to get unique ATC
       treat_episode <- merge(treat_episode, dt[, .(pregnancy_id, person_id, rx_date, code)], by.x = c("pregnancy_id", "episode.start"), by.y = c("pregnancy_id", "rx_date"), all.x = TRUE, allow.cartesian = TRUE)
-      
       # Merge with study population to get start, end follow ups, entry/exit dates
-      treat_episode <- merge(treat_episode, study_population[, .(pregnancy_id, pregnancy_start_date, pregnancy_end_date, sex_at_instance_creation,birth_date, op_start_date, op_end_date,  start_follow_up, end_follow_up)], by = "pregnancy_id", allow.cartesian = TRUE)
-      
+      treat_episode <- merge(treat_episode, study_population[, .(pregnancy_id, pregnancy_start_date, pregnancy_end_date, sex_at_instance_creation, birth_date, op_start_date, op_end_date, start_follow_up, end_follow_up)], by = "pregnancy_id", allow.cartesian = TRUE)
       # Convert date columns to IDate
       treat_episode[, `:=`(episode.start = as.IDate(episode.start), episode.end = as.IDate(episode.end))]
-      
       # Apply episode validity filters
-      treat_episode[episode.end > end_follow_up, episode.end := end_follow_up] 
-      treat_episode <- treat_episode[episode.end > episode.start,] 
-      
+      treat_episode[episode.end > end_follow_up, episode.end := end_follow_up]
+      treat_episode <- treat_episode[episode.end > episode.start, ]
       # Remove duplicates
       treat_episode <- unique(treat_episode)
-      
       # Save output if treatment episode has at least one row
-      if(nrow(treat_episode)>0) saveRDS(treat_episode, file = file.path(paths$D3_dir, "tx_episodes", paste0(pop_prefix, "_", atc_group, "_treatment_episode.rds")))
-      
-      
+      if (nrow(treat_episode) > 0) saveRDS(treat_episode, file = file.path(paths$D3_dir, "tx_episodes", paste0(pop_prefix, "_", atc_group, "_treatment_episode.rds")))
     }
   }
 }
