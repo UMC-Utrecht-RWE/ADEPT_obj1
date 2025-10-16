@@ -1,7 +1,7 @@
 ###############################################################################################################################################################################
-# <<< Sub-objective 1.3: Pre-pregnancy use rate >>> 
+# <<< Sub-objective 1.3: Pre-pregnancy use rate >>>
 # Measure: Annual pre-pregnancy ASM use rate
-# Numerator: The number of unique pregnancies with ≥1 treatment episode in the year prior to pregnancy, falling within both 12-6 months before pregnancy and 6-0 months before pregnancy.
+# Numerator: The number of unique pregnancies with >=1 treatment episode in the year prior to pregnancy, falling within both 12-6 months before pregnancy and 6-0 months before pregnancy.
 # Denominator: Total number of unique pregnancies in that calendar year in the data source
 # Stratification by: Overall, individual drug substance, drug sub-groups, calendar year, data source
 
@@ -14,231 +14,160 @@ print("=========================================================================
 # List all treatment episode files matching population prefix
 files_episodes <- list.files(file.path(paths$D3_dir, "tx_episodes"), pattern = "\\.rds$")
 
-# Keep only files that match population prefix AND contain "_F_" (female patients)
-files_episodes <- files_episodes[grepl(paste0("^", pop_prefix, "_"), files_episodes) & grepl("_F_", files_episodes)]
-
-# Drop PC_HOSP files if pop_prefix is PC
-if(pop_prefix == "PC") files_episodes <- files_episodes[!grepl("PC_HOSP", files_episodes)]
-
-# Load pregnancies file
-load(file.path(preg_dir, "D3_pregnancy_final.RData"))
-pregnancies <- as.data.table(D3_pregnancy_final)
-
-# Remove duplicates
-pregnancies <- unique(pregnancies)
-
-# Convert pregnancy dates to IDate
-pregnancies[, pregnancy_start_date := as.IDate(pregnancy_start_date)]
-pregnancies[, pregnancy_end_date   := as.IDate(pregnancy_end_date)]
-
-# Merge pregnancies with study population to get start and end follow up. We want to keep only pregnancy starts within this period
-pregnancies <- merge(pregnancies, study_population[, .(person_id, start_follow_up, end_follow_up, entry_date, exit_date)], by = "person_id", allow.cartesian = TRUE)
-
-# keep pregnancies that start after start follow up to ensure lookback period
-pregnancies <- pregnancies[pregnancy_start_date >= start_follow_up,]
-
-# Drop the start and end follow up columns as these will be available again when merged with treatment episodes
-pregnancies[, c("start_follow_up", "end_follow_up", "entry_date", "exit_date") := NULL]
-
-if (any(unlist(deap_flags[c("is_BIFAP", "is_CPRD", "is_NOR_REG", "is_PHARMO", "is_SIDIAP", "is_VAL_PAD", "is_VID")]))) {
-  
+if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG) {
+  # Keep only files that match population prefix AND contain "_F_" (female patients)
+  files_episodes <- files_episodes[grepl(paste0("^", pop_prefix, "_"), files_episodes) & grepl("_F_", files_episodes)]
+  # Create vector of study years from study dates (exist in environment)
+  study_years <- seq(year(as.IDate(as.Date(start_study_date) + lookback_period)), year(as.IDate(end_study_date)))
+  # Create template table with all years zeroed
+  empty_dt <- data.table(preg_year = study_years)
+  # Load pregnancies file
+  load(file.path(preg_dir, "D3_pregnancy_final.RData"))
+  pregnancies <- as.data.table(D3_pregnancy_final)
+  pregnancies <- unique(pregnancies)   # Remove true duplicates
+  # Convert pregnancy dates to IDate
+  pregnancies[, pregnancy_start_date := as.IDate(pregnancy_start_date)][, pregnancy_end_date := as.IDate(pregnancy_end_date)]
+  # Merge pregnancies with study population to get start and end follow up. We want to keep only pregnancy starts within this period
+  pregnancies <- merge(pregnancies, study_population[, .(person_id, start_follow_up, end_follow_up)], by = "person_id", allow.cartesian = TRUE)
+  # keep pregnancies that start after start follow up to ensure look back period and fall within follow up period
+  pregnancies <- pregnancies[pregnancy_start_date >= start_follow_up & pregnancy_end_date <= end_follow_up, ]
+  # Drop the start and end follow up columns as these will be available again when merged with treatment episodes
+  pregnancies[, c("start_follow_up", "end_follow_up") := NULL]
   # Add pre-pregnancy windows
   pregnancies[, window_12_6_start := pregnancy_start_date - 365]
   pregnancies[, window_12_6_end   := pregnancy_start_date - 183]
   pregnancies[, window_6_0_start  := pregnancy_start_date - 182]
   pregnancies[, window_6_0_end    := pregnancy_start_date - 1]
-  
   # Add pregnancy start year
   pregnancies[, preg_year := year(pregnancy_start_date)]
-  
-  # Set key for joining
+  # Set key for joining with treatment episodes
   setkey(pregnancies, person_id)
-  
-  # Create vector of study years from your study dates (must exist in environment)
-  study_years <- seq(year(start_study_date), year(end_study_date))
-  
-  # Create template table with all years zeroed
-  empty_dt <- data.table(preg_year = study_years)
-  
   # Calculate total pregnancies per year (denominator)
   total_preg_by_year <- pregnancies[, .(Freq = uniqueN(pregnancy_id)), by = preg_year]
-  
   # Loop through each treatment episode file
   for (episode in seq_along(files_episodes)) {
-    
     # Get name of current ASM
     treatment_name <- gsub("_treatment_episode\\.rds$", "", files_episodes[episode])
-    
     # Load treatment episodes
     dt <- readRDS(file.path(paths$D3_dir, "tx_episodes", files_episodes[episode]))
-    
     # Remove duplicates
     dt <- unique(dt, by = c("person_id", "episode.start"))
-    
     # Convert episode dates to IDate
     dt[, episode.start := as.IDate(episode.start)][, episode.end := as.IDate(episode.end)]
-    
     # Set key for joining
     setkey(dt, person_id)
-    
-    # <<< 12-0 window overlap >>> # 
-    
+    # <<< 12-0 window overlap >>> #
     # Merge treatment episode with pregnancies file on person id
     dt_12_0 <- dt[pregnancies, on = .(person_id), nomatch = 0]
-    
-    # Keep episodes that fall within the 12-0 month period before pregnancy start 
+    # Keep episodes that fall within the 12-0 month period before pregnancy start
     dt_12_0 <- dt_12_0[episode.start <= window_6_0_end & episode.end >= window_12_6_start]
-    
-    # Create flags for 12–6 month and 6–0 month windows:
+    # Create flags for 12-6 month and 6-0 month windows:
     dt_12_0[, overlap_12_6 := episode.start <= window_12_6_end & episode.end >= window_12_6_start]
     dt_12_0[, overlap_6_0  := episode.start <= window_6_0_end  & episode.end >= window_6_0_start]
-    
-    dt_12_0 <- dt_12_0[overlap_12_6 == TRUE & overlap_6_0 == TRUE]
-    
-    # Keep only if pregnancy start is between start and end follow up 
-    dt_12_0 <- dt_12_0[pregnancy_start_date >= start_follow_up & pregnancy_start_date <= end_follow_up,]
-    
-    # Get list of unique ids 
+    dt_12_0 <- dt_12_0[overlap_12_6 == TRUE & overlap_6_0 == TRUE, ]
+    # Get list of unique ids
     preg_ids_12_0 <- unique(dt_12_0$pregnancy_id)
-    
-    # Check if any pre-pregnancy ASM use was found 
-    if(nrow(dt_12_0)>0){
-      
+    # Check if any pre-pregnancy ASM use was found
+    if (nrow(dt_12_0) > 0) {
       # Print Message
       message(paste0("There is pre-pregnancy use of ", treatment_name))
-      
       # Count the number of pregnancies with ASM use in the 6-0 month and 12-6 month window, grouped by pregnancy year
       pre_pregnancy_counts <- pregnancies[pregnancy_id %in% preg_ids_12_0, .N, by = preg_year]
-      
-      # Merge with template to get all years 
+      # Merge with template to get all years
       pre_pregnancy_all <- merge(empty_dt[, .(preg_year)], pre_pregnancy_counts, by = "preg_year", all.x = TRUE)
-      
       # Merge with all pregnancies to get denominator
       pre_pregnancy_all <- merge(pre_pregnancy_all, total_preg_by_year, by = "preg_year", all.x = TRUE)
-      
       # Set N = 0 and Freq = 0 for years with no counts
       pre_pregnancy_all[is.na(N), N := 0][is.na(Freq), Freq := 0]
-      
       # Calculate rates
       pre_pregnancy_all[, rate := round(1000 * N / Freq, 3)][N == 0 & Freq == 0, rate := 0]
-      
-      # Create column marking if rate is computable 
+      # Create column marking if rate is computable
       pre_pregnancy_all[, rate_computable := Freq > 0]
-      
       # Set warnings if Numerator > than Denominator or if Denominator is 0 and Numerator is >0
       if (nrow(pre_pregnancy_all[N > Freq]) > 0) warning(red("Warning: Some numerator values exceed denominator."))
       if (nrow(pre_pregnancy_all[Freq == 0 & N != 0]) > 0) warning(red("Warning: Denominator zero with non-zero numerator."))
-      
-      # Save data where odd values 
-      if(nrow(pre_pregnancy_all[N > Freq])>0) fwrite(pre_pregnancy_all[N > Freq], file.path(paths$D5_dir, "1.3_pre-pregnancy_use_rate", paste0(treatment_name, "_all_num_gt_denominator.csv")))
-      if(nrow(pre_pregnancy_all[Freq == 0 & N != 0])>0) fwrite(pre_pregnancy_all[Freq == 0 & N != 0], file.path(paths$D5_dir, "1.3_pre-pregnancy_use_rate", paste0(treatment_name, "_all_denominator_zero_numerator_nonzero.csv")))
-      
-      # Rename columns 
+      # Save data where odd values
+      if (nrow(pre_pregnancy_all[N > Freq]) > 0) fwrite(pre_pregnancy_all[N > Freq], file.path(paths$D5_dir, "1.3_pre-pregnancy_use_rate", paste0(treatment_name, "_all_num_gt_denominator.csv")))
+      if (nrow(pre_pregnancy_all[Freq == 0 & N != 0]) > 0) fwrite(pre_pregnancy_all[Freq == 0 & N != 0], file.path(paths$D5_dir, "1.3_pre-pregnancy_use_rate", paste0(treatment_name, "_all_denominator_zero_numerator_nonzero.csv")))
+      # Rename columns
       setnames(pre_pregnancy_all, c("N", "Freq"), c("n_treated", "n_total"))
-      
-      # Save files 
+      # Save files
       saveRDS(dt_12_0, file = file.path(paths$D4_dir, "1.3_pre-pregnancy_use", paste0(treatment_name, "_pre_pregnancy_data.rds")))
       saveRDS(pre_pregnancy_all, file = file.path(paths$D5_dir, "1.3_pre-pregnancy_use", paste0(treatment_name, "_pre_pregnancy_counts.rds")))
-      
     } else {
       message(red(paste0("There was no pre-pregnancy use of ", treatment_name, " in the 12-0 month window")))
-    }  
+    }
   }
 } else {
-  
-  # Add pre-pregnancy windows
-  pregnancies[, window_start := pregnancy_start_date - lookback_period]
-  pregnancies[, window_end   := pregnancy_start_date - 1]
-
-  # Add pregnancy start year
-  pregnancies[, preg_year := year(pregnancy_start_date)]
-  
-  # Set key for joining
-  setkey(pregnancies, person_id)
-  
-  # Create vector of study years from your study dates (must exist in environment)
-  study_years <- seq(year(start_study_date), year(end_study_date))
-  
+  # EFEMERIS and FINREG
+  # Create vector of study years from study dates (exist in environment)
+  study_years <- seq(year(as.IDate(start_study_date)), year(as.IDate(end_study_date)))
   # Create template table with all years zeroed
   empty_dt <- data.table(preg_year = study_years)
-  
+  # study population is the pregnancies
+  pregnancies <- copy(study_population) # pregnancies and study population are the same
+  pregnancies <- unique(pregnancies)   # Remove true duplicates
+  # Convert pregnancy dates to IDate
+  pregnancies[, pregnancy_start_date := as.IDate(pregnancy_start_date)][, pregnancy_end_date := as.IDate(pregnancy_end_date)]
+  # Add pre-pregnancy windows
+  pregnancies[, window_start := op_start_date]
+  pregnancies[, window_end   := start_follow_up - 1]
+  # Add pregnancy start year
+  pregnancies[, preg_year := year(pregnancy_start_date)]
+  # Set key for joining with treatment episodes
+  setkey(pregnancies, pregnancy_id)
   # Calculate total pregnancies per year (denominator)
   total_preg_by_year <- pregnancies[, .(Freq = uniqueN(pregnancy_id)), by = preg_year]
-  
   # Loop through each treatment episode file
   for (episode in seq_along(files_episodes)) {
-    
     # Get name of current ASM
     treatment_name <- gsub("_treatment_episode\\.rds$", "", files_episodes[episode])
-    
     # Load treatment episodes
     dt <- readRDS(file.path(paths$D3_dir, "tx_episodes", files_episodes[episode]))
-    
     # Remove duplicates
-    dt <- unique(dt, by = c("person_id", "episode.start", "start_follow_up"))
-    
+    dt <- unique(dt, by = c("pregnancy_id", "episode.start"))
     # Convert episode dates to IDate
     dt[, episode.start := as.IDate(episode.start)][, episode.end := as.IDate(episode.end)]
-    
     # Set key for joining
-    setkey(dt, person_id)
-    
-    # <<< Overlap >>> # 
-    
-    # Merge treatment episode with pregnancies file on person id
-    dt_all <- dt[pregnancies, on = .(person_id), nomatch = 0, allow.cartesian = TRUE]
-    
-    # Keep episodes that fall within the 12-0 month period before pregnancy start 
+    setkey(dt, pregnancy_id)
+    # Drop columns from pregnancies that already exist in dt
+    pregnancies_clean <- pregnancies[, c("pregnancy_id", setdiff(names(pregnancies), names(dt))), with = FALSE]
+    # <<< Overlap >>> #
+    # Merge treatment episode with pregnancies file on pregnancy id
+    dt_all <- dt[pregnancies_clean, on = .(pregnancy_id), nomatch = 0, allow.cartesian = TRUE]
+    # Keep episodes that fall within the look back period before pregnancy start
     dt_all <- dt_all[episode.start <= window_end & episode.end >= window_start]
-    
-    # Keep only if pregnancy start is between start and end follow up 
-    dt_all <- dt_all[pregnancy_start_date >= start_follow_up & pregnancy_start_date <= end_follow_up,]
-    
-    # Get list of unique ids 
+    # Get list of unique ids
     preg_ids_all <- unique(dt_all$pregnancy_id)
-    
-    # Check if any pre-pregnancy ASM use was found 
-    if(nrow(dt_all)>0){
-      
+    # Check if any pre-pregnancy ASM use was found
+    if (nrow(dt_all) > 0) {
       # Print Message
       message(paste0("There is pre-pregnancy use of ", treatment_name))
-      
-      # Count the number of pregnancies with ASM use in the 6-0 month and 12-6 month window, grouped by pregnancy year
+      # Count the number of pregnancies with ASM use in the lookback period window, grouped by pregnancy year
       pre_pregnancy_counts <- pregnancies[pregnancy_id %in% preg_ids_all, .N, by = preg_year]
-      
-      # Merge with template to get all years 
+      # Merge with template to get all years
       pre_pregnancy_all <- merge(empty_dt[, .(preg_year)], pre_pregnancy_counts, by = "preg_year", all.x = TRUE)
-      
       # Merge with all pregnancies to get denominator
       pre_pregnancy_all <- merge(pre_pregnancy_all, total_preg_by_year, by = "preg_year", all.x = TRUE)
-      
       # Set N = 0 and Freq = 0 for years with no counts
       pre_pregnancy_all[is.na(N), N := 0][is.na(Freq), Freq := 0]
-      
       # Calculate rates
       pre_pregnancy_all[, rate := round(1000 * N / Freq, 3)][N == 0 & Freq == 0, rate := 0]
-      
-      # Create column marking if rate is computable 
+      # Create column marking if rate is computable
       pre_pregnancy_all[, rate_computable := Freq > 0]
-      
       # Set warnings if Numerator > than Denominator or if Denominator is 0 and Numerator is >0
       if (nrow(pre_pregnancy_all[N > Freq]) > 0) warning(red("Warning: Some numerator values exceed denominator."))
       if (nrow(pre_pregnancy_all[Freq == 0 & N != 0]) > 0) warning(red("Warning: Denominator zero with non-zero numerator."))
-      
-      # Save data where odd values 
-      if(nrow(pre_pregnancy_all[N > Freq])>0) fwrite(pre_pregnancy_all[N > Freq], file.path(paths$D5_dir, "1.3_pre-pregnancy_use_rate", paste0(treatment_name, "_all_num_gt_denominator.csv")))
-      if(nrow(pre_pregnancy_all[Freq == 0 & N != 0])>0) fwrite(pre_pregnancy_all[Freq == 0 & N != 0], file.path(paths$D5_dir, "1.3_pre-pregnancy_use_rate", paste0(treatment_name, "_all_denominator_zero_numerator_nonzero.csv")))
-      
-      # Rename columns 
+      # Save data where odd values
+      if (nrow(pre_pregnancy_all[N > Freq]) > 0) fwrite(pre_pregnancy_all[N > Freq], file.path(paths$D5_dir, "1.3_pre-pregnancy_use_rate", paste0(treatment_name, "_all_num_gt_denominator.csv")))
+      if (nrow(pre_pregnancy_all[Freq == 0 & N != 0]) > 0) fwrite(pre_pregnancy_all[Freq == 0 & N != 0], file.path(paths$D5_dir, "1.3_pre-pregnancy_use_rate", paste0(treatment_name, "_all_denominator_zero_numerator_nonzero.csv")))
+      # Rename columns
       setnames(pre_pregnancy_all, c("N", "Freq"), c("n_treated", "n_total"))
-      
-      # Save files 
+      # Save files
       saveRDS(dt_all, file = file.path(paths$D4_dir, "1.3_pre-pregnancy_use", paste0(treatment_name, "_pre_pregnancy_data.rds")))
       saveRDS(pre_pregnancy_all, file = file.path(paths$D5_dir, "1.3_pre-pregnancy_use", paste0(treatment_name, "_pre_pregnancy_counts.rds")))
-      
     } else {
       message(red(paste0("There was no pre-pregnancy use of ", treatment_name)))
-    }  
+    }
   }
-  
 }

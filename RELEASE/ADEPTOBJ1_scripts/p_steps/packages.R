@@ -16,7 +16,7 @@ load_package <- function(pkg) {
 }
 
 # List of all required packages
-required_packages <- c( "AdhereR", "crayon", "data.table", "fs", "lubridate", "RcppAlgos", "readr", "readxl", "stringr")
+required_packages <- c("AdhereR", "crayon", "data.table", "fs", "lubridate", "RcppAlgos", "readr", "readxl", "stringr")
 
 # Load each package
 invisible(lapply(required_packages, load_package))
