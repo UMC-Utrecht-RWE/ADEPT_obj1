@@ -1,11 +1,11 @@
 ###################################################
-# Create Folders and Set Paths 
+# Create Folders and Set Paths
 ###################################################
 
-# Define root folder 
+# Define root folder
 if (!exists("root_dir")) root_dir <- thisdir
 
-# Assign names to paths 
+# Assign names to paths
 paths <- list(
   D3_dir = file.path(root_dir, "D3_study_variables"),
   D4_dir = file.path(root_dir, "D4_analytic_datasets"),
@@ -20,18 +20,19 @@ for (p in paths) {
   }
 }
 
-if(deap_flags$is_EFEMERIS | deap_flags$is_FIN_REG) {
+if (deap_flags$is_EFEMERIS || deap_flags$is_FIN_REG) {
+  
   # Create list of all folders to be created
   subfolders <- list(
-    
     file.path(paths$D3_dir, c(
-      "concept_sets", "denominator", "source_population", "spells", "study_population", "tmp", "tx_episodes",
-      "algorithm_input", "alternatives", "cov", "exposure", "indication" 
+      "concept_sets", "denominator", "source_population",
+      "spells", "study_population", "tmp", "tx_episodes",
+      "algorithm_input", "alternatives", "cov", "exposure", "indication"
     )),
     
     file.path(paths$D4_dir, c(
-      "1.2_discontinued", "1.2_altmeds", "1.2_switching", "1.2_polytherapy", 
-      "1.3_pre-pregnancy_use", "1.3_pregnancy_initiation", "1.3_pregnancy_continuous", 
+      "1.2_discontinued", "1.2_altmeds", "1.2_switching", "1.2_polytherapy",
+      "1.3_pre-pregnancy_use", "1.3_pregnancy_initiation", "1.3_pregnancy_continuous",
       "1.4_pregnancy_discontinuation", "1.4_pregnancy_switching", "1.4_pregnancy_polytherapy",
       "1.5_mean_weighted_daily_dose"
     )),
@@ -77,18 +78,10 @@ if(deap_flags$is_EFEMERIS | deap_flags$is_FIN_REG) {
 
 # Create folders
 for (f in subfolders) {
-  
   if (!dir.exists(f)) {
-    
     dir.create(f, recursive = TRUE)
     message("Created folder: ", f)
-    
   } else {
-    
     message("Folder already exists: ", f)
-    
   }
 }
-
-
-

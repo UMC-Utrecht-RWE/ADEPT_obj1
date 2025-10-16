@@ -1,13 +1,13 @@
 ###################################################
-# Checks which data components are available in the Common Data Model (CDM) directory and 
+# Checks which data components are available in the CDM directory
 # sets flags indicating whether certain types of analyses can be performed.
 ###################################################
 
 # Define function
-`%!in%` = Negate(`%in%`)
+`%!in%` <- Negate(`%in%`)
 
 # Function to list files by pattern in a directory
-get_files <- function(dir, pattern) if(length(files <- list.files(dir, pattern = pattern)) == 0) character(0) else files
+get_files <- function(dir, pattern) if (length(files <- list.files(dir, pattern = pattern)) == 0) character(0) else files
 
 # Detect which data tables are present in the directory
 actual_tables <- list(
@@ -34,105 +34,69 @@ actual_tables <- list(
 ### pregnancy_only_vacc: if TRUE only vaccine exposure in pregnancy can be estimated
 ### pregnancy_only_med_vacc: if TRUE only medicine and vaccine exposure in pregnancy can be estimated
 
-if(sum(length(actual_tables$EVENTS), 
-       length(actual_tables$MEDICAL_OBSERVATIONS), 
-       length(actual_tables$SURVEY_OBSERVATIONS))==0){
-  
+if (sum(length(actual_tables$EVENTS),
+        length(actual_tables$MEDICAL_OBSERVATIONS),
+        length(actual_tables$SURVEY_OBSERVATIONS)) == 0) {
   #no diagnoses can be retrieved
-  diagnoses<-FALSE
-  diagnoses_pregnancy_med<-FALSE
-  diagnoses_pregnancy_vacc<-FALSE
-  diagnoses_pregnancy_med_vacc<-FALSE
-  
-  if(length(actual_tables$SURVEY_ID)>0){
-    
+  diagnoses <- FALSE
+  diagnoses_pregnancy_med <- FALSE
+  diagnoses_pregnancy_vacc <- FALSE
+  diagnoses_pregnancy_med_vacc <- FALSE
+  if (length(actual_tables$SURVEY_ID) > 0) {
     #pregnancies can be retrieved
-    pregnancies<-TRUE
-    
-    if(length(actual_tables$MEDICINES)>0){
-      
-      if(length(actual_tables$VACCINES)>0){
-        
+    pregnancies <- TRUE
+    if (length(actual_tables$MEDICINES) > 0) {
+      if (length(actual_tables$VACCINES) > 0) {
         pregnancy_only_med      <- TRUE
         pregnancy_only_vacc     <- TRUE
         pregnancy_only_med_vacc <- TRUE
-        
       } else {
-        
-        pregnancy_only_med      <-TRUE
-        pregnancy_only_vacc     <-FALSE
-        pregnancy_only_med_vacc <-FALSE
-        
+        pregnancy_only_med      <- TRUE
+        pregnancy_only_vacc     <- FALSE
+        pregnancy_only_med_vacc <- FALSE
       }
-      
     } else {
-      
-      if(length(actual_tables$VACCINES)>0){
-        
-        pregnancy_only_med      <- FALSE 
+      if (length(actual_tables$VACCINES) > 0) {
+        pregnancy_only_med      <- FALSE
         pregnancy_only_vacc     <- TRUE
         pregnancy_only_med_vacc <- FALSE
-        
       } else {
-        
         pregnancy_only_med      <- FALSE
         pregnancy_only_vacc     <- FALSE
         pregnancy_only_med_vacc <- FALSE
-        
       }
-      
     }
-    
   } else {
-    
-    pregnancies<-FALSE
-    
+    pregnancies <- FALSE
   }
-  
 } else {
-  
   #diagnoses can be retrieved
   diagnoses               <- TRUE
   pregnancies             <- TRUE
-  
   pregnancy_only_med      <- FALSE
   pregnancy_only_vacc     <- FALSE
   pregnancy_only_med_vacc <- FALSE
-  
-  if(length(actual_tables$MEDICINES)>0){
-    
-    if(length(actual_tables$VACCINES)>0){
-      
-      diagnoses_pregnancy_med      <- TRUE 
-      diagnoses_pregnancy_vacc     <- TRUE
+  if (length(actual_tables$MEDICINES) > 0) {
+    if (length(actual_tables$VACCINES) > 0) {
+      diagnoses_pregnancy_med <- TRUE
+      diagnoses_pregnancy_vacc <- TRUE
       diagnoses_pregnancy_med_vacc <- TRUE
-      
     } else {
-      
-      diagnoses_pregnancy_med      <- TRUE 
-      diagnoses_pregnancy_vacc     <- FALSE
+      diagnoses_pregnancy_med <- TRUE
+      diagnoses_pregnancy_vacc <- FALSE
       diagnoses_pregnancy_med_vacc <- FALSE
-      
     }
-    
   } else {
-    
-    if(length(actual_tables$VACCINES)>0){
-      
-      diagnoses_pregnancy_med      <- FALSE 
-      diagnoses_pregnancy_vacc     <- TRUE
-      diagnoses_pregnancy_med_vacc <- FALSE 
-      
+    if (length(actual_tables$VACCINES) > 0) {
+      diagnoses_pregnancy_med <- FALSE
+      diagnoses_pregnancy_vacc <- TRUE
+      diagnoses_pregnancy_med_vacc <- FALSE
     } else {
-      
-      diagnoses_pregnancy_med      <- FALSE 
-      diagnoses_pregnancy_vacc     <- FALSE
-      diagnoses_pregnancy_med_vacc <- FALSE 
-      
+      diagnoses_pregnancy_med <- FALSE
+      diagnoses_pregnancy_vacc <- FALSE
+      diagnoses_pregnancy_med_vacc <- FALSE
     }
-    
   }
-  
 }
 
 
@@ -151,5 +115,3 @@ if (subpopulations_present) {
   subpop_values <- METADATA_subp[type_of_metadata == "subpopulations", values]
   subpopulations_names <- unlist(str_split(subpop_values, pattern = " "))
 }
-
-
