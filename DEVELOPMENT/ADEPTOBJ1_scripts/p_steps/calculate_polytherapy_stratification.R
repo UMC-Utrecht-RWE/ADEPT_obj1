@@ -19,7 +19,7 @@ files_polytherapy_episodes <- list.files(file.path(paths$D4_dir, "1.2_polytherap
 # filter for pop_prefix
 files_polytherapy_episodes <- files_polytherapy_episodes[grepl(paste0("^", pop_prefix, "_"), files_polytherapy_episodes)]
 
-# get a list of indication files 
+# get a list of indication files
 files_indication <- list.files(file.path(paths$D3_dir, "indication"), pattern = "\\.rds$", full.names = TRUE)
 
 # filter for pop_prefix
@@ -29,7 +29,7 @@ files_indication <- files_indication[grepl(paste0("^", pop_prefix, "_"), basenam
 dt_indication <- unique(rbindlist(lapply(files_indication, readRDS), use.names = TRUE, fill = TRUE))
 
 # change value of column event_definition in any rows with O_NEUROPATHICPAIN_COV or O_FIBROMYALGIA_AESI to algorithm name O_NEUROPATHICPAINALG_COV
-dt_indication[event_definition== "O_NEUROPATHICPAIN_COV" | event_definition=="O_FIBROMYALGIA_AESI", event_definition:="O_NEUROPATHICPAINALG_COV"]
+dt_indication[event_definition == "O_NEUROPATHICPAIN_COV" | event_definition == "O_FIBROMYALGIA_AESI", event_definition := "O_NEUROPATHICPAINALG_COV"]
 
 # set strata levels
 # indications
@@ -49,7 +49,7 @@ dt <- rbindlist(lapply(file.path(paths$D4_dir, "1.2_polytherapy", files_polyther
 dt <- dt[overlap_start >= start_follow_up & overlap_start <= end_follow_up & overlap_end >= start_follow_up & overlap_end <= end_follow_up]
 
 # keep records where overlap is greater or equal to 182 days
-dt <- dt[overlap_days >= 182,]
+dt <- dt[overlap_days >= 182, ]
 
 # Sort by person id and overlap start
 setorder(dt, person_id, overlap_start)
@@ -68,7 +68,7 @@ dt_temp <- copy(dt)
 # polytherapy
 dt_temp[, start_window := as.IDate(as.Date(overlap_start) %m-% lookback_period)][, end_window := overlap_start]
 
-# indication file 
+# indication file
 dt_indication[, start_event := as.IDate(event_date)][, end_event   := as.IDate(event_date)]
 
 # set keys
@@ -76,8 +76,8 @@ setkey(dt_temp, person_id, start_window, end_window)
 setkey(dt_indication, person_id, start_event, end_event)
 
 # perform overlap join
-indications <- foverlaps(dt_temp[.(person_id, start_window, end_window, overlap_start)],
-                         dt_indication[,.(person_id, start_event, end_event, event_date, event_definition)],
+indications <- foverlaps(dt_temp[, .(person_id, start_window, end_window, overlap_start, year)],
+                         dt_indication[, .(person_id, start_event, end_event, event_date, event_definition)],
                          by.x = c("person_id", "start_window", "end_window"),
                          by.y = c("person_id", "start_event", "end_event"),
                          nomatch = NA
@@ -153,4 +153,3 @@ if (any(!check_counts$match)) {
 
 # save counts
 saveRDS(indication_counts, file.path(paths$D5_dir, "1.2_polytherapy", "stratified", paste0(pop_prefix, "_polytherapy_indication_counts.rds")))
-
