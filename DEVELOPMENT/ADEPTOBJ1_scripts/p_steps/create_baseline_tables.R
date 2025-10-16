@@ -24,18 +24,18 @@ study_population[, age_group := fifelse(age_at_start_follow_up >= 12 & age_at_st
 
 # 2. summary statistics
 
-# Calculates median of followup in years 
-fu_median      <- median(study_population$followup_days)/365.25
-fu_IQR         <- IQR(study_population$followup_days)/365.25
-fu_min         <- min(study_population$followup_days)/365.25
-fu_max         <- max(study_population$followup_days)/365.25
+# Calculates median of followup in years
+fu_median      <- median(study_population$followup_days) / 365.25
+fu_IQR         <- IQR(study_population$followup_days) / 365.25
+fu_min         <- min(study_population$followup_days) / 365.25
+fu_max         <- max(study_population$followup_days) / 365.25
 max_endfu_date <- max(study_population$end_follow_up)
 
 # Mean Age
-age_at_start_fu_mean <-mean(study_population$age_at_start_follow_up)
-age_at_start_fu_SD   <-sd(study_population$age_at_start_follow_up)
+age_at_start_fu_mean <- mean(study_population$age_at_start_follow_up)
+age_at_start_fu_SD   <- sd(study_population$age_at_start_follow_up)
 
-# Counts Per Age_Group 
+# Counts Per Age_Group
 age_group_12_18.99_count <- sum(study_population$age_group == "12-18.99", na.rm = TRUE)
 age_group_19_34.99_count <- sum(study_population$age_group == "19-34.99", na.rm = TRUE)
 age_group_35_54.99_count <- sum(study_population$age_group == "35-54.99", na.rm = TRUE)
@@ -43,60 +43,52 @@ age_group_55_74.99_count <- sum(study_population$age_group == "55-74.99", na.rm 
 age_group_above_75_count <- sum(study_population$age_group == "75+", na.rm = TRUE)
 
 # Calculates percentages
-age_group_12_18.99_perc <- (age_group_12_18.99_count/nrow(study_population)) * 100
-age_group_19_34.99_perc <- (age_group_19_34.99_count/nrow(study_population)) * 100
-age_group_35_54.99_perc <- (age_group_35_54.99_count/nrow(study_population)) * 100
-age_group_55_74.99_perc <- (age_group_55_74.99_count/nrow(study_population)) * 100
-age_group_above_75_perc <- (age_group_above_75_count/nrow(study_population)) * 100
+age_group_12_18.99_perc <- (age_group_12_18.99_count / nrow(study_population)) * 100
+age_group_19_34.99_perc <- (age_group_19_34.99_count / nrow(study_population)) * 100
+age_group_35_54.99_perc <- (age_group_35_54.99_count / nrow(study_population)) * 100
+age_group_55_74.99_perc <- (age_group_55_74.99_count / nrow(study_population)) * 100
+age_group_above_75_perc <- (age_group_above_75_count / nrow(study_population)) * 100
 
-# Create Baseline Table 
+# Create Baseline Table
 names <- c("Follow-up, years - median",
            "Follow-up, years - IQR",
            "Follow-up, years - min",
            "Follow-up, years - max",
-           
            "Max end-fu date",
-           
            "Age at start fu - mean",
            "Age at start fu - sd",
-           
            "age_group_12_18.99_count",
-           "age_group_12_18.99_perc", 
+           "age_group_12_18.99_perc",
            "age_group_19_34.99_count",
            "age_group_19_34.99_perc",
            "age_group_35_54.99_count",
-           "age_group_35_54.99_perc", 
+           "age_group_35_54.99_perc",
            "age_group_55_74.99_count",
            "age_group_55_74.99_perc",
-           "age_group_above_75_count", 
+           "age_group_above_75_count",
            "age_group_above_75_perc")
 
-values<-c(as.character(round(fu_median,2)),
-          as.character(round(fu_IQR,2)),
-          as.character(round(fu_min,2)),
-          as.character(round(fu_max,2)),
-          
-          as.character(max_endfu_date),
-          
-          as.character(round(age_at_start_fu_mean,2)), 
-          as.character(round(age_at_start_fu_SD, 2)),
-          
-          as.character(age_group_12_18.99_count),
-          as.character(round(age_group_12_18.99_perc,2)),
-          as.character(age_group_19_34.99_count),
-          as.character(round(age_group_19_34.99_perc,2)),
-          as.character(age_group_35_54.99_count),
-          as.character(round(age_group_35_54.99_perc,2)),
-          as.character(age_group_55_74.99_count),
-          as.character(round(age_group_55_74.99_perc,2)),
-          as.character(age_group_above_75_count),
-          as.character(round(age_group_above_75_perc,2))
+values <- c(as.character(round(fu_median, 2)),
+            as.character(round(fu_IQR, 2)),
+            as.character(round(fu_min, 2)),
+            as.character(round(fu_max, 2)),
+            as.character(max_endfu_date),
+            as.character(round(age_at_start_fu_mean, 2)),
+            as.character(round(age_at_start_fu_SD, 2)),
+            as.character(age_group_12_18.99_count),
+            as.character(round(age_group_12_18.99_perc, 2)),
+            as.character(age_group_19_34.99_count),
+            as.character(round(age_group_19_34.99_perc, 2)),
+            as.character(age_group_35_54.99_count),
+            as.character(round(age_group_35_54.99_perc, 2)),
+            as.character(age_group_55_74.99_count),
+            as.character(round(age_group_55_74.99_perc, 2)),
+            as.character(age_group_above_75_count),
+            as.character(round(age_group_above_75_perc, 2))
 )
 
-# Join names and values 
-baseline_table <-data.table(names, values)
+# Join names and values
+baseline_table <- data.table(names, values)
 
-# Save baseline table 
+# Save baseline table
 saveRDS(baseline_table, file.path(paths$D5_dir, "baseline_tables", paste0(pop_prefix, "_study_population_baseline_table.rds")))
-
-
