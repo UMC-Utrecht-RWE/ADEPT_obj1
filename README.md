@@ -117,6 +117,16 @@ source(file.path(thisdir, "p_steps", "run_analysis_pregnancies.R"), local = TRUE
 ```r
 source(file.path(thisdir, "p_steps", "calculate_weighted_daily_dose.R"), local = TRUE)
 ```
+#### 3.7 ⚠️ EFEMERIS: Please use the run_analysis_EFEMERIS.R script. All other run_analysis files can be commented out. 
+
+```r
+source(file.path(thisdir, "p_steps", "run_analysis_EFEMERIS.R"), local = TRUE)
+```
+#### 3.7 ⚠️ FINLAND: Please use the run_analysis_FIN_REG.R script.  Objective 1.5 script has been added to this file so you do not need to run it separately. All other run_analysis files can be commented out. 
+
+```r
+source(file.path(thisdir, "p_steps", "run_analysis_FIN_REG.R"), local = TRUE)
+```
 
 ---
 ### 4. ✅ Run the Script  
