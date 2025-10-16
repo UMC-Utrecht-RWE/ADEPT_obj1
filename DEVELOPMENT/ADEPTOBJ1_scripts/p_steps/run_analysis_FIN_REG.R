@@ -136,5 +136,8 @@ for(pop in seq_along(populations)){
   # Baseline Tables
   source(file.path(thisdir, "p_steps", "create_baseline_tables.R"), local = TRUE)
   
+  # Objective 1.5 
+  source(file.path(thisdir, "p_steps", "calculate_weighted_daily_dose.R"), local = TRUE)
+  
 }
 
