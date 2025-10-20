@@ -9,9 +9,21 @@ bridge           <- unique(as.data.table(read_excel(file.path(thisdir, "definiti
 algorithm_map    <- unique(as.data.table(read_excel(file.path(thisdir, "definitions", "bridge", "ADEPT_O1_BRIDGE_19Mayo25.xlsx"), sheet = "ALG")))
 codelist_meds    <- unique(as.data.table(read_excel(file.path(thisdir, "definitions", "codelists", "20250515_ADEPT_medicines.xlsx"))))
 codelist_dx      <- unique(as.data.table(read_csv(file.path(thisdir, "definitions", "codelists", "20250526_ADEPT_full_codelist.csv"), show_col_types = FALSE)))
+codelist_dx1     <- unique(as.data.table(read_csv(file.path(thisdir, "definitions", "codelists", "20251020_V.0.0.csv"), show_col_types = FALSE)))
 codelist_dx_RCD1 <- unique(as.data.table(read_excel(file.path(thisdir, "definitions", "codelists", "20250801_READCODES.xlsx"))))
 codelist_dx_RCD2 <- unique(as.data.table(read_excel(file.path(thisdir, "definitions", "codelists", "20250820_READCODES.xlsx"))))
 
+# Bind codelist dx with updated codelist dx1
+# drop column origins in new version
+codelist_dx1[,origin := NULL]
+# Make sure columns are in the same order 
+setcolorder(codelist_dx1, names(codelist_dx))
+# Bind the two
+codelist_dx <- rbind(codelist_dx, codelist_dx1)
+# Remove duplicates 
+codelist_dx <- unique(codelist_dx, by = c("variable_name", "coding_system", "code"))
+
+# Read codes for CPRD
 if (deap_flags$is_CPRD) {
   # Clean codelist with read code before binding with codelist_dx
   codelist_dx_RCD1[, origin := NULL]
