@@ -46,13 +46,9 @@ dt_poly <- dt_poly[overlap_days >= 91, ]
 
 # Sort by person id and overlap start
 if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG) {
-  setorder(dt_poly, person_id, overlap_start)
-  dt_poly <- unique(dt_poly, by = c("person_id", "year"))
   # Merge pre-pregnancy records with polytherapy records to get persons who had polytherapy
   dt <- merge(dt_prepreg, dt_poly, by = "person_id", all = FALSE, allow.cartesian = TRUE)
 } else {
-  setorder(dt_poly, pregnancy_id, overlap_start)
-  dt_poly <- unique(dt_poly, by = c("pregnancy_id", "year"))
   # Merge pre-pregnancy records with polytherapy records to get persons who had polytherapy
   dt <- merge(dt_prepreg, dt_poly, by = c("pregnancy_id", "pregnancy_start_date", "pregnancy_end_date"), all = FALSE, allow.cartesian = TRUE)
 }
