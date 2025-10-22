@@ -145,11 +145,9 @@ if (length(event_files) > 0) {
           }
           # create column in subset_dt with no dot
           subset_dt_tmp <- copy(subset_dt)
-          subset_dt_tmp[, code:= as.character(code)] #make character
           subset_dt_tmp[, code_nodot := gsub("\\.", "", code)]
           # create column in concept_subset with not dot
           concept_subset_tmp <- copy(concept_subset)
-          subset_dt_tmp[, code:= as.character(code)]
           concept_subset_tmp[, code_nodot := gsub("\\.", "", code)]
           # check for matches
           matched <- subset_dt_tmp[code_nodot %chin% concept_subset_tmp$code_nodot]

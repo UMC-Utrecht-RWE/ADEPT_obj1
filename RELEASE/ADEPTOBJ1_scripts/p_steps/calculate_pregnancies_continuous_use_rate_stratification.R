@@ -76,8 +76,14 @@ for (episode in seq_along(files_cont_use_episodes)) {
   } else {
     # prepare data for foverlaps
     # continuous use rate file
-    dt_temp[, start_window := as.IDate(op_start_date)]
-    dt_temp[, end_window := as.IDate(op_end_date)]
+    if(deap_flags$is_EFEMERIS){
+      dt_temp[, start_window := as.IDate(op_start_date)]
+      dt_temp[, end_window := as.IDate(op_end_date)]
+    }
+    if(deap_flags$is_FIN_REG){
+      dt_temp[, start_window := as.IDate(as.Date(pregnancy_start_date) - years(1))]
+      dt_temp[, end_window := as.IDate(pregnancy_end_date)]
+    }
     # indication file
     dt_indication[, start_event := as.IDate(event_date)]
     dt_indication[, end_event := as.IDate(event_date)]

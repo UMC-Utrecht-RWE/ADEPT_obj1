@@ -132,8 +132,14 @@ if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG) {
   saveRDS(indication_counts, file.path(paths$D5_dir,  "baseline_tables", "indication_counts", paste0(pop_prefix, "_indication_counts.rds")))
 } else {
   # Create windows
-  dt_exposures_temp[, start_window := as.IDate(op_start_date)]
-  dt_exposures_temp[, end_window   := as.IDate(op_end_date)]
+  if(deap_flags$is_EFEMERIS){
+    dt_exposures_temp[, start_window := as.IDate(op_start_date)]
+    dt_exposures_temp[, end_window   := as.IDate(op_end_date)]
+  }
+  if(deap_flags$is_FIN_REG){
+    dt_exposures_temp[, start_window := as.IDate(as.Date(pregnancy_start_date) - years(1))]
+    dt_exposures_temp[, end_window   := as.IDate(pregnancy_end_date)]
+  }
   dt_indication[, start_event := as.IDate(event_date)]
   dt_indication[, end_event   := as.IDate(event_date)]
   # rename columns
@@ -258,8 +264,14 @@ if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG) {
   saveRDS(comorbidity_counts, file.path(paths$D5_dir, "baseline_tables", "comorbidity_counts", paste0(pop_prefix, "_comorbidity_counts.rds")))
 } else {
   # Create windows
-  dt_exposures_temp[, start_window := as.IDate(op_start_date)]
-  dt_exposures_temp[, end_window   := as.IDate(op_end_date)]
+  if(deap_flags$is_EFEMERIS){
+    dt_exposures_temp[, start_window := as.IDate(op_start_date)]
+    dt_exposures_temp[, end_window   := as.IDate(op_end_date)]
+  }
+  if(deap_flags$is_FIN_REG){
+    dt_exposures_temp[, start_window := as.IDate(as.Date(pregnancy_start_date) - years(1))]
+    dt_exposures_temp[, end_window   := as.IDate(pregnancy_end_date)]
+  }
   dt_comorbidity_dx[, start_event := as.IDate(event_date)]
   dt_comorbidity_dx[, end_event   := as.IDate(event_date)]
   dt_comorbidity_meds[, start_event := as.IDate(rx_date)]

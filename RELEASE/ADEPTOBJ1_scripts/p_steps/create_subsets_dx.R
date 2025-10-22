@@ -8,7 +8,8 @@ print("=======================================================================")
 
 # Load all concept sets and bind them. Remove all true duplicates
 dx_concept_sets <- unique(rbindlist(lapply(list.files(path = file.path(paths$D3_dir, "concept_sets"), pattern = "dx", ignore.case = TRUE, full.names = TRUE), fread), use.names = TRUE, fill = TRUE))
-
+dx_concept_sets <- as.data.table(dx_concept_sets)
+dx_concept_sets[, code := as.character(code)]
 # create subsets of dx_concept_sets
 dx_concept_set_nodot      <- dx_concept_sets[coding_system %in% c("ICD10", "ICD10CM", "ICD10DA", "ICD9CM", "ICD9CMP", "ICPC", "ICPC2P", "MTHICD9", "ICPC2EENG")]
 dx_concept_set_startswith <- dx_concept_sets[coding_system %in% c("RCD", "RCD2")]
@@ -45,7 +46,8 @@ if (length(event_files) > 0) {
     study_population[, person_id := as.character(person_id)]
     if (deap_flags$is_EFEMERIS || deap_flags$is_FIN_REG) {
       # add interval columns
-      study_population[, `:=`(start_window = op_start_date, end_window = op_end_date)]
+      if (deap_flags$is_EFEMERIS) study_population[, `:=`(start_window = op_start_date, end_window = op_end_date)]
+      if (deap_flags$is_FIN_REG)  study_population[, `:=`(start_window = as.IDate(pregnancy_start_date - years(1)), end_window = as.IDate(op_end_date))]
       dt[, `:=`(start_event = event_date, end_event = event_date)]
       # set keys
       setkey(study_population, person_id, start_window, end_window)
@@ -106,6 +108,8 @@ if (length(event_files) > 0) {
             next
           }
           # Match codes exactly
+          subset_dt[, code := as.character(code)]
+          concept_subset[, code := as.character(code)]
           matched <- subset_dt[code %chin% concept_subset$code]
           matched <- unique(matched)
           # Save if there's any match
