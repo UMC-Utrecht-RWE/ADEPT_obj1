@@ -46,8 +46,15 @@ if (length(event_files) > 0) {
     study_population[, person_id := as.character(person_id)]
     if (deap_flags$is_EFEMERIS || deap_flags$is_FIN_REG) {
       # add interval columns
-      if (deap_flags$is_EFEMERIS) study_population[, `:=`(start_window = op_start_date, end_window = op_end_date)]
-      if (deap_flags$is_FIN_REG)  study_population[, `:=`(start_window = as.IDate(pregnancy_start_date - years(1)), end_window = as.IDate(op_end_date))]
+      if (deap_flags$is_EFEMERIS) {
+        study_population[, start_window := as.IDate(op_start_date)]
+        study_population[, end_window := as.IDate(op_end_date)]
+      }
+      if (deap_flags$is_FIN_REG)  {
+        study_population[, start_window := as.IDate(as.Date(pregnancy_start_date) - years(1))]
+        study_population[, end_window := as.IDate(op_end_date)]
+        }
+      
       dt[, `:=`(start_event = event_date, end_event = event_date)]
       # set keys
       setkey(study_population, person_id, start_window, end_window)
