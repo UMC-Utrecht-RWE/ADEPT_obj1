@@ -40,6 +40,7 @@ for (med in seq_along(med_files)) {
     message(red("Skipping empty MEDICINES file: ", current_table))
     next
   }
+  
   # Keep only needed columns
   dt <- dt[, .(person_id, medicinal_product_atc_code, date_dispensing, date_prescription, meaning_of_drug_record, presc_duration_days, disp_number_medicinal_product, presc_quantity_per_day, medicinal_product_id)]
   # Rename columns
@@ -94,7 +95,7 @@ for (med in seq_along(med_files)) {
       # Add or update the 'Varname' column in subset_dt with the retrieved value
       subset_dt[, Varname := varname]
       # Save the subset_dt to file
-      saveRDS(subset_dt, file.path(paths$D3_dir, "tmp", paste0(varname, "-", current_table, ".rds")))
+      saveRDS(subset_dt, file.path(paths$D3_dir, "tmp", paste0(varname, "-",current_table,"_",current_code,".rds")))
     } else {
       # print message
       message(red("no matching records found for: ", current_code))
@@ -107,6 +108,7 @@ for (med in seq_along(med_files)) {
     }
   }
 }
+
 
 #################################################
 # Save unmatched codes
