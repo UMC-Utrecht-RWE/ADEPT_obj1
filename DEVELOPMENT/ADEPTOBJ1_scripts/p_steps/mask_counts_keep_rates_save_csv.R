@@ -30,7 +30,7 @@ for (rds_path in rds_files) {
   ##############################################################################
   # CASE 1: comorbidity_counts / indication_counts subfolders
   ##############################################################################
-  if (grepl("comorbidity_counts|indication_counts", rds_path)) {
+  if (grepl("baseline_tables/comorbidity_counts|baseline_tables/indication_counts", rds_path)) {
     # Identify which of the special columns actually exist in the data table
     special_cols <- intersect(names(dt),
                               c("comorbidity_counts", "indication_counts"))

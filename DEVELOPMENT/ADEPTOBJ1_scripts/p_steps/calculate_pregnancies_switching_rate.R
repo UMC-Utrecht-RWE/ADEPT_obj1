@@ -52,8 +52,8 @@ for (trt in seq_along(common_keys)) {
   dt_counts  <- readRDS(counts_map[[trt]])
   dt_switch  <- readRDS(switcher_map[[trt]])
   # merge pre-pregnancy data with switcher file
-  if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG) dt <- merge(dt_prepreg[, .(person_id, pregnancy_id, pregnancy_start_date, pregnancy_end_date, episode.start, episode.end, preg_year)], dt_switch, by = c("person_id", "episode.start", "episode.end"), all = FALSE)
-  if (deap_flags$is_EFEMERIS || deap_flags$is_FIN_REG)   dt <- merge(dt_prepreg[, .(pregnancy_id, episode.start, episode.end, preg_year)], dt_switch, by = c("pregnancy_id", "episode.start", "episode.end"), all = FALSE)
+  if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG) dt <- merge(dt_prepreg[, .(person_id, pregnancy_id, pregnancy_start_date, pregnancy_end_date, episode.start, episode.end, preg_year)], dt_switch, by = c("person_id"), all = FALSE)
+  if (deap_flags$is_EFEMERIS || deap_flags$is_FIN_REG)   dt <- merge(dt_prepreg[, .(pregnancy_id, episode.start, episode.end, preg_year)], dt_switch, by = c("pregnancy_id"), all = FALSE)
   # Print message if no switchers found
   if (nrow(dt) == 0) {
     message(red("No switcher records found in pre-pregnancy users for", treatment))

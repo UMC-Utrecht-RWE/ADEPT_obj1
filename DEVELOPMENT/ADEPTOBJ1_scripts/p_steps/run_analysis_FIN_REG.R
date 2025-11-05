@@ -16,7 +16,8 @@ source(file.path(thisdir, "p_steps", "study_parameters.R"), local = TRUE)
 # <<<Create Population >>> 
 # Load pregnancy file created by pregnancy algorithm and assign it as the study population 
 study_population <- as.data.table(get(load(file.path(preg_dir, "D3_pregnancy_final.RData"))))
-
+# Exclude pregnancies before 
+study_population<-study_population[ year(pregnancy_start_date)>=1999,]
 # Remove any true duplicates
 study_population <- unique(study_population)
 
