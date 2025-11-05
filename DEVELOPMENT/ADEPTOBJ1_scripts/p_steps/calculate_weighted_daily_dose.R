@@ -35,6 +35,7 @@
 # Stratification by: Individual drug substance, calendar year, data source
 
 ###############################################################################################################################################################################
+#########################################################################
 # List of ATCs of interest
 target_atcs <- c("N02BF01", "N03AX12", "N03AA02", "N03AE01", "N03AF01", "N03AG01", "N03AX09", "N03AX11", "N03AX14")
 
@@ -90,7 +91,7 @@ overlap_days <- function(start1, end1, start2, end2) fifelse(!is.na(start2) & !i
 #####################################################################################################
 # Levels
 #####################################################################################################
-dose_levels <- c("low", "mid", "high", "invalid")
+dose_levels <- c("low", "mid", "high", "invalid", "missing")
 all_years <- seq(year(start_study_date) + 1, year(end_study_date))  # start one year after study start
 all_combinations <- CJ(preg_start_year = all_years, dose_group = dose_levels, unique = TRUE)
 
@@ -146,8 +147,8 @@ if (nrow(dt_all) > 0) {
     ### dt_exposure
     ########################
     # find matching exposure file
-    if (deap_flags$is_FIN_REG)  file_match <- exposure_files[grepl(unique(dt_all_atc$atc_group), exposure_files)]
-    if (!deap_flags$is_FIN_REG) file_match <- exposure_files[grepl(paste0("_F_", unique(dt_all_atc$atc_group)), exposure_files)]
+    if (deap_flags$is_FIN_REG || deap_flags$is_EFEMERIS)  file_match <- exposure_files[grepl(unique(dt_all_atc$atc_group), exposure_files)]
+    if (!deap_flags$is_FIN_REG && !deap_flags$is_EFEMERIS) file_match <- exposure_files[grepl(paste0("_F_", unique(dt_all_atc$atc_group)), exposure_files)]
     # exclude unwanted subgroups
     file_match <- file_match[!grepl(paste(exclude, collapse = "|"), file_match)]
     if (length(file_match) == 0) {
@@ -193,6 +194,8 @@ if (nrow(dt_all) > 0) {
       overlap_dt[, rx_start := rx_date]
       overlap_dt[, rx_end := shift(rx_date, type = "lead") - 1, by = .(person_id, pregnancy_start_date)]
       overlap_dt[is.na(rx_end), rx_end := episode.end]
+      # For same-day prescriptions, expand rx_end to the max Rx_end of that day
+      overlap_dt[, rx_end := max(rx_end, na.rm = TRUE), by = .(person_id, pregnancy_start_date, rx_date)]
       # calculate overlap in days
       overlap_dt[, t0 := overlap_days(rx_start, rx_end, t0_start, t0_end)]
       overlap_dt[, t1 := overlap_days(rx_start, rx_end, t1_start, t1_end)]
@@ -214,9 +217,9 @@ if (nrow(dt_all) > 0) {
     # keep unique rows
     dt <- unique(dt, by = c("person_id", "pregnancy_start_date", "rx_date"))
     ################################################################################################################################################
-    #################### EHR DATABASES #############################################################################################################
+    #################### EHR + COHORT DATABASES #############################################################################################################
     ################################################################################################################################################
-    if (deap_flags$is_BIFAP || deap_flags$is_CPRD || deap_flags$is_VID) {
+    if (deap_flags$is_BIFAP || deap_flags$is_CPRD || deap_flags$is_VID | deap_flags$is_EFEMERIS) {
       # left join: keep all prescriptions, add product info
       dt <- merge(dt, dt_products, by = "medicinal_product_id", all.x = TRUE)
       # Check again after merge
@@ -236,8 +239,11 @@ if (nrow(dt_all) > 0) {
         # calculate proportion of rx days to duration - cap it to 1
         dt_subset[, paste0("prop_", p) := pmin(get(p) / assumed_duration, 1)]
         # calculate the amount of medication taken during this period
-        if (deap_flags$is_CPRD || deap_flags$is_PHARMO) dt_subset[, paste0("amount_", p) := get(paste0("prop_", p)) * disp_number_medicinal_product]
-        if (deap_flags$is_BIFAP || deap_flags$is_VID) {
+        if (deap_flags$is_CPRD) dt_subset[, paste0("amount_", p) := get(paste0("prop_", p)) * disp_number_medicinal_product]
+        if (deap_flags$is_BIFAP || deap_flags$is_VID || deap_flags$is_EFEMERIS) {
+          if (deap_flags$is_EFEMERIS) {
+            dt_subset[is.na(disp_number_medicinal_product) & year(pregnancy_start_date)<2012, disp_number_medicinal_product:=1]
+          }
           dt_subset[, paste0("amount_", p) := get(paste0("prop_", p)) * disp_number_medicinal_product * unit_of_presentation_num]
         }
         # compute strength considering formulation amount
