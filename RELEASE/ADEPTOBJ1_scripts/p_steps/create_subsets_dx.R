@@ -51,7 +51,7 @@ if (length(event_files) > 0) {
         study_population[, end_window := as.IDate(op_end_date)]
       }
       if (deap_flags$is_FIN_REG)  {
-        study_population[, start_window := as.IDate(as.Date(pregnancy_start_date) - years(1))]
+        study_population[, start_window := as.IDate(add_with_rollback(pregnancy_start_date, years(-1)))]
         study_population[, end_window := as.IDate(op_end_date)]
         }
       

@@ -140,5 +140,8 @@ for(pop in seq_along(populations)){
   # Objective 1.5 
   source(file.path(thisdir, "p_steps", "calculate_weighted_daily_dose.R"), local = TRUE)
   
+  # Aggregate results
+  source(file.path(thisdir, "p_steps", "aggregate_results_finland.R"), local = TRUE)
+  
 }
 

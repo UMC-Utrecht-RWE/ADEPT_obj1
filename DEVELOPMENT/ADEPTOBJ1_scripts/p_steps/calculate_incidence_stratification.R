@@ -58,7 +58,7 @@ for (episode in seq_along(files_incidence_episodes)) {
   denom_counts <- dt[, .(Freq = .N), by = year]
   #<<< AGE GROUPS >>>#
   # age group calculation only in groups
-  if (grepl("DP_ANTIEPINEW | DP_ANTIEPIOLD | DP_BENZOANTIEPILEPTIC | DP_GABAPENTINOIDS", files_incidence_episodes[episode])) {
+  if (grepl("DP_ANTIEPINEW|DP_ANTIEPIOLD|DP_BENZOANTIEPILEPTIC|DP_GABAPENTINOIDS", files_incidence_episodes[episode])) {
     # create a copy of dt for age group calculations
     agegroups <- copy(dt)
     # convert dates to IDates
