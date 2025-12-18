@@ -13,10 +13,10 @@ files_exposures <- files_exposures[grepl(paste0("^", pop_prefix, "_"), files_exp
 files_exposures <- files_exposures[!grepl(paste(exclude, collapse = "|"), files_exposures)] # Exclude subgroups
 
 # Create dataset with all exposure medications
-dt_exposures <- as.data.table(rbindlist(lapply(file.path(paths$D3_dir, "exposure", files_exposures), readRDS), fill = TRUE)) # read and bind datasets
+dt_exposures <- as.data.table(rbindlist(lapply(file.path(paths$D3_dir, "exposure", files_exposures), readRDS), fill = TRUE)) # read and bind exposures
 
 if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG) {
-  # remove duplicates by person id/pregnancy id, code and rx date
+  # remove duplicates by person id, code and rx date
   dt_exposures <- unique(dt_exposures, by = c("person_id", "code", "rx_date"))
   # keep only prescriptions between start and end fu
   dt_exposures <- dt_exposures[rx_date >= start_follow_up & rx_date <= end_follow_up, ]
@@ -106,24 +106,13 @@ if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG) {
                                       nomatch = 0
   )
   # Add column for each indication group
-  indication_in_lookback[event_definition == "M_RESTLESSLEG_COV", indication_group := "M_RESTLESSLEG_COV"]
-  indication_in_lookback[event_definition == "Ment_ANXIETY_COV", indication_group := "Ment_ANXIETY_COV"]
-  indication_in_lookback[event_definition == "Ment_BIPOLAR_AESI", indication_group := "Ment_BIPOLAR_AESI"]
-  indication_in_lookback[event_definition == "Ment_DEPRESSION_COV", indication_group := "Ment_DEPRESSION_COV"]
-  indication_in_lookback[event_definition == "Ment_SCHIZOPHRENIA_COV", indication_group := "Ment_SCHIZOPHRENIA_COV"]
-  indication_in_lookback[event_definition == "N_CONVULSION_AESI", indication_group := "N_CONVULSION_AESI"]
-  indication_in_lookback[event_definition == "N_EPILEPSY_COV", indication_group := "N_EPILEPSY_COV"]
-  indication_in_lookback[event_definition == "N_ESSENTIALTREMOR_AESI", indication_group := "N_ESSENTIALTREMOR_AESI"]
-  indication_in_lookback[event_definition == "N_MIGRAINE_COV", indication_group := "N_MIGRAINE_COV"]
-  indication_in_lookback[event_definition == "O_FIBROMYALGIA_AESI" | event_definition == "O_NEUROPATHICPAIN_COV", indication_group := "O_NEUROPATHICPAINALG_COV"]
+  indication_in_lookback[, indication_group := ifelse(event_definition == "O_FIBROMYALGIA_AESI" | event_definition == "O_NEUROPATHICPAIN_COV", "O_NEUROPATHICPAINALG_COV", event_definition)]
   # Make unique by person_id, and indication
   indication_in_lookback <- unique(indication_in_lookback, by = c("person_id", "indication_group"))
   # All users in denominator
   all_users <- unique(dt_exposures_temp$person_id)
   # Users already matched to an indication group
   matched_users <- unique(indication_in_lookback$person_id)
-  # Users with no indication in lookback
-  no_indication_users <- setdiff(all_users, matched_users)
   # Count unique people with each indication
   indication_counts <- indication_in_lookback[, .(indication_counts = uniqueN(person_id)), by = indication_group]
   # Add column with total users
@@ -155,17 +144,9 @@ if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG) {
                                       nomatch = 0
   )
   # Add column for each indication group
-  indication_in_lookback[event_definition == "M_RESTLESSLEG_COV", indication_group := "M_RESTLESSLEG_COV"]
-  indication_in_lookback[event_definition == "Ment_ANXIETY_COV", indication_group := "Ment_ANXIETY_COV"]
-  indication_in_lookback[event_definition == "Ment_BIPOLAR_AESI", indication_group := "Ment_BIPOLAR_AESI"]
-  indication_in_lookback[event_definition == "Ment_DEPRESSION_COV", indication_group := "Ment_DEPRESSION_COV"]
-  indication_in_lookback[event_definition == "Ment_SCHIZOPHRENIA_COV", indication_group := "Ment_SCHIZOPHRENIA_COV"]
-  indication_in_lookback[event_definition == "N_CONVULSION_AESI", indication_group := "N_CONVULSION_AESI"]
-  indication_in_lookback[event_definition == "N_EPILEPSY_COV", indication_group := "N_EPILEPSY_COV"]
-  indication_in_lookback[event_definition == "N_ESSENTIALTREMOR_AESI", indication_group := "N_ESSENTIALTREMOR_AESI"]
-  indication_in_lookback[event_definition == "N_MIGRAINE_COV", indication_group := "N_MIGRAINE_COV"]
-  indication_in_lookback[event_definition == "O_FIBROMYALGIA_AESI" | event_definition == "O_NEUROPATHICPAIN_COV", indication_group := "O_NEUROPATHICPAINALG_COV"]
-  # Make unique by person_id, and indication
+  # Add column for each indication group
+  indication_in_lookback[, indication_group := ifelse(event_definition == "O_FIBROMYALGIA_AESI" | event_definition == "O_NEUROPATHICPAIN_COV", "O_NEUROPATHICPAINALG_COV", event_definition)]
+  # Make unique by pregnancy_id, and indication
   indication_in_lookback <- unique(indication_in_lookback, by = c("pregnancy_id", "indication_group"))
   # Count unique people with each indication
   indication_counts <- indication_in_lookback[, .(indication_counts = uniqueN(pregnancy_id)), by = indication_group]

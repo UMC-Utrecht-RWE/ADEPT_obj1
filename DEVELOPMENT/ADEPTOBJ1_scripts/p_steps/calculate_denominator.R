@@ -8,8 +8,8 @@ if (nrow(study_population) > 0) {
   # Convert start and end follow up to IDate
   study_population[, start_follow_up := as.IDate(start_follow_up)][, end_follow_up := as.IDate(end_follow_up)]
   # Get study period boundaries
-  start_year <- year(pmax(study_population$start_follow_up, start_study_date))
-  end_year   <- year(pmin(study_population$end_follow_up, end_study_date))
+  start_year <- year(study_population$start_follow_up)
+  end_year   <- year(study_population$end_follow_up)
   # Generate vector of years of follow-up per person
   studyFUyears <- unlist(mapply(seq, start_year, end_year, SIMPLIFY = FALSE))
   # Tabulate frequency of persons observed per year

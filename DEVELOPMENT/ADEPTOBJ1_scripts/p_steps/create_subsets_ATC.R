@@ -76,6 +76,11 @@ for (med in seq_along(med_files)) {
   if (nrow(dt) == 0) next
   # For each ATC code, subset matching rows and append to codes_list
   for (current_code in names(ATC_codelist)) {
+    # SIDIAP - skip legacy GABA codes 
+    if (deap_flags$is_SIDIAP &&
+        current_code %in% c("N03AX12", "N03AX16", "N02BG11", "N03AX")) {
+      next
+    }
     # print message
     message("looking for: ", current_code)
     # Check for match_type
