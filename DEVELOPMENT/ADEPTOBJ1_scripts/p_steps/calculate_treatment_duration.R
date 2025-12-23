@@ -21,23 +21,31 @@ all_drug_stats <- list()
 
 # Loop over each file
 for (episode in seq_along(files_episodes)) {
+  
   # Read the treatment episode file
   dt <- readRDS(file.path(paths$D3_dir, "tx_episodes", files_episodes[episode]))
+  
   # Remove duplicates
   dt <- unique(dt, by = c("person_id", "episode.start", "episode.end"))
+  
   # Extract drug name from file name
   episode_name <- gsub(paste0("^", pop_prefix, "_"), "", files_episodes[episode])
   episode_name <- gsub("_treatment_episode\\.rds$", "", episode_name)
   message("Processing: ", pop_prefix, "_", episode_name)
+  
   # Convert dates to IDate
   dt[, episode.start := as.IDate(episode.start)]
   dt[, episode.end   := as.IDate(episode.end)]
+  
   # Filter and trim to follow-up period
   dt <- dt[!(episode.end < start_follow_up | episode.start > end_follow_up), ]
   dt <- dt[episode.end >= episode.start, ]  # drop invalid records
+  
   if (nrow(dt) > 0) {
+    
     # Calculate episode duration
     dt[, total_months := (as.numeric(episode.end - episode.start) + 1) / 30.44]
+    
     # Calculate overall treatment stats
     overall_stats <- dt[, {
       q <- quantile(total_months, probs = c(0.25, 0.75), na.rm = TRUE)
@@ -54,10 +62,13 @@ for (episode in seq_along(files_episodes)) {
         sd_months      = sd(total_months, na.rm = TRUE)
       )
     }]
+    
     # Append to summary list
     all_drug_stats[[episode_name]] <- overall_stats
+    
     # Save files
     saveRDS(dt, file.path(paths$D4_dir, "1.2_treatment_duration", paste0(pop_prefix, "_", episode_name, "_treatment_duration_months.rds")))
+    
   } else {
     message(red(paste0("No Treatment Duration can be calculated for: ", pop_prefix, "_", episode_name)))
   }
