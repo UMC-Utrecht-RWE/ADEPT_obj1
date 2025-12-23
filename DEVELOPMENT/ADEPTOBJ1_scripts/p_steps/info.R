@@ -42,6 +42,7 @@ if (sum(length(actual_tables$EVENTS),
   diagnoses_pregnancy_med <- FALSE
   diagnoses_pregnancy_vacc <- FALSE
   diagnoses_pregnancy_med_vacc <- FALSE
+  
   if (length(actual_tables$SURVEY_ID) > 0) {
     #pregnancies can be retrieved
     pregnancies <- TRUE

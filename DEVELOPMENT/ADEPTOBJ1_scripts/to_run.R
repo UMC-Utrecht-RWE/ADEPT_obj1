@@ -57,7 +57,7 @@ start_logging(file.path(thisdir, "log_file.txt"))
 source(file.path(thisdir, "p_steps", "set_flags.R"), local = TRUE)
 
 # BIFAP, CPRD, NOR_REG, PHARMO, SIDIAP, VAL_PAD, VID
-if(!deap_flags$is_EFEMERIS || !deap_flags$is_FIN_REG){
+if(!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG){
   source(file.path(thisdir, "p_steps", "run_analysis.R"), local = TRUE)                    #analysis obj 1.1, 1.2
   source(file.path(thisdir, "p_steps", "run_analysis_pregnancies.R"), local = TRUE)        #analysis obj 1.3, 1.4
   # Excluding VID

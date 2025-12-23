@@ -64,7 +64,6 @@ start_logging <- function(log_file) {
 # ======================
 #     Stop Logging 
 # ======================
-
 stop_logging <- function() {
   
   # If log file connection exists in global environment, close it to release the file.

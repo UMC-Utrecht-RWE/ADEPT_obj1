@@ -21,7 +21,6 @@ for (p in paths) {
 }
 
 if (deap_flags$is_EFEMERIS || deap_flags$is_FIN_REG) {
-  
   # Create list of all folders to be created
   subfolders <- list(
     file.path(paths$D3_dir, c(
@@ -31,7 +30,7 @@ if (deap_flags$is_EFEMERIS || deap_flags$is_FIN_REG) {
     )),
     
     file.path(paths$D4_dir, c(
-      "1.2_discontinued", "1.2_altmeds", "1.2_switching", "1.2_polytherapy",
+      "1.2_altmeds", "1.2_polytherapy",
       "1.3_pre-pregnancy_use", "1.3_pregnancy_initiation", "1.3_pregnancy_continuous",
       "1.4_pregnancy_discontinuation", "1.4_pregnancy_switching", "1.4_pregnancy_polytherapy",
       "1.5_mean_weighted_daily_dose"
@@ -49,7 +48,6 @@ if (deap_flags$is_EFEMERIS || deap_flags$is_FIN_REG) {
 } else {
   # Create list of all folders to be created
   subfolders <- list(
-    
     file.path(paths$D3_dir, c(
       "concept_sets", "denominator", "source_population", "spells", "study_population", "tmp", "tx_episodes",
       "algorithm_input", "alternatives", "cov", "exposure", "indication" 
