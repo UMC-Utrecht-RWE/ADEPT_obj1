@@ -4,7 +4,7 @@ source(file.path(thisdir, "p_steps", "99_path.R"), local = TRUE)
 # Load packages
 source(file.path(thisdir, "p_steps", "packages.R"), local = TRUE)
 
-# Detect available CDM tables, extract subpop info
+# Detect available CDM tables, extract pop info
 source(file.path(thisdir, "p_steps", "info.R"), local = TRUE)
 
 # Set study parameters
@@ -18,7 +18,6 @@ rm(list = grep("actual_tables|CDM_SOURCE|^flow_chart|inputed|METADATA|OBSERVATIO
 
 # Loads study population/populations
 populations <- list.files(file.path(paths$D3_dir, "study_population"))
-
 
 # Loops over each subpopulation
 for (pop in seq_along(populations)){
@@ -65,43 +64,43 @@ for (pop in seq_along(populations)){
     
     # Comorbidity and Indication Counts
     source(file.path(thisdir, "p_steps", "calculate_indication_and_comorbidities.R"), local = TRUE)
-    
+
     # Create Treatment Episodes
     source(file.path(thisdir, "p_steps", "create_treatment_episodes.R"), local = TRUE)
-    
+
     # Calculate incidence
     source(file.path(thisdir, "p_steps", "calculate_incidence.R"), local = TRUE)
-    
+
     # Calculate incidence - stratification
     source(file.path(thisdir, "p_steps", "calculate_incidence_stratification.R"), local = TRUE)
-    
+
     # Calculate prevalence
     source(file.path(thisdir, "p_steps", "calculate_prevalence.R"), local = TRUE)
-    
+
     # Calculate prevalence - stratification
     source(file.path(thisdir, "p_steps", "calculate_prevalence_stratification.R"), local = TRUE)
-    
-    # Treatment Durations
+
+    # Treatment Duration
     source(file.path(thisdir, "p_steps", "calculate_treatment_duration.R"), local = TRUE)
-    
+
     # Calculate Discontinuers
     source(file.path(thisdir, "p_steps", "calculate_discontinuation.R"), local = TRUE)
-    
+
     # Calculate Discontinuers - stratification
     source(file.path(thisdir, "p_steps", "calculate_discontinuation_stratification.R"), local = TRUE)
-    
+
     # Calculate alternative medications
     source(file.path(thisdir, "p_steps", "calculate_altmeds.R"), local = TRUE)
-    
+
     # Calculate Switching
     source(file.path(thisdir, "p_steps", "calculate_switching.R"), local = TRUE)
-    
+
     # Find Polytherapy
     source(file.path(thisdir, "p_steps", "calculate_polytherapy.R"), local = TRUE)
-  
+
     # Find Polytherapy - stratification
     source(file.path(thisdir, "p_steps", "calculate_polytherapy_stratification.R"), local = TRUE)
-    
+
     # Baseline Tables
     source(file.path(thisdir, "p_steps", "create_baseline_tables.R"), local = TRUE)
     
