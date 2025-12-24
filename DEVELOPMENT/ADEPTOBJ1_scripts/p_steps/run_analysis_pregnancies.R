@@ -3,16 +3,22 @@ populations <- list.files(file.path(paths$D3_dir, "study_population"))
 
 # Loops over each subpopulation
 for (pop in seq_along(populations)) {
+  
   # Loads study population
   study_population <- readRDS(file.path(paths$D3_dir, "study_population", populations[pop]))
   study_population[, person_id := as.character(person_id)]
+  
   # Assign study population prefix name
   pop_prefix <- gsub("_study_population.rds", "", populations[pop])
+  
   # get female population only
   study_population <- study_population[sex_at_instance_creation == "F", ]
   
   # Pregnancy Attrition Table
   source(file.path(thisdir, "p_steps", "create_pregnancy_attrition_table.R"), local = TRUE)
+  
+  # Pre-pregnancy ASM use
+  source(file.path(thisdir, "p_steps", "get_pregnancy_overlaps.R"), local = TRUE)
   
   # Pre-pregnancy ASM use
   source(file.path(thisdir, "p_steps", "calculate_pre_pregnancy_use.R"), local = TRUE)
