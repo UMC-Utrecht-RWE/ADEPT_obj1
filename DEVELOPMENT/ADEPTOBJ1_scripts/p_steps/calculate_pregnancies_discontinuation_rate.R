@@ -119,3 +119,6 @@ for (overlap in seq_along(files_overlaps)) {
     }
   }
 }
+
+# Clean out tmp folder
+if (length(list.files(file.path(paths$D3_dir, "tmp"), full.names = TRUE)) > 0) unlink(list.files(file.path(paths$D3_dir, "tmp"), full.names = TRUE))
