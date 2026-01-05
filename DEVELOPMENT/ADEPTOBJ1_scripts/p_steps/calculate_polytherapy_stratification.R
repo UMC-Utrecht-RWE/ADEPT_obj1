@@ -84,7 +84,7 @@ indications <- foverlaps(dt_temp[, .(person_id, start_window, end_window, overla
                          nomatch = NA
 )
 
-# Calculate difference in days between episode start and event date of indication
+# Calculate difference in days between overlap start and event date of indication
 indications[, diff_days := as.numeric(difftime(overlap_start, event_date, units = "days"))]
 
 # Create column indication:

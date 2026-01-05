@@ -11,27 +11,27 @@ print("=========================================================================
 print("========================= STRATIFYING POLYTHERAPY IN PRE-PREGNANCY USERS BY INDICATION =========================")
 print("================================================================================================================")
 
-# create folder for stratification counts
+# Create folder for stratification counts
 dir.create(file.path(paths$D5_dir, "1.4_pregnancy_polytherapy", "stratified"), showWarnings = FALSE, recursive = TRUE)
 
-# get list of polytherapy during pregnancy files
+# Get list of polytherapy during pregnancy files
 files_polytherapy_episodes <- list.files(file.path(paths$D4_dir, "1.4_pregnancy_polytherapy"), pattern = "\\.rds$")
 
-# get a list of indication files
+# Get a list of indication files
 files_indication <- list.files(file.path(paths$D3_dir, "indication"), pattern = "\\.rds$", full.names = TRUE)
 
-# filter for pop_prefix
+# Filter for pop_prefix
 if (deap_flags$is_EFEMERIS ||  deap_flags$is_FIN_REG) files_indication <- files_indication[grepl(paste0("^", pop_prefix, "_"), basename(files_indication))]
 if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG) files_indication <- files_indication[grepl(paste0("^", pop_prefix, "_F_"), basename(files_indication))]
 
-# load and bind all indications into one dataset, remove true duplicates
+# Load and bind all indications into one dataset, remove true duplicates
 dt_indication <- unique(rbindlist(lapply(files_indication, readRDS), use.names = TRUE, fill = TRUE))
 
-# change value of column event_definition in any rows with O_NEUROPATHICPAIN_COV or O_FIBROMYALGIA_AESI to algorithm name O_NEUROPATHICPAINALG_COV
+# Change value of column event_definition in any rows with O_NEUROPATHICPAIN_COV or O_FIBROMYALGIA_AESI to algorithm name O_NEUROPATHICPAINALG_COV
 dt_indication[event_definition == "O_NEUROPATHICPAIN_COV" | event_definition == "O_FIBROMYALGIA_AESI", event_definition := "O_NEUROPATHICPAINALG_COV"]
 
-# set strata levels
-# indications
+# Set strata levels
+# Indications
 indication_levels <- c("M_RESTLESSLEG_COV", "Ment_ANXIETY_COV", "Ment_BIPOLAR_AESI", "Ment_DEPRESSION_COV", "Ment_SCHIZOPHRENIA_COV",
                        "N_CONVULSION_AESI", "N_EPILEPSY_COV", "N_ESSENTIALTREMOR_AESI", "N_MIGRAINE_COV", "O_NEUROPATHICPAINALG_COV", "UNKNOWN")
 
@@ -39,7 +39,7 @@ indication_levels <- c("M_RESTLESSLEG_COV", "Ment_ANXIETY_COV", "Ment_BIPOLAR_AE
 if (deap_flags$is_EFEMERIS ||  deap_flags$is_FIN_REG) study_years <- seq(year(as.IDate(start_study_date)), year(as.IDate(end_study_date)))
 if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG) study_years <- seq(year(as.IDate(as.Date(start_study_date) + lookback_period)), year(as.IDate(end_study_date)))
 
-# create empty data frame using all possible years from the study for counts
+# Create empty data frame using all possible years from the study for counts
 all_combinations_indications <- CJ(preg_year = study_years, indication = indication_levels, unique = TRUE)
 
 # Load and bind all polytherapy files
@@ -51,36 +51,41 @@ setorder(dt, pregnancy_id, overlap_start)
 # Keep only one row per person per year
 dt <- unique(dt, by = c("pregnancy_id", "preg_year"))
 
-# prepare denominator
+# Prepare denominator
 denom_counts <- dt[, .(Freq = .N), by = preg_year]
 
 #<<< INDICATIONS >>>#
-# create a copy of dt for indication calculations
+# Create a copy of dt for indication calculations
 dt_temp <- copy(dt)
 
 if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG) {
-  # prepare data for foverlaps
-  # polytherapy in pregnancy file
+  # Prepare data for foverlaps
+  # Polytherapy in pregnancy file
   dt_temp[, start_window := as.IDate(as.Date(overlap_start) %m-% lookback_period)]
   dt_temp[, end_window := as.IDate(overlap_start)]
-  # indication file
+  
+  # Indication file
   dt_indication[, start_event := as.IDate(event_date)]
   dt_indication[, end_event := as.IDate(event_date)]
-  # set keys
+  
+  # Set keys
   setkey(dt_temp, person_id, start_window, end_window)
   setkey(dt_indication, person_id, start_event, end_event)
-  # perform overlap join
+  
+  # Perform overlap join
   indications <- foverlaps(dt_temp,
                            dt_indication[, .(person_id, start_event, end_event, event_date, event_definition)],
                            by.x = c("person_id", "start_window", "end_window"),
                            by.y = c("person_id", "start_event", "end_event"),
                            nomatch = NA
   )
-  # calculate difference in days between episode start and event date of indication
-  indications[, diff_days := as.numeric(difftime(episode.start, event_date, units = "days"))]
+  
+  # Calculate difference in days between overlap start and event date of indication
+  indications[, diff_days := as.numeric(difftime(overlap_start, event_date, units = "days"))]
+
 } else {
-  # prepare data for foverlaps
-  # polytherapy in pregnancy file
+  # Prepare data for foverlaps
+  # Polytherapy in pregnancy file
   if(deap_flags$is_EFEMERIS){
     dt_temp[, start_window := as.IDate(op_start_date)]
     dt_temp[, end_window := as.IDate(op_end_date)]
@@ -89,23 +94,28 @@ if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG) {
     dt_temp[, start_window := as.IDate(add_with_rollback(pregnancy_start_date, years(-1)))]
     dt_temp[, end_window := as.IDate(pregnancy_end_date)]
   } 
-  # indication file
+  
+  # Indication file
   dt_indication[, start_event := event_date]
   dt_indication[, end_event := event_date]
-  # set keys
+  
+  # Set keys
   setkey(dt_temp, pregnancy_id, start_window, end_window)
   setkey(dt_indication, pregnancy_id, start_event, end_event)
-  # perform overlap join
+  
+  # Perform overlap join
   indications <- foverlaps(dt_temp,
                            dt_indication[, .(pregnancy_id, start_event, end_event, event_date, event_definition)],
                            by.x = c("pregnancy_id", "start_window", "end_window"),
                            by.y = c("pregnancy_id", "start_event", "end_event"),
                            nomatch = NA
   )
-  # calculate difference in days between episode start and event date of indication
-  indications[, diff_days := abs(as.numeric(difftime(episode.start, event_date, units = "days")))]
+  
+  # Calculate difference in days between overlap start and event date of indication
+  indications[, diff_days := abs(as.numeric(difftime(overlap_start, event_date, units = "days")))]
 }
-# create column indication:
+
+# Create column indication:
 # if more than one rx is present, and epilepsy is among them, then priority is epilepsy
 # if any other rx are present, pick the one closest to episode.start
 # if one rx is present then that is the indication
@@ -128,27 +138,38 @@ indications <- indications[
   },
   by = .(pregnancy_id)
 ]
+
 # Keep one row per pregnancy_id
 indications <- unique(indications, by = c("pregnancy_id"))
-# count groups per year
+
+# Count groups per year
 indication_counts <- indications[, .N, by = .(preg_year, indication)]
-# merge counts with empty dt
+
+# Merge counts with empty dt
 indication_counts <- merge(all_combinations_indications, indication_counts, by = c("preg_year", "indication"), all.x = TRUE)
-# if is.na(N), replace it with 0
+
+# If is.na(N), replace it with 0
 indication_counts[is.na(N), N := 0]
-# merge with denominator
+
+# Merge with denominator
 indication_counts <- merge(indication_counts, denom_counts, by = c("preg_year"), all.x = TRUE)
-# if is.na(Freq), replace it with 0
+
+# If is.na(Freq), replace it with 0
 indication_counts[is.na(Freq), Freq := 0]
-# calculate rate, if N = 0 and Freq = 0 then change the rate to 0
+
+# Calculate rate, if N = 0 and Freq = 0 then change the rate to 0
 indication_counts[, rate := round(100 * N / Freq, 3)][N == 0 & Freq == 0, rate := 0]
-# create a column marking if rate is computable aka TRUE. It will be false if denominator is 0
+
+# Create a column marking if rate is computable aka TRUE. It will be false if denominator is 0
 indication_counts[, rate_computable := Freq > 0]
-# sanity check
-# sum counts per year
+
+# Sanity check
+# Sum counts per year
 check_counts <- indication_counts[, .(sum_indications = sum(N), denominator = unique(Freq)), by = preg_year]
+
 # Check for equality
 check_counts[, match := sum_indications == denominator]
+
 # Stop if any mismatch
 if (any(!check_counts$match)) {
   cat("\nError: Mismatch detected between numerator and denominator!\n")
@@ -157,5 +178,6 @@ if (any(!check_counts$match)) {
 } else {
   message(blue("All indication counts match the denominator for every year"))
 }
-# save counts
+
+# Save counts
 saveRDS(indication_counts, file.path(paths$D5_dir, "1.4_pregnancy_polytherapy", "stratified", paste0(pop_prefix, "_polytherapy_in_pregnancy_indication_counts.rds")))
