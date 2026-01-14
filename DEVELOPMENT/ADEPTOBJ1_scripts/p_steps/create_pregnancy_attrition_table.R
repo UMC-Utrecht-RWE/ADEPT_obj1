@@ -9,7 +9,7 @@ exclude <- c("DP_ANTIEPINEW", "DP_ANTIEPIOLD", "DP_BENZOANTIEPILEPTIC", "DP_GABA
 files_exposures <- list.files(file.path(paths$D3_dir, "exposure"), pattern = "\\.rds$", full.names = FALSE) 
 files_exposures <- files_exposures[grepl(paste0("^", pop_prefix, "_"), files_exposures)] # keep files of current pop prefix
 files_exposures <- files_exposures[!grepl(paste(exclude, collapse = "|"), files_exposures)] # Exclude subgroups
-files_exposures <- files_exposures[grepl("_F_", files_exposures, fixed = TRUE)] # Keep female records only 
+if(!deap_flags$is_EFEMERIS && ! deap_flags$is_FIN_REG) files_exposures <- files_exposures[grepl("_F_", files_exposures, fixed = TRUE)] # Keep female records only 
 
 # Bind all exposure files in list
 dt_exposures <- as.data.table(rbindlist(lapply(file.path(paths$D3_dir, "exposure", files_exposures), readRDS), fill = TRUE)) # read and bind datasets
