@@ -64,8 +64,8 @@ for (med in seq_along(med_files)) {
   if (deap_flags$is_EFEMERIS || deap_flags$is_FIN_REG) {
     
     # add interval columns
-    study_population[, start_window = op_start_date][, end_window = op_end_date]
-    dt[, start_event = rx_date][, end_event = rx_date]
+    study_population[, start_window := op_start_date][, end_window := op_end_date]
+    dt[, start_event := rx_date][, end_event := rx_date]
 
     # set keys
     setkey(study_population, person_id, start_window, end_window)
