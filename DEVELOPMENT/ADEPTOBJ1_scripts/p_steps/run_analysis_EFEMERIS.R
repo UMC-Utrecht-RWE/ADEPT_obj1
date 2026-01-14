@@ -62,7 +62,7 @@ study_population <- study_population[date_max >= start_follow_up, ]
 n_after <- nrow(study_population)
 
 # Clean up population columns
-study_population <- study_population[,.(pregnancy_id, person_id, pregnancy_start_date, pregnancy_end_date, sex_at_instance_creation, op_start_date, op_end_date, start_follow_up, end_follow_up, birth_date)]
+study_population <- study_population[,.(pregnancy_id, person_id, pregnancy_start_date, pregnancy_end_date, highest_quality, sex_at_instance_creation, op_start_date, op_end_date, start_follow_up, end_follow_up, birth_date)]
 
 # Save study population 
 saveRDS(study_population, file = file.path(paths$D3_dir, "study_population", "ALL_study_population.rds"))
@@ -100,39 +100,46 @@ for(pop in seq_along(populations)){
 
   # Preps altmeds for the switching script
   source(file.path(thisdir, "p_steps", "calculate_altmeds.R"), local = TRUE)
-
+  
   # Pregnancy Attrition Table
   source(file.path(thisdir, "p_steps", "create_pregnancy_attrition_table.R"), local = TRUE)
+  
+  # Pre-pregnancy ASM use
+  source(file.path(thisdir, "p_steps", "get_pregnancy_overlaps.R"), local = TRUE)
 
   # Pre-pregnancy ASM use
   source(file.path(thisdir, "p_steps", "calculate_pre_pregnancy_use.R"), local = TRUE)
 
   # Initiation Rates during pregnancy
   source(file.path(thisdir, "p_steps", "calculate_pregnancies_initiation_rate.R"), local = TRUE)
+  
   # Initiation Rates during pregnancy - stratification
   source(file.path(thisdir, "p_steps", "calculate_pregnancies_initiation_rate_stratification.R"), local = TRUE)
 
   # Continued Use during pregnancy
   source(file.path(thisdir, "p_steps", "calculate_pregnancies_continuous_use_rate.R"), local = TRUE)
+  
   # Continued Use during pregnancy - stratification
   source(file.path(thisdir, "p_steps", "calculate_pregnancies_continuous_use_rate_stratification.R"), local = TRUE)
 
   # Calculate Discontinuers /discontinuation in pregnancy
-  source(file.path(thisdir, "p_steps", "calculate_discontinuation.R"), local = TRUE)
   source(file.path(thisdir, "p_steps", "calculate_pregnancies_discontinuation_rate.R"), local = TRUE)
 
   # Calculate Switching
-  source(file.path(thisdir, "p_steps", "calculate_switching.R"), local = TRUE)
   source(file.path(thisdir, "p_steps", "calculate_pregnancies_switching_rate.R"), local = TRUE)
 
   # Polytherapy
   source(file.path(thisdir, "p_steps", "calculate_polytherapy.R"), local = TRUE)
   source(file.path(thisdir, "p_steps", "calculate_pregnancies_polytherapy_rate.R"), local = TRUE)
+  
   #Polytherapy during pregnancy - stratification
   source(file.path(thisdir, "p_steps", "calculate_pregnancies_polytherapy_rate_stratification.R"), local = TRUE)
 
   # Baseline Tables
   source(file.path(thisdir, "p_steps", "create_baseline_tables.R"), local = TRUE)
-
+  
+  # Weighted Daily Dose  
+  source(file.path(thisdir, "p_steps", "calculate_weighted_daily_dose.R"), local = TRUE)
+  
 }
 
