@@ -15,15 +15,15 @@ thisdir <- dirname(rstudioapi::getSourceEditorContext()$path)
 #<<< ===========================================================================================================>>>
 # Select DEAP data source by uncommenting **only one** of the lines below.
 
-DEAP_data <- "BIFAP"
-#DEAP_data <- "CPRD"
-#DEAP_data <- "EFEMERIS"
-#DEAP_data <- "FIN_REG"
-#DEAP_data <- "NOR_REG"
-#DEAP_data <- "PHARMO"
-#DEAP_data <- "SIDIAP"
-#DEAP_data <- "VAL_PAD"
-#DEAP_data <- "VID"
+# DEAP_data <- "BIFAP"
+DEAP_data <- "CPRD"
+# DEAP_data <- "EFEMERIS"
+# DEAP_data <- "FIN_REG"
+# DEAP_data <- "NOR_REG"
+# DEAP_data <- "PHARMO"
+# DEAP_data <- "SIDIAP"
+# DEAP_data <- "VAL_PAD"
+# DEAP_data <- "VID"
 
 ### <<< USER INPUT >>> ###
 #<<< ===========================================================================================================>>>
@@ -60,8 +60,7 @@ source(file.path(thisdir, "p_steps", "set_flags.R"), local = TRUE)
 if(!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG){
   source(file.path(thisdir, "p_steps", "run_analysis.R"), local = TRUE)                    #analysis obj 1.1, 1.2
   source(file.path(thisdir, "p_steps", "run_analysis_pregnancies.R"), local = TRUE)        #analysis obj 1.3, 1.4
-  # Excluding VID
-  if(!deap_flags$is_VID){
+  if(!deap_flags$is_SIDIAP){
     source(file.path(thisdir, "p_steps", "calculate_weighted_daily_dose.R"), local = TRUE) #analysis obj 1.5
   }
   stop_logging() #stop logging
