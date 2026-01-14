@@ -186,9 +186,6 @@ if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG) {
   # Rename columns 
   setnames(indication_in_lookback, c("event_date", "event_definition"), c("indication_date", "indication"))
   
-  # Rename columns 
-  setnames(indication_in_lookback, c("event_date", "event_definition"), c("indication_date", "indication"))
-  
   # Deduplicate to one row per person per indication group
   indication_in_lookback <- unique(indication_in_lookback, by = c("pregnancy_id", "indication_group"))
   
@@ -316,8 +313,8 @@ if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG) {
   # Overlap join between exposures and comorbidities - within windows 
   comorbidity_dx_in_lookback <- foverlaps(dt_exposures_temp[, .(person_id, pregnancy_id, exposure_ATC, exposure_rx_date, start_window, end_window)],
                                           dt_comorbidity_dx[, .(person_id, pregnancy_id, code, event_date, event_definition, start_event, end_event)],
-                                          by.x = c("person_id", "start_window", "end_window"),
-                                          by.y = c("person_id", "start_event", "end_event"),
+                                          by.x = c("pregnancy_id", "start_window", "end_window"),
+                                          by.y = c("pregnancy_id", "start_event", "end_event"),
                                           nomatch = 0
   )
   comorbidity_meds_in_lookback <- foverlaps(dt_exposures_temp[, .(person_id, pregnancy_id, exposure_ATC, exposure_rx_date, start_window, end_window)],
