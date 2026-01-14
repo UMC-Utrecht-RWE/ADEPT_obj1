@@ -6,9 +6,16 @@ print("========================= CREATING DX SUBSETS =========================")
 print("=======================================================================")
 
 # Load all concept sets and bind them. Remove all true duplicates
-dx_concept_sets <- unique(rbindlist(lapply(list.files(path = file.path(paths$D3_dir, "concept_sets"), pattern = "dx", ignore.case = TRUE, full.names = TRUE), fread), use.names = TRUE, fill = TRUE))
-dx_concept_sets <- as.data.table(dx_concept_sets)
-dx_concept_sets[, code := as.character(code)]
+dx_concept_sets <- unique(
+  rbindlist(
+    lapply(
+      list.files(path = file.path(paths$D3_dir, "concept_sets"),
+                 pattern = "dx", ignore.case = TRUE, full.names = TRUE),
+      function(file) fread(file, colClasses = list(character = "code"))  # force code to character
+    ),
+    use.names = TRUE, fill = TRUE
+  )
+)
 
 # Create subsets of dx_concept_sets
 dx_concept_set_nodot      <- dx_concept_sets[coding_system %in% c("ICD10", "ICD10CM", "ICD10DA", "ICD9CM", "ICD9CMP", "ICPC", "ICPC2P", "MTHICD9", "ICPC2EENG")]
@@ -31,7 +38,7 @@ for (event in seq_along(event_files)) {
   message(blue$bold("searching in: ",  current_table))
   
   # Read current events file
-  dt <- fread(file.path(CDM_dir, event_files[event]), stringsAsFactors = FALSE)
+  dt <- fread(file.path(CDM_dir, event_files[event]), colClasses = list(character = c("event_code")), stringsAsFactors = FALSE)
   
   if (nrow(dt) == 0) {
     message(red("Skipping empty EVENTS file: ", current_table))
@@ -58,7 +65,7 @@ for (event in seq_along(event_files)) {
     if (deap_flags$is_FIN_REG)  study_population[, start_window := as.IDate(add_with_rollback(pregnancy_start_date, years(-1)))][, end_window := as.IDate(op_end_date)]
     
     # Set windows - diagnosis 
-    dt[, start_event = event_date][,end_event = event_date]
+    dt[, start_event := event_date][,end_event := event_date]
     
     # Set keys
     setkey(study_population, person_id, start_window, end_window)
