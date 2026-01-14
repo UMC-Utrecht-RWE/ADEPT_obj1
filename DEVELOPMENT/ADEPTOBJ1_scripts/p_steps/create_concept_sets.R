@@ -8,50 +8,10 @@ print("Creating Concept Sets...")
 bridge           <- unique(as.data.table(read_excel(file.path(thisdir, "definitions", "bridge", "ADEPT_O1_BRIDGE_19Mayo25.xlsx"), sheet = "OBJ1")))
 algorithm_map    <- unique(as.data.table(read_excel(file.path(thisdir, "definitions", "bridge", "ADEPT_O1_BRIDGE_19Mayo25.xlsx"), sheet = "ALG")))
 codelist_meds    <- unique(as.data.table(read_excel(file.path(thisdir, "definitions", "codelists", "20250515_ADEPT_medicines.xlsx"))))
-codelist_dx      <- unique(as.data.table(read_csv(file.path(thisdir,"definitions", "codelists", "20250526_ADEPT_full_codelist.csv"), show_col_types = FALSE)))
-codelist_dx1     <- unique(as.data.table(read_csv(file.path(thisdir, "definitions", "codelists", "20251020_V.0.0.csv"), show_col_types = FALSE)))
-codelist_dx_RCD1 <- unique(as.data.table(read_excel(file.path(thisdir, "definitions", "codelists", "20250801_READCODES.xlsx"))))
-codelist_dx_RCD2 <- unique(as.data.table(read_excel(file.path(thisdir, "definitions", "codelists", "20250820_READCODES.xlsx"))))
-
-# Bind codelist dx with updated codelist dx1
-# drop column origins in new version
-codelist_dx1[,origin := NULL]
-
-# Make sure columns are in the same order 
-setcolorder(codelist_dx1, names(codelist_dx))
-
-# Bind the two
-codelist_dx <- rbind(codelist_dx, codelist_dx1)
+codelist_dx      <- fread(file.path(thisdir,"definitions", "codelists", "20260107_ADEPT_full_codelist_merged.csv"), colClasses = list(character = c("code")), stringsAsFactors = FALSE)
 
 # Remove duplicates 
 codelist_dx <- unique(codelist_dx, by = c("variable_name", "coding_system", "code"))
-
-# Read codes for CPRD
-if (deap_flags$is_CPRD) {
-  
-  # Clean codelist with read code before binding with codelist_dx
-  codelist_dx_RCD1[, origin := NULL]
-  codelist_dx_RCD1[event_definition == "Essential tremor",                   variable_name := "N_ESSENTIALTREMOR_AESI"]
-  codelist_dx_RCD1[event_definition == "Schizophrenia",                      variable_name := "Ment_SCHIZOPHRENIA_COV"]
-  codelist_dx_RCD1[event_definition == "Restless legs syndrome",             variable_name := "M_RESTLESSLEG_COV"]
-  
-  codelist_dx_RCD2[, origin := NULL]
-  codelist_dx_RCD2[event_definition == "Heart failure including chronic HF", variable_name := "C_HF_COV"]
-  codelist_dx_RCD2[event_definition == "Meningoencephalitis",                variable_name := "N_MENINGOENC_AESI"]
-  codelist_dx_RCD2[event_definition == "Brain hypoxia",                      variable_name := "N_BRAINHYPOXIA_COV"]
-  codelist_dx_RCD2[event_definition == "Dementia",                           variable_name := "N_DEMENTIA_COV"]
-  codelist_dx_RCD2[event_definition == "Mild cognitive impairment",          variable_name := "N_MILDCOGNITIVEIMP_COV"]
-  codelist_dx_RCD2[event_definition == "Neonatal encephalopathy",            variable_name := "N_NEONATENCEPHALOPATHY_AESI"]
-  codelist_dx_RCD2[event_definition == "Brain injury",                       variable_name := "N_BRAININJURY_AESI"]
-  
-  # reorder the columns to match
-  setcolorder(codelist_dx_RCD1, names(codelist_dx))
-  setcolorder(codelist_dx_RCD2, names(codelist_dx))
-  
-  # bind the code lists
-  codelist_dx <- rbindlist(list(codelist_dx, codelist_dx_RCD1, codelist_dx_RCD2), use.names = TRUE, fill = TRUE)
-  
-}
 
 # Code lists not participating in algorithms
 not_algorithms <- bridge[(exposure == TRUE | cov == TRUE | indication == TRUE | algorithm_input == TRUE | dp == TRUE) & algorithm == FALSE, ]
