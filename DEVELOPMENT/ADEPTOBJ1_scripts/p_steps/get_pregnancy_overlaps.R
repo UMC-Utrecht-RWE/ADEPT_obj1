@@ -58,7 +58,7 @@ if(!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG) {
     
     # Get all episodes that overlap from 12 months before pregnancy start to pregnancy end 
     dt_overlap <- foverlaps(
-      dt_episode,
+      dt_episode[,.(person_id, episode.start, episode.end, atc_group, code, start_follow_up, end_follow_up, birth_date)],
       pregnancies,
       by.x = c("person_id", "episode.start", "episode.end"),
       by.y = c("person_id", "window_12_6_start", "pregnancy_end_date"),
@@ -68,9 +68,6 @@ if(!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG) {
     
     # Remove any pregnancies outside fu period
     dt_overlap <- dt_overlap[pregnancy_start_date >= start_follow_up & pregnancy_end_date <= end_follow_up, ]
-    
-    # Drop cols 
-    dt_overlap[, c("episode.ID", "end.episode.gap.days", "start_follow_up", "end_follow_up", "entry_date", "exit_date", "episode.duration") := NULL]
     
     # Check for overlaps 
     dt_overlap[, overlap_12_6 := episode.start <= window_12_6_end & episode.end  >= window_12_6_start]
@@ -128,7 +125,7 @@ if(!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG) {
   pregnancies[, pregnancy_start_date := as.IDate(pregnancy_start_date)][, pregnancy_end_date := as.IDate(pregnancy_end_date)]
   
   # Drop columns you will not need 
-  pregnancies <- as.data.table(pregnancies[,.(person_id, pregnancy_id, pregnancy_start_date, pregnancy_end_date, highest_quality)])
+  pregnancies <- as.data.table(pregnancies[,.(person_id, pregnancy_id, pregnancy_start_date, pregnancy_end_date, highest_quality, op_start_date, op_end_date)])
   
   # Add windows
   pregnancies[, window_before_preg_start := op_start_date]
@@ -167,16 +164,13 @@ if(!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG) {
     
     # Get all episodes that overlap from 12 months before pregnancy start to pregnancy end 
     dt_overlap <- foverlaps(
-      dt_episode,
+      dt_episode[,.(person_id, pregnancy_id, episode.start, episode.end, atc_group, code, op_start_date, op_end_date, birth_date)],
       pregnancies,
       by.x = c("pregnancy_id", "episode.start", "episode.end"),
       by.y = c("pregnancy_id", "window_before_preg_start", "pregnancy_end_date"),
       type = "any",
       nomatch = 0L
     )
-    
-    # Drop cols 
-    dt_overlap[, c("episode.ID", "end.episode.gap.days", "birth_date", "start_follow_up", "end_follow_up", "sex_at_instance_creation", "episode.duration") := NULL]
     
     # Check for overlaps 
     dt_overlap[, overlap_before_pregnancy := episode.start <= window_before_preg_end & episode.end >= window_before_preg_start]
