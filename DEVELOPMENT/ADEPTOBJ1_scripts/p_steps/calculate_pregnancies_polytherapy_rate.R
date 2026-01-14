@@ -32,7 +32,9 @@ dt_poly    <- unique(rbindlist(lapply(file.path(paths$D4_dir, "1.2_polytherapy",
 dt_prepreg <- dt_prepreg[, .(person_id, pregnancy_id, pregnancy_start_date, pregnancy_end_date, preg_year)]
 
 # Keep only columns you need: polytherapy
-dt_poly <- dt_poly[, .(person_id, sex_at_instance_creation, birth_date, start_follow_up, end_follow_up, atc_group, i.atc_group, overlap_start, overlap_end, overlap_days)]
+if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG) dt_poly <- dt_poly[, .(person_id, sex_at_instance_creation, birth_date, start_follow_up, end_follow_up, atc_group, i.atc_group, overlap_start, overlap_end, overlap_days)]
+if (deap_flags$is_EFEMERIS || deap_flags$is_FIN_REG) dt_poly <- dt_poly[, .(person_id, sex_at_instance_creation, birth_date, atc_group, i.atc_group, overlap_start, overlap_end, overlap_days, op_start_date, op_end_date)]
+  
 setnames(dt_poly, c("atc_group", "i.atc_group"), c("atc_group_poly1", "atc_group_poly2"))
 
 # Overlap should be between start and end fu - (not for EFEMERIS or FINLAND)
