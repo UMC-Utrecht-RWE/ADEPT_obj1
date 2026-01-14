@@ -18,6 +18,7 @@ exclude <- c("DP_ANTIEPINEW", "DP_ANTIEPIOLD", "DP_BENZOANTIEPILEPTIC", "DP_GABA
 # List pre-pregnancy discontinued before pregnancy start episodes
 files_discontinued_episodes <- list.files(file.path(paths$D4_dir, "1.4_pregnancy_discontinuation"))
 files_discontinued_episodes <- files_discontinued_episodes[!grepl(paste(exclude, collapse = "|"), files_discontinued_episodes)] # exclude subgrou[s]
+files_discontinued_episodes <- files_discontinued_episodes[grepl("before", files_discontinued_episodes)] # exclude subgroup[s]
 
 # List exposure meds 
 files_exposures <- list.files(file.path(paths$D3_dir, "exposure"))
@@ -51,11 +52,11 @@ for (episode in seq_along(files_discontinued_episodes)) {
     # Get name of exposure drug
     exposure_name <- sub("\\.rds$", "", files_exposures[exposure])
     
-    # Print message
-    message("Checking for switchers between: ", discontinued_episode_name, " and ", exposure_name)
-    
     # Skip if the same exposure
     if (discontinued_episode_name == exposure_name) next
+    
+    # Print message
+    message("Checking for switchers between: ", discontinued_episode_name, " and ", exposure_name)
     
     # Load exposure prescriptions
     dt_exposures <- as.data.table(readRDS(file.path(paths$D3_dir, "exposure", files_exposures[exposure])))
