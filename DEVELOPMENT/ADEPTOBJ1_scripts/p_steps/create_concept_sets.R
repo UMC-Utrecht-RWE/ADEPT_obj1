@@ -8,7 +8,7 @@ print("Creating Concept Sets...")
 bridge           <- unique(as.data.table(read_excel(file.path(thisdir, "definitions", "bridge", "ADEPT_O1_BRIDGE_19Mayo25.xlsx"), sheet = "OBJ1")))
 algorithm_map    <- unique(as.data.table(read_excel(file.path(thisdir, "definitions", "bridge", "ADEPT_O1_BRIDGE_19Mayo25.xlsx"), sheet = "ALG")))
 codelist_meds    <- unique(as.data.table(read_excel(file.path(thisdir, "definitions", "codelists", "20250515_ADEPT_medicines.xlsx"))))
-codelist_dx      <- fread(file.path(thisdir,"definitions", "codelists", "20260107_ADEPT_full_codelist_merged.csv"), colClasses = list(character = c("code")), stringsAsFactors = FALSE)
+codelist_dx      <- fread(file.path(thisdir,"definitions", "codelists", "2026_01-20_ADEPT_full_codelist_merged.csv"), colClasses = list(character = c("code")), stringsAsFactors = FALSE)
 
 # Remove duplicates 
 codelist_dx <- unique(codelist_dx, by = c("variable_name", "coding_system", "code"))
