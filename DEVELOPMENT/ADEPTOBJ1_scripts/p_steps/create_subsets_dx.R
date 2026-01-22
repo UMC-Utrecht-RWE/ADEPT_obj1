@@ -23,7 +23,7 @@ dx_concept_set_startswith <- dx_concept_sets[coding_system %in% c("RCD", "RCD2")
 dx_concept_set_exact      <- dx_concept_sets[coding_system %in% c("MEDCODEID", "SCTSPA", "SNOMEDCT_US", "SNM")]
 
 # Initialize unmatched code tracker
-unmatched_log <- data.table(med_file = character(), varname = character())
+# unmatched_log <- data.table(med_file = character(), varname = character())
 
 #<<< LOAD EVENTS FILES >>>
 event_files <- list.files(path = CDM_dir, pattern = "EVENTS", ignore.case = TRUE)
@@ -136,11 +136,11 @@ for (event in seq_along(event_files)) {
         if (nrow(concept_subset) == 0) {
           message(yellow("Skipping ", varname, ": no SNOMED codes found in concept set"))
 
-          unmatched_log <- rbind(unmatched_log, data.table(
-            med_file = current_table,
-            varname = varname,
-            reason = "No SNOMED codes in concept set"
-          ), use.names = TRUE, fill = TRUE)
+          # unmatched_log <- rbind(unmatched_log, data.table(
+          #   med_file = current_table,
+          #   varname = varname,
+          #   reason = "No SNOMED codes in concept set"
+          # ), use.names = TRUE, fill = TRUE)
           next
         }
         
@@ -166,11 +166,11 @@ for (event in seq_along(event_files)) {
           message(red("no matching records found for: ", varname))
           
           # If no matches found, log the unmatched code
-          unmatched_log <- rbind(unmatched_log, data.table(
-            med_file = current_table,
-            varname = varname,
-            reason = "No matches in data"
-          ), use.names = TRUE, fill = TRUE)
+          # unmatched_log <- rbind(unmatched_log, data.table(
+          #   med_file = current_table,
+          #   varname = varname,
+          #   reason = "No matches in data"
+          # ), use.names = TRUE, fill = TRUE)
         }
       }
     }
@@ -192,11 +192,11 @@ for (event in seq_along(event_files)) {
           message(yellow("Skipping ", varname, ": no ICD/ICPC codes found in concept set"))
           
           # If no matches found, log the unmatched code
-          unmatched_log <- rbind(unmatched_log, data.table(
-            med_file = current_table,
-            varname = varname,
-            reason = "No ICD/ICPC codes in concept set"
-          ), use.names = TRUE, fill = TRUE)
+          # unmatched_log <- rbind(unmatched_log, data.table(
+          #   med_file = current_table,
+          #   varname = varname,
+          #   reason = "No ICD/ICPC codes in concept set"
+          # ), use.names = TRUE, fill = TRUE)
           next
         }
         
@@ -230,11 +230,11 @@ for (event in seq_along(event_files)) {
           message(red("no matching records found for: ", varname))
           
           # If no matches found, log the unmatched code
-          unmatched_log <- rbind(unmatched_log, data.table(
-            med_file = current_table,
-            varname = varname,
-            reason = "No matches in data"
-          ), use.names = TRUE, fill = TRUE)
+          # unmatched_log <- rbind(unmatched_log, data.table(
+          #   med_file = current_table,
+          #   varname = varname,
+          #   reason = "No matches in data"
+          # ), use.names = TRUE, fill = TRUE)
         }
       }
     }
@@ -256,11 +256,11 @@ for (event in seq_along(event_files)) {
           message(yellow("Skipping ", varname, ": no READ codes found in concept set"))
           
           # If no matches found, log the unmatched code
-          unmatched_log <- rbind(unmatched_log, data.table(
-            med_file = current_table,
-            varname = varname,
-            reason = "No READ codes in concept set"
-          ), use.names = TRUE, fill = TRUE)
+          # unmatched_log <- rbind(unmatched_log, data.table(
+          #   med_file = current_table,
+          #   varname = varname,
+          #   reason = "No READ codes in concept set"
+          # ), use.names = TRUE, fill = TRUE)
           next
         }
         
@@ -287,11 +287,11 @@ for (event in seq_along(event_files)) {
           message(red("no matching records found for: ", varname))
           
           # If no matches found, log the unmatched code
-          unmatched_log <- rbind(unmatched_log, data.table(
-            med_file = current_table,
-            varname = varname,
-            reason = "No matches in data"
-          ), use.names = TRUE, fill = TRUE)
+          # unmatched_log <- rbind(unmatched_log, data.table(
+          #   med_file = current_table,
+          #   varname = varname,
+          #   reason = "No matches in data"
+          # ), use.names = TRUE, fill = TRUE)
         }
       }
     }
@@ -305,7 +305,7 @@ for (event in seq_along(event_files)) {
 }
 
 # Save unmatched codes
-fwrite(unmatched_log, file.path(paths$D5_dir, paste0(pop_prefix, "_unmatched_dx_codes.csv")))
+# fwrite(unmatched_log, file.path(paths$D5_dir, paste0(pop_prefix, "_unmatched_dx_codes.csv")))
 
 # <<< CONCATENATE SUBSETS AND SAVE IN FOLDERS >>>
 # Build table of tmp RDS files
