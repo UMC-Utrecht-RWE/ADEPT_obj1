@@ -13,23 +13,15 @@ print("=========================================================================
 print("========================= CALCULATING POLYTHERAPY RATES DURING PREGNANCY =========================")
 print("==================================================================================================")
 
-# Subgroups to be excluded
-exclude <- paste(c("DP_ANTIEPINEW", "DP_ANTIEPIOLD", "DP_BENZOANTIEPILEPTIC", "DP_GABAPENTINOIDS"), collapse = "|")
-
-# Pre-pregnancy data and counts
-files_prepregnancy <- list.files(file.path(paths$D4_dir, "1.3_pre-pregnancy_use"))
-files_prepregnancy <- files_prepregnancy[!grepl(exclude, files_prepregnancy)] # Apply exclusions
+# Drop columns you will not need 
+pregnancies <- pregnancies[,.(person_id, pregnancy_id, pregnancy_start_date, pregnancy_end_date, highest_quality, preg_year)]
 
 # Polytherapy episodes
 files_polytherapy_episodes <- list.files(file.path(paths$D4_dir, "1.2_polytherapy"), pattern = "\\.rds$")
 if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG) files_polytherapy_episodes[grepl("_F_", files_polytherapy_episodes)]
 
 # Read in and bind all files and remove true duplicates
-dt_prepreg <- unique(rbindlist(lapply(file.path(paths$D4_dir, "1.3_pre-pregnancy_use", files_prepregnancy), readRDS), fill = TRUE))
 dt_poly    <- unique(rbindlist(lapply(file.path(paths$D4_dir, "1.2_polytherapy",       files_polytherapy_episodes), readRDS), fill = TRUE))
-
-# Keep only columns you need: pre-pregnancy
-dt_prepreg <- dt_prepreg[, .(person_id, pregnancy_id, pregnancy_start_date, pregnancy_end_date, preg_year)]
 
 # Keep only columns you need: polytherapy
 if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG) dt_poly <- dt_poly[, .(person_id, sex_at_instance_creation, birth_date, start_follow_up, end_follow_up, atc_group, i.atc_group, overlap_start, overlap_end, overlap_days)]
@@ -44,7 +36,7 @@ if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG) dt_poly <- dt_poly[overla
 dt_poly <- dt_poly[overlap_days >= 91, ]
 
 # Merge poly records with pre-pregnancy records
-dt <- merge(dt_prepreg, dt_poly, by = "person_id", all = FALSE, allow.cartesian = TRUE)
+dt <- merge(pregnancies, dt_poly, by = "person_id", all = FALSE, allow.cartesian = TRUE)
 
 # Check if overlap is within pregnancy
 if (nrow(dt) > 0) {
