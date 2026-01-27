@@ -45,20 +45,20 @@ preg_dir <- "Path/To/Your/Pregnancy/D3_pregnancy_final.RData/File/Here"
 source(file.path(thisdir, "p_steps", "set_flags.R"), local = TRUE)
 
 # # === ANALYSIS SCRIPTS ===
-# Objectives 1.1 and 1.2
+# # Objectives 1.1 and 1.2
 source(file.path(thisdir, "p_steps", "run_analysis.R"), local = TRUE)
 
 # Objectives 1.3 and 1.4
 source(file.path(thisdir, "p_steps", "run_analysis_pregnancies.R"), local = TRUE)
-
-# Objectives 1.5
-source(file.path(thisdir, "p_steps", "calculate_weighted_daily_dose.R"), local = TRUE)
-
+# 
+# # Objectives 1.5
+# source(file.path(thisdir, "p_steps", "calculate_weighted_daily_dose.R"), local = TRUE)
+ 
 # EFEMERIS
 # source(file.path(thisdir, "p_steps", "run_analysis_EFEMERIS.R"), local = TRUE)
 
 # FIN_REG
-# source(file.path(thisdir, "p_steps", "run_analysis_FIN_REG.R"), local = TRUE)
+source(file.path(thisdir, "p_steps", "run_analysis_FIN_REG.R"), local = TRUE)
 
-# mask and save as csv (FIN_REG ONLY!)
-# source(file.path(thisdir, "p_steps", "mask_and_save_as_csv.R"), local = TRUE)
+# # mask and save as csv (FIN_REG ONLY!)
+# source(file.path(thisdir, "p_steps", "mask_counts_keep_rates_save_csv.R"), local = TRUE)
