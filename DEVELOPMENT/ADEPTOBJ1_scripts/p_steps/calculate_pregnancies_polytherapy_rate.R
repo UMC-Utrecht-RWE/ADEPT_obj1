@@ -13,9 +13,6 @@ print("=========================================================================
 print("========================= CALCULATING POLYTHERAPY RATES DURING PREGNANCY =========================")
 print("==================================================================================================")
 
-# Drop columns you will not need 
-pregnancies <- pregnancies[,.(person_id, pregnancy_id, pregnancy_start_date, pregnancy_end_date, highest_quality, preg_year)]
-
 # Polytherapy episodes
 files_polytherapy_episodes <- list.files(file.path(paths$D4_dir, "1.2_polytherapy"), pattern = "\\.rds$")
 if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG) files_polytherapy_episodes[grepl("_F_", files_polytherapy_episodes)]

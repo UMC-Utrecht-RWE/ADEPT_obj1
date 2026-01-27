@@ -2,7 +2,7 @@
 ###############################################################################################
 # <<< Sub-objective 1.2: Polytherapy rate >>>
 # Measure: Annual polytherapy rate of ASM
-# Numerator: The number of individuals who use ≥2 distinct ASMs in a calendar year with ≥182 days overlap between the treatment episodes
+# Numerator: The number of individuals who use >=2 distinct ASMs in a calendar year with >=182 days overlap between the treatment episodes
 # Denominator: Total number of study population in that calendar year in the data source
 # Stratification by: indication, calendar year, data source
 
