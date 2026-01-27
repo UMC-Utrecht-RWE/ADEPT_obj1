@@ -53,7 +53,7 @@ for (rds_path in rds_files) {
     # Keep only rows where the first column's value does NOT end with "_count"
     dt <- dt[!grepl("_count$", get(first_col))]
     ############################################################################
-    # CASE 3: 1.2_treatment_duration — mask n_persons < 3, not remove
+    # CASE 3: treatment duration - mask if less than 3 
     ############################################################################
   } else if (grepl("1\\.2_treatment_duration", rds_path)) {
     # Check if the column 'n_persons' exists in the data table
@@ -67,7 +67,7 @@ for (rds_path in rds_files) {
       dt[n_persons < 3, n_persons := NA]
     }
     ############################################################################
-    # CASE 4: Default — remove all count columns
+    # CASE 4: Default - remove all count columns 
     ############################################################################
   } else {
     count_cols <- c("n_treated", "n_total", "N", "Freq",

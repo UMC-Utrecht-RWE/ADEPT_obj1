@@ -1,7 +1,7 @@
 ###############################################################################################################################################################################
 # <<< Sub-objective 1.2: Treatment duration >>>
 # Measure: Annual treatment duration mean & median of ASM
-# Calculation: Mean, median, minimum, maximum, interquartile range, and SD (in months) of treatment episodes for all individuals with ≥1 treatment episode of an ASM within a calendar year in the data source
+# Calculation: Mean, median, minimum, maximum, interquartile range, and SD (in months) of treatment episodes for all individuals with >=1 treatment episode of an ASM within a calendar year in the data source
 # Stratification by: Individual drugs, calendar year, data source
 
 ###############################################################################################################################################################################

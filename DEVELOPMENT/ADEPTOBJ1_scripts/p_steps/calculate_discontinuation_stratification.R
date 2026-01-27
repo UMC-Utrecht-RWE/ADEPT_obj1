@@ -1,7 +1,7 @@
 ###############################################################################################################################################################################
 # <<< Sub-objective 1.2: Discontinuation rate >>>
 # Measure: Annual discontinuation rate of ASM
-# Numerator: Number of individuals who have a gap of ≥120 days between treatment episodes of an ASM in each calendar year
+# Numerator: Number of individuals who have a gap of >=120 days between treatment episodes of an ASM in each calendar year
 # Denominator: The number of prevalent ASM users in that calendar year in the data source
 # Stratification by: Individual drug substance, drug sub-groups, age groups, calendar year, data source
 
