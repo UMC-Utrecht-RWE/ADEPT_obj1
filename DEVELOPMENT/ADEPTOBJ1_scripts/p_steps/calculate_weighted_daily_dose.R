@@ -68,6 +68,8 @@ continuous_files <- continuous_files[grepl(paste0("^", pop_prefix, "_"), basenam
 continuous_files <- continuous_files[!grepl(paste(exclude, collapse = "|"), basename(continuous_files))]       # exclude subgroups
 dt_continuous    <- as.data.table(rbindlist(lapply(continuous_files, readRDS), use.names = TRUE, fill = TRUE)) # read in and bind all files, set as data table
 dt_continuous    <- unique(dt_continuous)                                                                      # remove true duplicates
+# Keep only episodes that contribute to the determination of the continued episode
+dt_continuous<- dt_continuous[episode.end >= pregnancy_start_date,]
 
 # Late discontinuers
 discontinued_files <- list.files(file.path(paths$D4_dir, "1.4_pregnancy_discontinuation"), full.names = TRUE)      # all late discontinuer files in folder 
@@ -76,6 +78,8 @@ discontinued_files <- discontinued_files[!grepl(paste(exclude, collapse = "|"), 
 discontinued_files <- discontinued_files[grepl("t2", basename(discontinued_files), ignore.case = TRUE)]            # filter for late discontinuers only (t2)
 dt_discontinued    <- as.data.table(rbindlist(lapply(discontinued_files, readRDS), use.names = TRUE, fill = TRUE)) # read in and bind all files, set as data table
 dt_discontinued    <- unique(dt_discontinued)                                                                      # remove true duplicates
+# Keep only episodes that contribute to the determination of the discontinued episode
+dt_discontinued <- dt_discontinued[episode.end >= pregnancy_start_date,]
 
 # Bind both continuous user and late discontinuer users into 1 file
 cols_needed <- c("person_id", "pregnancy_id" ,"episode.start", "episode.end", "atc_group", "code", "pregnancy_start_date", "pregnancy_end_date") # list of columns we want to keep
@@ -154,7 +158,6 @@ if (exists("dt_all") && nrow(dt_all) > 0) {
     
     ############################################################################
     # Prepare for overlaps 
-    # dt_all_atc (intervals are episode.start to episode.end)
     setcolorder(dt_all_atc, c("person_id", "episode.start", "episode.end", setdiff(names(dt_all_atc), c("person_id", "episode.start", "episode.end")))) # reorder cols
     setkey(dt_all_atc, person_id, episode.start, episode.end) # set keys
     
@@ -163,72 +166,38 @@ if (exists("dt_all") && nrow(dt_all) > 0) {
     setcolorder(dt_exp, c("person_id", "event_start", "event_end", setdiff(names(dt_exp), c("person_id", "event_start", "event_end")))) # reorder cols
     setkey(dt_exp, person_id, event_start, event_end) # set keys
     
-    ############################################################################
-    # Loop through person_id/pregnancy_start_date pairs to get rx that match the episode and pregnancy
-    # Create a data.table of unique combinations
-    unique_pairs <- unique(dt_all_atc[, .(person_id, pregnancy_start_date)])
+    # overlap join 
+    overlap_dt <- foverlaps(
+      dt_exp[, .(person_id, event_start, event_end, rx_date, medicinal_product_id, disp_number_medicinal_product, presc_quantity_per_day, assumed_duration, presc_duration_days)],              
+      dt_all_atc,         
+      by.x = c("person_id", "event_start", "event_end"),   
+      by.y = c("person_id", "episode.start", "episode.end"), 
+      nomatch = 0        
+    )
     
-    # Create a list to store results for each pair
-    results_list <- vector("list", nrow(unique_pairs))
+    # Order by person_id, pregnancy_start_date, rx_date
+    setorder(overlap_dt, person_id, pregnancy_start_date, rx_date)
     
-    # Loop over each unique pair
-    for (i in seq_len(nrow(unique_pairs))) {
-      
-      # Subset dt_all_atc for this person and pregnancy
-      subset_dt <- dt_all_atc[person_id == unique_pairs$person_id[i] & pregnancy_start_date == unique_pairs$pregnancy_start_date[i]]
-      
-      # Perform foverlaps with prescriptions
-      overlap_dt <- foverlaps(
-        dt_exp[, .(person_id, event_start, event_end, rx_date, medicinal_product_id, disp_number_medicinal_product, presc_quantity_per_day, assumed_duration, presc_duration_days)],
-        subset_dt,
-        by.x = c("person_id", "event_start", "event_end"),
-        by.y = c("person_id", "episode.start", "episode.end"),
-        nomatch = 0
-      )
-      
-      # If no matches found - should not happen but just in case, go to the next pair
-      if (nrow(overlap_dt) == 0) {
-        message(red("No overlaps found for: ", atc))
-        next
-      }
-      
-      # Order by person_id, pregnancy_start_date, rx_date
-      setorder(overlap_dt, person_id, pregnancy_start_date, rx_date)
-      
-      # Create intervals for the rx: rx_start to 1 day before the next rx_start. If last rx_start, then the end is the episode end
-      overlap_dt[, rx_start := rx_date]
-      overlap_dt[, rx_end := shift(rx_date, type = "lead") - 1, by = .(person_id, pregnancy_start_date)]
-      overlap_dt[is.na(rx_end), rx_end := episode.end]
-      
-      # For same-day prescriptions, expand rx_end to the max Rx_end of that day
-      overlap_dt[, rx_end := max(rx_end, na.rm = TRUE), by = .(person_id, pregnancy_start_date, rx_date)]
-      
-      # Calculate overlap in days
-      overlap_dt[, t0 := overlap_days(rx_start, rx_end, t0_start, t0_end)]
-      overlap_dt[, t1 := overlap_days(rx_start, rx_end, t1_start, t1_end)]
-      overlap_dt[, t2 := overlap_days(rx_start, rx_end, t2_start, t2_end)]
-      overlap_dt[, t3 := overlap_days(rx_start, rx_end, t3_start, t3_end)]
-      
-      # Remove rows where overlap is 0 for all cols
-      overlap_dt <- overlap_dt[!(t0 == 0 & t1 == 0 & t2 == 0 & t3 == 0)]
-      
-      # Check again if any rows remain - this again, should not be the case
-      if (nrow(overlap_dt) == 0) {
-        message(red("no overlaps found for any period for ATC: ", atc))
-        next
-      }
-      
-      # Store result in list
-      results_list[[i]] <- overlap_dt
-      
-    }         
+    # Create intervals for the rx: rx_start to 1 day before the next rx_start. If last rx_start, then the end is the episode end
+    overlap_dt[, rx_start := rx_date]
+    overlap_dt[, rx_end := shift(rx_date, type = "lead") - 1, by = .(person_id, pregnancy_start_date)]
+    overlap_dt[is.na(rx_end), rx_end := episode.end]
     
-    ############################################################################
-    # Combine all results into a single data.table
-    dt <- rbindlist(results_list, use.names = TRUE, fill = TRUE)
+    # For same-day prescriptions, expand rx_end to the max Rx_end of that day
+    overlap_dt[, rx_end := max(rx_end, na.rm = TRUE), by = .(person_id, pregnancy_start_date, rx_date)]
+    
+    # Calculate overlap in days
+    overlap_dt[, t0 := overlap_days(rx_start, rx_end, t0_start, t0_end)]
+    overlap_dt[, t1 := overlap_days(rx_start, rx_end, t1_start, t1_end)]
+    overlap_dt[, t2 := overlap_days(rx_start, rx_end, t2_start, t2_end)]
+    overlap_dt[, t3 := overlap_days(rx_start, rx_end, t3_start, t3_end)]
+    
+    # Remove rows where overlap is 0 for all cols
+    overlap_dt <- overlap_dt[!(t0 == 0 & t1 == 0 & t2 == 0 & t3 == 0)]
     
     # Drop cols you dont need
-    dt[, c("event_start", "event_end") := NULL]
+    dt <- overlap_dt[, c("event_start", "event_end") := NULL]
+    
     
     ############################################################################
     #################### EHR + COHORT DATABASES ################################
