@@ -21,6 +21,22 @@ if(!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG) {
   # Drop columns you will not need 
   pregnancies <- as.data.table(pregnancies[,.(person_id, pregnancy_id, pregnancy_start_date, pregnancy_end_date, highest_quality)])
   
+  # Merge pregnancies with study population to get start and end follow up. We want to keep only pregnancy starts within this period
+  pregnancies <- merge(pregnancies, study_population[, .(person_id, start_follow_up, end_follow_up)], by = "person_id", allow.cartesian = TRUE)
+  
+  # Keep pregnancies with at least 1 year of lookback
+  pregnancies <- pregnancies[pregnancy_start_date >= start_follow_up, ]
+  
+  # Keep pregnancies whose preg_start_date is before endfu
+  pregnancies <- pregnancies[pregnancy_start_date < end_follow_up, ]
+  
+  # Censor pregnancy ends for pregnancies that continue after end fu
+  setnames(pregnancies, "pregnancy_end_date", "pregnancy_end_date_original")
+  pregnancies <- pregnancies[, pregnancy_end_date := pmin(pregnancy_end_date_original, end_follow_up) ]
+  
+  # Drop the start and end follow up columns as these will be available again when merged with treatment episodes
+  pregnancies[, c("start_follow_up", "end_follow_up") := NULL]
+  
   # Add windows
   pregnancies[, window_12_6_start := pregnancy_start_date - 365]
   pregnancies[, window_12_6_end   := pregnancy_start_date - 183]
@@ -33,6 +49,9 @@ if(!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG) {
   pregnancies[, window_t3_start   := fifelse(pregnancy_end_date >= pregnancy_start_date + 181, pregnancy_start_date + 181, as.IDate(NA))]
   pregnancies[, window_t3_end     := fifelse(!is.na(window_t3_start), pregnancy_end_date, as.IDate(NA))]
   pregnancies[, preg_year         := year(pregnancy_start_date)]
+  
+  # Calculate total pregnancies per year (denominator)
+  total_preg_by_year <- pregnancies[, .(Freq = uniqueN(pregnancy_id)), by = preg_year]
   
   # Prepare for join - keep all records that fall between 12 months before pregnancy start date and pregnancy end date
   setkey(pregnancies, person_id, window_12_6_start, pregnancy_end_date)
@@ -67,10 +86,7 @@ if(!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG) {
       type = "any",
       nomatch = 0L
     )
-    
-    # Remove any pregnancies outside fu period
-    dt_overlap <- dt_overlap[pregnancy_start_date >= start_follow_up & pregnancy_end_date <= end_follow_up, ]
-    
+
     # Check for overlaps 
     dt_overlap[, overlap_12_6 := episode.start <= window_12_6_end & episode.end  >= window_12_6_start]
     dt_overlap[, overlap_6_0  := episode.start <= window_6_0_end  & episode.end  >= window_6_0_start]
