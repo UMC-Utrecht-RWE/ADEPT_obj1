@@ -42,10 +42,11 @@ if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG) {
   unique_pregnancies_in_study_population <- uniqueN(pregnancies$pregnancy_id)
   
   # Exclude pregnancies that  do not have at least a year of lookback -> pregnancy start needs to be equal or after startfu
-  # Get Pregnancies with at least a year of lookback - pregnancy start needs to be equal or after startfu
+  # Get Pregnancies with at least a year of lookback - pregnancy start needs tal or after startfu
   #<<< flow chart >>> #
   pregnancies_wo_12_mnths_before_pregnancy_start <- pregnancies[pregnancy_start_date < start_follow_up, ] # pregnancies
-  no_info_12_mnths_before_pregnancy_start <- uniqueN(pregnancies_wo_12_mnths_before_pregnancy_start$person_id) # unique pregnancy persons wo 12 months info prior
+  no_info_12_mnths_before_pregnancy_start_unique_persons <- uniqueN(pregnancies_wo_12_mnths_before_pregnancy_start$person_id) # unique pregnancy persons wo 12 months info prior
+  no_info_12_mnths_before_pregnancy_start_unique_pregnancies <- uniqueN(pregnancies_wo_12_mnths_before_pregnancy_start$pregnancy_id) # unique pregnancy persons wo 12 months info prior
   
   # Exclude records where no lookback of at least a year
   pregnancies <- pregnancies[pregnancy_start_date >= start_follow_up, ]
@@ -54,6 +55,19 @@ if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG) {
   unique_pregnant_persons_in_study_population_with_at_least_12_mnths_fu <- uniqueN(pregnancies$person_id)
   unique_pregnancies_in_study_population_with_at_least_12_mnths_fu <- uniqueN(pregnancies$pregnancy_id)
   
+  # Exclude pregnancies that start after endfu
+  #<<< flow chart >>> #
+  pregnancy_start_after_endfu <- pregnancies[pregnancy_start_date >= end_follow_up, ] # pregnancies
+  nr_of_pregnancy_starts_after_endfu_unique_persons <- uniqueN(pregnancy_start_after_endfu$person_id) # unique pregnancy persons with pregnancy after endfu
+  nr_of_pregnancy_starts_after_endfu_unique_pregnancies <- uniqueN(pregnancy_start_after_endfu$pregnancy_id) # unique pregnancy persons with pregnancy after endfu
+  
+  # Exclude records where no lookback of at least a year
+  pregnancies <- pregnancies[pregnancy_start_date < end_follow_up, ]
+  
+  # Population with pregnancy and at least 12 months of fu
+  unique_pregnant_persons_in_study_population_with_pregstart_before_endfu <- uniqueN(pregnancies$person_id)
+  unique_pregnancies_in_study_population_with_pregstart_before_endfu <- uniqueN(pregnancies$pregnancy_id)
+  
   # Merge with dt_exposure to get pregnancy persons with rx a year before pregnancy start or within pregnancy
   pregnancies <- merge(pregnancies, dt_exposures[, .(person_id, code, rx_date)], by = "person_id", allow.cartesian = TRUE)
   
@@ -61,36 +75,69 @@ if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG) {
   pregnancies <- pregnancies[rx_date >= as.IDate(as.Date(pregnancy_start_date) - lookback_period) & rx_date < pregnancy_end_date]
   
   #<<< Flow chart >>> #
-  pregnant_persons_with_ASM_use <- uniqueN(pregnancies$person_id)
-  pregnancies_with_ASM_use <- uniqueN(pregnancies$pregnancy_id)
-  pregnant_persons_with_no_ASM_use <- unique_pregnant_persons_in_study_population_with_at_least_12_mnths_fu - pregnant_persons_with_ASM_use
+  pregnant_persons_with_ASM_use    <- uniqueN(pregnancies$person_id)
+  pregnancies_with_ASM_use         <- uniqueN(pregnancies$pregnancy_id)
+  
+  pregnant_persons_with_no_ASM_use <- unique_pregnant_persons_in_study_population_with_pregstart_before_endfu - pregnant_persons_with_ASM_use
+  pregnancies_with_no_ASM_use      <- unique_pregnancies_in_study_population_with_pregstart_before_endfu - pregnancies_with_ASM_use
+  
   flow_data <- data.table(
-    step = c(
-      "total_FEMALE_study_population_base_cohort",
-      "female_study_population_without_pregnancy",
-      "unique_pregnant_persons_in_study_population",
-      "unique_pregnancies_in_study_population",
-      "no_info_12_mnths_before_pregnancy_start",
-      "unique_pregnant_persons_in_study_population_with_at_least_12_mnths_fu",
-      "unique_pregnancies_in_study_population_with_at_least_12_mnths_fu",
-      "pregnant_persons_with_no_ASM_use",
-      "pregnant_persons_with_ASM_use",
-      "pregnancies_with_ASM_use"
+    Step = c(
+      "1. BASE COHORT",
+      "   Total female study population",
+      "",
+      "2. PREGNANCY STATUS",
+      "   Excluded: Females without pregnancy",
+      "   Remaining: pregnant persons in study population (persons)",
+      "   Remaining: pregnacies in study population (pregnancies)",
+      "",
+      "3. LOOKBACK EXCLUSION - pregnancies with less than 12 months lookback",
+      "   Excluded: No 12mo lookback (persons)",
+      "   Excluded: No 12mo lookback (pregnancies)",
+      "   Remaining: With >=12mo lookback (persons)",
+      "   Remaining: With >=12mo lookback (pregnancies)",
+      "",
+      "4. FOLLOW-UP EXCLUSION - pregnancies that start after endfu",
+      "   Excluded: Pregnancy start after end FU (persons)",
+      "   Excluded: Pregnancy start after end FU (pregnancies)",
+      "   Remaining: Final pregnancy cohort (persons)",
+      "   Remaining: Final pregnancy cohort (pregnancies)",
+      "",
+      "5. ASM EXPOSURE - pregnancies with ASM use",
+      "   Excluded: Pregnant persons WITHOUT ASM use",
+      "   Excluded: Pregnancies WITHOUT ASM use",
+      "   Remaining: ASM Users (persons)",
+      "   Remaining: ASM Users (pregnancies)"
     ),
-    count = c(
+    Count = c(
+      "",
       total_population_base_cohort,
+      "",
+      "",
       female_study_population_without_pregnancy,
       unique_pregnant_persons_in_study_population,
       unique_pregnancies_in_study_population,
-      no_info_12_mnths_before_pregnancy_start,
+      "",
+      "",
+      no_info_12_mnths_before_pregnancy_start_unique_persons,
+      no_info_12_mnths_before_pregnancy_start_unique_pregnancies,
       unique_pregnant_persons_in_study_population_with_at_least_12_mnths_fu,
       unique_pregnancies_in_study_population_with_at_least_12_mnths_fu,
+      "",
+      "",
+      nr_of_pregnancy_starts_after_endfu_unique_persons,
+      nr_of_pregnancy_starts_after_endfu_unique_pregnancies,
+      unique_pregnant_persons_in_study_population_with_pregstart_before_endfu,
+      unique_pregnancies_in_study_population_with_pregstart_before_endfu,
+      "",
+      "",
       pregnant_persons_with_no_ASM_use,
+      pregnancies_with_no_ASM_use,
       pregnant_persons_with_ASM_use,
       pregnancies_with_ASM_use
     )
   )
-  
+ 
   # Save table
   saveRDS(flow_data, file.path(paths$D5_dir, "flowcharts", paste0(pop_prefix, "_study_pop_to_Pregnant_ASM_users_flowchart.rds")))
   
