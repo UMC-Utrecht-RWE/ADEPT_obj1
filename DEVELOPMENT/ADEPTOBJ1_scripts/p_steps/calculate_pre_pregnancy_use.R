@@ -17,9 +17,6 @@ study_years <- seq(year(as.IDate(as.Date(start_study_date) + lookback_period)), 
 # Create template table with all years zeroed
 empty_dt <- data.table(preg_year = study_years)
 
-# Calculate total pregnancies per year (denominator)
-total_preg_by_year <- pregnancies[, .(Freq = uniqueN(pregnancy_id)), by = preg_year]
-
 # List overlaps
 files_overlaps  <- list.files(file.path(paths$D3_dir, "tmp"), pattern = "\\.rds$", full.names = TRUE)
 
@@ -45,8 +42,17 @@ for (overlap in seq_along(files_overlaps)) {
     # Get list of unique ids
     preg_ids_12_0 <- unique(dt_pre_pregnancy$pregnancy_id)
     
-    # Count the number of pregnancies with ASM use in the 6-0 month and 12-6 month window, grouped by pregnancy year
-    pre_pregnancy_counts <- pregnancies[pregnancy_id %in% preg_ids_12_0, .N, by = preg_year]
+    # Create Dataset of unique continuous users - a person is counted once per pregnancy id
+    dt_pre_pregnancy_unique <- pregnancies[pregnancy_id %in% preg_ids_12_0, ]
+    
+    # Filter to pregnancies with ASM use in the 12-0 month window
+    pre_pregnancy_unique <- pregnancies[pregnancy_id %in% preg_ids_12_0]
+    
+    # Count by pregnancy year
+    pre_pregnancy_counts <- pre_pregnancy_unique[, .N, by = preg_year]
+  
+    # Count the number of pregnancies with ASM use in first trimester, grouped by pregnancy year
+    continuous_rate_counts <- pregnancies[, .N, by = preg_year]
     
     # Merge with template to get all years
     pre_pregnancy_all <- merge(empty_dt[, .(preg_year)], pre_pregnancy_counts, by = "preg_year", all.x = TRUE)

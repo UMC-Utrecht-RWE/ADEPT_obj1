@@ -81,10 +81,10 @@ for (overlap in seq_along(files_overlaps)) {
       message(sprintf("Processing %s - %s", overlap_name, names(discont_list)[dt]))
       
       # Keep one person per year
-      dt_subset <- unique(dt_subset, by = c("pregnancy_id", "preg_year"))
+      dt_subset_unique <- unique(dt_subset, by = c("pregnancy_id", "preg_year"))
       
       # Count by pregnancy
-      discontinuer_counts <- dt_subset[, .(N = .N), by = preg_year]
+      discontinuer_counts <- dt_subset_unique[, .(N = .N), by = preg_year]
       
       # Prepare denominator
       dt_counts_copy <- copy(dt_counts)

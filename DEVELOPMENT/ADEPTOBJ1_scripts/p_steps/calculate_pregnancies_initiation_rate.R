@@ -1,7 +1,7 @@
 ###############################################################################################################################################################################
 # <<< Sub-objective 1.3: Initiation rate during pregnancy >>>
 # Measure: Annual initiation rate of ASM during pregnancy
-# Numerator: Number of pregnancies in a calendar year with ≥1 treatment episode of an ASM during any trimester, but no treatment episode in the 12 months prior to pregnancy start
+# Numerator: Number of pregnancies in a calendar year with >=1 treatment episode of an ASM during any trimester, but no treatment episode in the 12 months prior to pregnancy start
 # Denominator: Total number of pregnancies in that calendar year in the data source
 # Stratification by: Overall, individual drug substance, drug sub-groups, age groups, indication, calendar year, data source
 
@@ -16,9 +16,6 @@ study_years <- seq(year(as.IDate(as.Date(start_study_date) + lookback_period)), 
 
 # Create template table with all years zeroed
 empty_dt <- data.table(preg_year = study_years)
-
-# Calculate total pregnancies per year (denominator)
-total_preg_by_year <- pregnancies[, .(Freq = uniqueN(pregnancy_id)), by = preg_year]
 
 # List overlaps
 files_overlaps  <- list.files(file.path(paths$D3_dir, "tmp"), pattern = "\\.rds$", full.names = TRUE)
@@ -44,8 +41,11 @@ for (overlap in seq_along(files_overlaps)) {
     # Get list of unique ids
     preg_ids <- unique(dt_incident$pregnancy_id)
     
-    # Count the number of pregnancies grouped by pregnancy year
-    initiation_rate_counts <- pregnancies[pregnancy_id %in% preg_ids, .N, by = preg_year]
+    # Filter to pregnancies in the relevant group
+    initiation_rate_unique <- pregnancies[pregnancy_id %in% preg_ids]
+    
+    # Count by pregnancy year
+    initiation_rate_counts <- initiation_rate_unique[, .N, by = preg_year]
     
     # Merge with template to get all years
     initiation_rate_all <- merge(empty_dt[, .(preg_year)], initiation_rate_counts, by = "preg_year", all.x = TRUE)

@@ -36,8 +36,11 @@ for (overlap in seq_along(files_overlaps)) {
     # Get list of unique ids
     preg_ids_allt <- unique(dt_continuous$pregnancy_id)
     
+    # Create Dataset of unique continuous users - a person is counted once per pregnancy id
+    dt_continuous_unique <- pregnancies[pregnancy_id %in% preg_ids_allt, ]
+    
     # Count the number of pregnancies with ASM use in first trimester, grouped by pregnancy year
-    continuous_rate_counts <- pregnancies[pregnancy_id %in% preg_ids_allt, .N, by = preg_year]
+    continuous_rate_counts <- dt_continuous_unique[, .N, by = preg_year]
     
     # Merge with template to get all years
     continuous_rate_all <- merge(empty_dt[, .(preg_year)], continuous_rate_counts, by = "preg_year", all.x = TRUE)
