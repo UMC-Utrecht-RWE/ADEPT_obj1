@@ -156,6 +156,9 @@ if(!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG) {
   pregnancies[, window_t3_end            := fifelse(!is.na(window_t3_start), pregnancy_end_date, as.IDate(NA))]
   pregnancies[, preg_year                := year(pregnancy_start_date)]
   
+  # Calculate total pregnancies per year (denominator)
+  total_preg_by_year <- pregnancies[, .(Freq = uniqueN(pregnancy_id)), by = preg_year]
+  
   # Prepare for join - keep all records that fall between 12 months before pregnancy start date and pregnancy end date
   setkey(pregnancies, pregnancy_id, window_before_preg_start, pregnancy_end_date)
   

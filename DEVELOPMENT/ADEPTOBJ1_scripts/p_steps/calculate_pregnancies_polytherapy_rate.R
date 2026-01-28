@@ -33,7 +33,7 @@ if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG) dt_poly <- dt_poly[overla
 dt_poly <- dt_poly[overlap_days >= 91, ]
 
 # Merge poly records with pre-pregnancy records
-dt <- merge(pregnancies, dt_poly, by = "person_id", all = FALSE, allow.cartesian = TRUE)
+dt <- merge(pregnancies[, .(person_id, pregnancy_id, pregnancy_start_date, pregnancy_end_date, preg_year)], dt_poly, by = "person_id", all = FALSE, allow.cartesian = TRUE)
 
 # Check if overlap is within pregnancy
 if (nrow(dt) > 0) {
