@@ -249,7 +249,9 @@ if (exists("dt_all") && nrow(dt_all) > 0) {
         dt_periods[, paste0("strength_", p) := get(paste0("amount_", p)) * subst1_amount_per_form]
         
         # Sum strength per person per pregnancy
-        dt_periods[, paste0("strength_", p, "_sum") := sum(get(paste0("strength_", p))), by = .(person_id, pregnancy_start_date)]
+        dt_periods[, paste0("strength_", p, "_sum") := if(all(is.na(get(paste0("strength_", p))))) NA_real_
+                                                       else sum(get(paste0("strength_", p)), na.rm = TRUE), 
+                                                       by = .(person_id, pregnancy_start_date)]
         
         # Compute daily dose
         dt_periods[, paste0("daily_dose_", p) := get(paste0("strength_", p, "_sum")) / get(paste0(p, "_len"))]
