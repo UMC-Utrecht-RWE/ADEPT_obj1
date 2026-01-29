@@ -107,30 +107,11 @@ This should be the **full path** to the folder containing the `D3_pregnancy_fina
 ```r
 preg_dir <- "Path/To/Your/Pregnancy/D3_pregnancy_final.RData/File/Here"
 ```
-#### 3.5 ⚠️ If not participating in Objectives 1.3 and 1.4 please comment out the line: 
-
-```r
-source(file.path(thisdir, "p_steps", "run_analysis_pregnancies.R"), local = TRUE)
-```
-#### 3.6 ⚠️ If not participating in Objective 1.5 please comment out the line: 
-
-```r
-source(file.path(thisdir, "p_steps", "calculate_weighted_daily_dose.R"), local = TRUE)
-```
-#### 3.7 ⚠️ EFEMERIS: Please use the run_analysis_EFEMERIS.R script. All other run_analysis files can be commented out. 
-
-```r
-source(file.path(thisdir, "p_steps", "run_analysis_EFEMERIS.R"), local = TRUE)
-```
-#### 3.7 ⚠️ FINLAND: Please use the run_analysis_FIN_REG.R script.  Objective 1.5 script has been added to this file so you do not need to run it separately. All other run_analysis files can be commented out. 
-
-```r
-source(file.path(thisdir, "p_steps", "run_analysis_FIN_REG.R"), local = TRUE)
-```
-
 ---
 ### 4. ✅ Run the Script  
-Once the configuration is complete, run the `to_run.R` script.
+Once you have confirmed that your DEAP_name and paths to CDM and pregnancy folder are correct, you can select all and run the script. Scripts to be run for each individual DEAP have already been selected so you do not need to individually source each part anymore.
+
+⚠️ Please note that a log file has been added and is and is available for review in the main scripts folder should you wish to review it after your run. 
 
 ---
 
