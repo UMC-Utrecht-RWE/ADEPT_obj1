@@ -41,8 +41,29 @@ if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG) {
   unique_pregnant_persons_in_study_population <- uniqueN(pregnancies$person_id)
   unique_pregnancies_in_study_population <- uniqueN(pregnancies$pregnancy_id)
   
+  # Exclude pregnancies that start before study start or pregnancies that start after endfu
+  pregnancy_end_before_study_start <- pregnancies[
+    !( 
+      between(pregnancy_start_date, start_study_date, end_study_date) &
+        between(pregnancy_end_date,   start_study_date, end_study_date)
+    )
+  ]
+  
+  pregnancy_end_before_study_start_unique_persons <- uniqueN(pregnancy_no_overlap_with_study_period$person_id)
+  pregnancy_end_before_study_start_unique_pregnancies <- uniqueN(pregnancy_end_before_study_start$pregnancy_id)
+  
+  #Exclude those outside study period
+  pregnancies <- pregnancies[
+      between(pregnancy_start_date, start_study_date, end_study_date) &
+      between(pregnancy_end_date,   start_study_date, end_study_date)
+  ]
+  
+  # Population with pregnancy and at least 12 months of fu
+  unique_pregnant_persons_with_preg_start_after_study_start <- uniqueN(pregnancies$person_id)
+  unique_pregnancies_with_preg_start_after_study_start <- uniqueN(pregnancies$pregnancy_id)
+  
   # Exclude pregnancies that  do not have at least a year of lookback -> pregnancy start needs to be equal or after startfu
-  # Get Pregnancies with at least a year of lookback - pregnancy start needs tal or after startfu
+  # Get Pregnancies with at least a year of lookback - pregnancy start needs after startfu
   #<<< flow chart >>> #
   pregnancies_wo_12_mnths_before_pregnancy_start <- pregnancies[pregnancy_start_date < start_follow_up, ] # pregnancies
   no_info_12_mnths_before_pregnancy_start_unique_persons <- uniqueN(pregnancies_wo_12_mnths_before_pregnancy_start$person_id) # unique pregnancy persons wo 12 months info prior
@@ -91,19 +112,25 @@ if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG) {
       "   Remaining: pregnant persons in study population (persons)",
       "   Remaining: pregnacies in study population (pregnancies)",
       "",
-      "3. LOOKBACK EXCLUSION - pregnancies with less than 12 months lookback",
+      "3. INSIDE STUDY PERIOD EXCLUSION - pregnancies outside the study period",
+      "   Excluded: Pregnant persons outside study period (persons)",
+      "   Excluded: Pregnancies outside study period (pregnancies)",
+      "   Remaining: Pregnant persons within study period (persons)",
+      "   Remaining: Pregnancies within study period (pregnancies)",
+      "",
+      "4. LOOKBACK EXCLUSION - pregnancies with less than 12 months lookback",
       "   Excluded: No 12mo lookback (persons)",
       "   Excluded: No 12mo lookback (pregnancies)",
       "   Remaining: With >=12mo lookback (persons)",
       "   Remaining: With >=12mo lookback (pregnancies)",
       "",
-      "4. FOLLOW-UP EXCLUSION - pregnancies that start after endfu",
+      "5. FOLLOW-UP EXCLUSION - pregnancies that start after endfu",
       "   Excluded: Pregnancy start after end FU (persons)",
       "   Excluded: Pregnancy start after end FU (pregnancies)",
       "   Remaining: Final pregnancy cohort (persons)",
       "   Remaining: Final pregnancy cohort (pregnancies)",
       "",
-      "5. ASM EXPOSURE - pregnancies with ASM use",
+      "6. ASM EXPOSURE - pregnancies with ASM use",
       "   Excluded: Pregnant persons WITHOUT ASM use",
       "   Excluded: Pregnancies WITHOUT ASM use",
       "   Remaining: ASM Users (persons)",
@@ -117,6 +144,12 @@ if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG) {
       female_study_population_without_pregnancy,
       unique_pregnant_persons_in_study_population,
       unique_pregnancies_in_study_population,
+      "",
+      "",
+      pregnancy_end_before_study_start_unique_persons,
+      pregnancy_end_before_study_start_unique_pregnancies,
+      unique_pregnant_persons_with_preg_start_after_study_start,
+      unique_pregnancies_with_preg_start_after_study_start,
       "",
       "",
       no_info_12_mnths_before_pregnancy_start_unique_persons,
@@ -137,7 +170,7 @@ if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG) {
       pregnancies_with_ASM_use
     )
   )
- 
+  
   # Save table
   saveRDS(flow_data, file.path(paths$D5_dir, "flowcharts", paste0(pop_prefix, "_study_pop_to_Pregnant_ASM_users_flowchart.rds")))
   
