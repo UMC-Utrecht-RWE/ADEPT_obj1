@@ -16,11 +16,11 @@ thisdir <- dirname(rstudioapi::getSourceEditorContext()$path)
 # Select DEAP data source by uncommenting **only one** of the lines below.
 
 # DEAP_data <- "BIFAP"
-DEAP_data <- "CPRD"
+# DEAP_data <- "CPRD"
 # DEAP_data <- "EFEMERIS"
 # DEAP_data <- "FIN_REG"
 # DEAP_data <- "NOR_REG"
-# DEAP_data <- "PHARMO"
+DEAP_data <- "PHARMO"
 # DEAP_data <- "SIDIAP"
 # DEAP_data <- "VAL_PAD"
 # DEAP_data <- "VID"
