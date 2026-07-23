@@ -126,20 +126,8 @@ if (!deap_flags$is_EFEMERIS && !deap_flags$is_FIN_REG) {
   pregnant_persons_with_no_ASM_use <- unique_pregnant_persons_in_study_population_with_at_least_12_mnths_fu - pregnant_persons_with_ASM_use
   pregnancies_with_no_ASM_use      <- unique_pregnancies_in_study_population_with_at_least_12_mnths_fu - pregnancies_with_ASM_use
   
-   
-  ############################
-  
-  #<<< Flow chart >>> #
-  pregnant_persons_with_ASM_use_during_1_yr_before_to_end_pregnancy <- uniqueN(pregnancies$person_id)
-  pregnancies_with_ASM_use         <- uniqueN(pregnancies$pregnancy_id)
-  
-  pregnant_persons_with_no_ASM_use <- unique_pregnancies_in_study_population_with_at_least_12_mnths_fu - pregnant_persons_with_ASM_use
-  pregnancies_with_no_ASM_use      <- unique_pregnancies_in_study_population_with_at_least_12_mnths_fu - pregnancies_with_ASM_use
-  
-  # Prescriptions that occur within 1 year of pregnancy start or during pregnancy
-  pregnancies <- pregnancies[rx_date >= as.IDate(as.Date(pregnancy_start_date) - lookback_period) & rx_date < pregnancy_end_date]
-  
-  
+
+  # FLOWCHART  
   flow_data <- data.table(
     Step = c(
       "1. BASE COHORT",
